@@ -65,3 +65,32 @@ class StorageTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             save_ledger(self.chain, self.path)
         self.assertEqual(self.path.read_bytes(), before)
+
+    def test_restore_in_new_process(self):
+        import subprocess
+        import sys
+
+        save_ledger(self.chain, self.path)
+        code = """
+import json
+import sys
+from ledger_storage import load_ledger
+
+allocations = json.loads(sys.argv[2])
+ledger = load_ledger(sys.argv[1], allocations, 0)
+assert ledger.validate()
+print(json.dumps(ledger.balances(), sort_keys=True))
+"""
+        result = subprocess.run(
+            [
+                sys.executable, "-c", code,
+                str(self.path), json.dumps(self.allocations)
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        )
+        self.assertEqual(
+            json.loads(result.stdout), self.chain.balances()
+        )
