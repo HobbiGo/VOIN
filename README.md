@@ -1,39 +1,55 @@
-# VOIN Experimental Blockchain Simulator
+# VOIN Experimental Blockchain Prototype
 
-Prototipe ledger lokal berbasis Python, bukan komputer kuantum,
-jaringan cryptocurrency, atau sistem siap produksi.
+Prototipe ledger lokal dengan tanda tangan ML-DSA-44.
+Bukan mainnet, exchange, komputer kuantum, atau sistem siap produksi.
 
 ## Menjalankan
 
-Gunakan Python 3.12 dan jalankan:
+Gunakan Python 3.12:
 
     python -m pip install -r requirements.txt
-    python demo_signed.py
+    python demo_strict.py
     python -m unittest discover -s tests -v
 
-## Dua versi ledger
+Demo menghasilkan saldo Alice 850, Bob 150, dan integritas True.
+Kunci demo dibuat sementara di memori, bukan disimpan.
 
-- VoinChain di voin.py: simulator awal tanpa autentikasi transaksi.
-- SignedVoinChain di signed_chain.py: mewajibkan tanda tangan
-  ML-DSA-44 dan mencocokkan alamat pengirim dengan public key.
+## Versi terbaru
 
-Demo signed membuat kunci sementara di memori dan mengirim
-250 unit simulasi dari saldo awal 1000. Bukan uang nyata.
+StrictVoinChain menggabungkan:
+- Transaksi v2 dengan chain_id yang ikut ditandatangani.
+- Alamat pengirim dan penerima berformat hash public key.
+- Batas input kunci, tanda tangan, dan jumlah transaksi.
+- Genesis deterministik untuk konfigurasi yang sama.
+- Pemeriksaan struktur blok.
+- Validasi calon rantai sebelum mengganti rantai aktif.
 
-## Status pengujian
+File ledger dan demo lama tetap untuk referensi.
+Jangan gunakan versi lama sebagai layanan transaksi.
 
-11 pengujian lokal lulus saat pengembangan.
-Workflow Add signed ledger juga berhasil di GitHub Actions.
-Hasil ini bukan audit keamanan.
+## Pengujian
 
-## Batasan
+32 tes lokal lulus saat pengembangan.
+GitHub Actions Add strict ledger demo juga berhasil.
+Tes tersebut bukan audit atau bukti keamanan menyeluruh.
 
-Tidak ada jaringan peer-to-peer, persistensi, pengelolaan kunci
-produksi, atau konsensus Proof of Stake. Validator hanya metadata
-demo. Proof of Work sangat sederhana dan tidak aman untuk produksi.
+## Batasan penting
 
-Pustaka pqcrypto 1.0.0 menyatakan implementasinya belum menjalani
-audit keamanan formal. Tanda tangan tidak membuat seluruh sistem
-otomatis aman terhadap semua serangan.
+Belum ada jaringan peer-to-peer, konsensus antarvalidator,
+tanda tangan validator, persistensi, atau keamanan akses bersamaan.
+Data dan konfigurasi masih berupa objek Python lokal yang bisa diubah.
+Salinan seluruh rantai digunakan saat penambahan blok, sehingga
+belum cocok untuk target TPS tinggi.
 
-Jangan gunakan untuk dana nyata. Jangan unggah kunci privat.
+Genesis sama hanya jika konfigurasi dan alokasi awal sama.
+Demo memakai kunci acak, sehingga genesis berbeda setiap dijalankan.
+Nama voin-devnet-1 belum berarti ada devnet antarserver.
+
+Pustaka pqcrypto 1.0.0 menyatakan implementasinya belum diaudit
+secara formal. Jangan gunakan untuk dana nyata atau unggah kunci privat.
+
+## Arah pengembangan
+
+Tujuan: blockchain mandiri terdesentralisasi dan exchange terpusat
+sebagai produk terpisah yang dapat dihubungkan.
+Belum ada benchmark yang membuktikan lebih cepat dari Solana.
