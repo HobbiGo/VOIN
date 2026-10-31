@@ -31,3 +31,14 @@ class StrictVoinChain(GenesisVoinChain):
             if not isinstance(validator, str) or not validator.strip():
                 raise ValueError("Invalid validator name")
         return super()._replay()
+
+    def add_block(self, transactions, validator):
+        import copy
+
+        candidate = copy.deepcopy(self)
+        block = super(StrictVoinChain, candidate).add_block(
+            transactions, validator
+        )
+        candidate.validate()
+        self.chain = candidate.chain
+        return block

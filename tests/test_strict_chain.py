@@ -49,3 +49,35 @@ class StrictChainTests(unittest.TestCase):
 
     def test_bad_previous_hash_rejected(self):
         self.reject_change("previous_hash", "z" * 64)
+
+    def test_failed_add_preserves_chain(self):
+        import copy
+        from unittest.mock import patch
+
+        before = copy.deepcopy(self.chain.chain)
+        item = copy.deepcopy(before[1]["transactions"][0])
+        tx = item["transaction"]
+        tx["nonce"] = 2
+
+        pk, sk = crypto.keygen()
+        recipient_pk, _ = crypto.keygen()
+        chain = StrictVoinChain({address(pk): 1000}, 0)
+        chain.register_validator("v", 50)
+        tx = {
+            "chain_id": CHAIN_ID,
+            "sender": address(pk),
+            "recipient": address(recipient_pk),
+            "amount": 10,
+            "nonce": 1,
+        }
+        item = {
+            "transaction": tx,
+            "public_key": pk.hex(),
+            "signature": sign_transaction(tx, pk, sk).hex(),
+        }
+        before = copy.deepcopy(chain.chain)
+        with patch("voin.time.time_ns", return_value=0):
+            with self.assertRaises(ValueError):
+                chain.add_block([item], "v")
+        self.assertEqual(chain.chain, before)
+        self.assertTrue(chain.validate())
