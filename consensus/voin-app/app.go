@@ -9,7 +9,8 @@ import (
 // App is an unfinished scaffold, not a runnable VOIN ledger.
 type App struct {
 	abci.BaseApplication
-	state *State
+	state   *State
+	pending *State
 }
 
 var _ abci.Application = (*App)(nil)
@@ -64,8 +65,5 @@ func (app *App) FinalizeBlock(
 	ctx context.Context,
 	req *abci.FinalizeBlockRequest,
 ) (*abci.FinalizeBlockResponse, error) {
-	if len(req.Txs) != 0 {
-		return nil, processingDisabledError{}
-	}
-	return &abci.FinalizeBlockResponse{}, nil
+	return app.finalizeEmptyBlock(req)
 }
