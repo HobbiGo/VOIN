@@ -53,3 +53,25 @@ secara formal. Jangan gunakan untuk dana nyata atau unggah kunci privat.
 Tujuan: blockchain mandiri terdesentralisasi dan exchange terpusat
 sebagai produk terpisah yang dapat dihubungkan.
 Belum ada benchmark yang membuktikan lebih cepat dari Solana.
+
+## Penyimpanan snapshot lokal
+
+Jalankan demo simpan-muat:
+
+    python demo_storage.py
+
+ledger_storage.py menyimpan riwayat sebagai JSON dengan batas 10 MiB.
+Data diperiksa sebelum disimpan dan setelah dimuat. Genesis tepercaya
+dibentuk dari alokasi awal dan difficulty yang diberikan pemanggil.
+File sementara digunakan sebelum mengganti snapshot tujuan.
+
+38 tes lokal lulus saat pengembangan, termasuk pemulihan dari proses
+Python baru. GitHub Actions untuk pengujian tersebut juga berhasil.
+
+Batasan:
+- Snapshot tidak menyimpan kunci privat atau registri validator.
+- Demo memakai folder sementara dan membersihkannya saat selesai.
+- Snapshot bukan database produksi atau penyimpanan otomatis per blok.
+- Belum ada perlindungan rollback ke riwayat lama yang masih valid.
+- Belum ada jaminan pemulihan akibat mesin mati mendadak.
+- Belum mendukung penulisan bersamaan oleh beberapa proses.
