@@ -3,3 +3,15 @@ __pycache__/
 *.py[cod]
 .venv/
 .env
+
+# Local wallet secrets and encrypted backups
+voin-test-wallets/
+voin-encrypted-test-wallets/
+voin-encrypted-test-backups/
+*wallet*.json
+*.enc
+*.enc.txt
+*.key
+*.pem
+.env.*
+!.env.example
