@@ -59,3 +59,45 @@ class V2Tests(unittest.TestCase):
         item["public_key"] += "00"
         with self.assertRaises(ValueError):
             self.chain.add_block([item], "v")
+
+    def test_changed_amount_rejected(self):
+        from pqcrypto import InvalidSignatureError
+        item = self.envelope(self.tx, self.pk, self.sk)
+        item["transaction"]["amount"] = 999
+        with self.assertRaises(InvalidSignatureError):
+            self.chain.add_block([item], "v")
+        self.assertEqual(len(self.chain.chain), 1)
+
+    def test_missing_signature_rejected(self):
+        item = self.envelope(self.tx, self.pk, self.sk)
+        del item["signature"]
+        with self.assertRaises(ValueError):
+            self.chain.add_block([item], "v")
+        self.assertEqual(len(self.chain.chain), 1)
+
+    def test_too_many_transactions_rejected(self):
+        item = self.envelope(self.tx, self.pk, self.sk)
+        with self.assertRaises(ValueError):
+            self.chain.add_block([item] * 101, "v")
+        self.assertEqual(len(self.chain.chain), 1)
+
+    def test_changed_amount_rejected(self):
+        from pqcrypto import InvalidSignatureError
+        item = self.envelope(self.tx, self.pk, self.sk)
+        item["transaction"]["amount"] = 999
+        with self.assertRaises(InvalidSignatureError):
+            self.chain.add_block([item], "v")
+        self.assertEqual(len(self.chain.chain), 1)
+
+    def test_missing_signature_rejected(self):
+        item = self.envelope(self.tx, self.pk, self.sk)
+        del item["signature"]
+        with self.assertRaises(ValueError):
+            self.chain.add_block([item], "v")
+        self.assertEqual(len(self.chain.chain), 1)
+
+    def test_too_many_transactions_rejected(self):
+        item = self.envelope(self.tx, self.pk, self.sk)
+        with self.assertRaises(ValueError):
+            self.chain.add_block([item] * 101, "v")
+        self.assertEqual(len(self.chain.chain), 1)
