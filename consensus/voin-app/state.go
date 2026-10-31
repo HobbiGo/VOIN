@@ -41,9 +41,34 @@ func NewState(allocations map[string]uint64) (*State, error) {
 }
 
 func (state *State) Hash() ([32]byte, error) {
+	if err := state.Validate(); err != nil {
+		return [32]byte{}, err
+	}
 	data, err := json.Marshal(state)
 	if err != nil {
 		return [32]byte{}, err
 	}
 	return sha256.Sum256(data), nil
+}
+
+// Validate checks structural invariants, not transaction authorization.
+func (state *State) Validate() error {
+	if state == nil {
+		return errors.New("missing state")
+	}
+	if state.ChainID != ChainID {
+		return errors.New("wrong state network")
+	}
+	if state.Height < 0 {
+		return errors.New("negative state height")
+	}
+	if len(state.Accounts) == 0 {
+		return errors.New("missing accounts")
+	}
+	for address := range state.Accounts {
+		if !accountPattern.MatchString(address) {
+			return errors.New("invalid account address")
+		}
+	}
+	return nil
 }

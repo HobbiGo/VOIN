@@ -56,3 +56,45 @@ func TestInvalidGenesisRejected(t *testing.T) {
 		}
 	}
 }
+
+func TestInvalidStateCannotBeHashed(t *testing.T) {
+	a := "voin_" + strings.Repeat("a", 64)
+	cases := map[string]*State{
+		"nil": nil,
+		"wrong network": {
+			ChainID:  "other-network",
+			Accounts: map[string]Account{a: {Balance: 1000}},
+		},
+		"negative height": {
+			ChainID:  ChainID,
+			Height:   -1,
+			Accounts: map[string]Account{a: {Balance: 1000}},
+		},
+		"missing accounts": {
+			ChainID: ChainID,
+		},
+		"invalid address": {
+			ChainID:  ChainID,
+			Accounts: map[string]Account{"alice": {Balance: 1000}},
+		},
+	}
+	for name, state := range cases {
+		t.Run(name, func(t *testing.T) {
+			if _, err := state.Hash(); err == nil {
+				t.Fatal("invalid state must not be hashed")
+			}
+		})
+	}
+}
+
+func TestZeroBalanceAllowedAfterGenesis(t *testing.T) {
+	a := "voin_" + strings.Repeat("a", 64)
+	state := &State{
+		ChainID:  ChainID,
+		Height:   1,
+		Accounts: map[string]Account{a: {Balance: 0, Nonce: 1}},
+	}
+	if _, err := state.Hash(); err != nil {
+		t.Fatal(err)
+	}
+}
