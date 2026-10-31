@@ -1,0 +1,24 @@
+name: VOIN ABCI Go Tests
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: consensus/voin-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: consensus/voin-app/go.mod
+          cache-dependency-path: consensus/voin-app/go.sum
+
+      - name: Run Go tests
+        run: go test ./... -v
