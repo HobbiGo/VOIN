@@ -28,6 +28,12 @@ func (app *App) Commit(
 		return nil, err
 	}
 
+	if app.stateFile != "" {
+		if err := writeStateFile(app.stateFile, app.pending); err != nil {
+			return nil, err
+		}
+	}
+
 	app.state = app.pending
 	app.pending = nil
 	return &abci.CommitResponse{}, nil
