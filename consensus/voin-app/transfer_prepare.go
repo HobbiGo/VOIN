@@ -8,6 +8,10 @@ import (
 func (app *TransferApp) PrepareProposal(
 	ctx context.Context, req *abci.PrepareProposalRequest,
 ) (*abci.PrepareProposalResponse, error) {
+	if app != nil {
+		app.mu.Lock()
+		defer app.mu.Unlock()
+	}
 	result := &abci.PrepareProposalResponse{}
 	if app == nil || app.App == nil || req == nil {
 		return result, nil

@@ -9,6 +9,10 @@ import (
 func (app *TransferApp) FinalizeBlock(
 	ctx context.Context, req *abci.FinalizeBlockRequest,
 ) (*abci.FinalizeBlockResponse, error) {
+	if app != nil {
+		app.mu.Lock()
+		defer app.mu.Unlock()
+	}
 	if app == nil || app.App == nil || req == nil {
 		return nil, errors.New("missing app or request")
 	}

@@ -9,6 +9,10 @@ import (
 func (app *TransferApp) ProcessProposal(
 	ctx context.Context, req *abci.ProcessProposalRequest,
 ) (*abci.ProcessProposalResponse, error) {
+	if app != nil {
+		app.mu.Lock()
+		defer app.mu.Unlock()
+	}
 	reject := &abci.ProcessProposalResponse{Status: 2}
 	if app == nil || app.App == nil || req == nil {
 		return reject, nil

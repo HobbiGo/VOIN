@@ -3,12 +3,14 @@ package voinapp
 import (
 	"context"
 	"errors"
+	"sync"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 )
 
 // TransferApp is an explicit experimental transfer mode.
 type TransferApp struct {
+	mu sync.Mutex
 	*App
 }
 
@@ -24,6 +26,10 @@ func NewTransferApp(base *App) (*TransferApp, error) {
 func (app *TransferApp) CheckTx(
 	ctx context.Context, req *abci.CheckTxRequest,
 ) (*abci.CheckTxResponse, error) {
+	if app != nil {
+		app.mu.Lock()
+		defer app.mu.Unlock()
+	}
 	if app == nil || app.App == nil || req == nil {
 		return &abci.CheckTxResponse{Code: 1, Log: "missing request or app"}, nil
 	}
