@@ -8,9 +8,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	abciclient "github.com/cometbft/cometbft/abci/client"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	voin "example.com/voin/abci"
 	"github.com/cloudflare/circl/sign/mldsa/mldsa44"
@@ -27,11 +30,28 @@ func main() {
 func run() error {
 	fixture := flag.Bool("fixture", false, "emit public test fixture; private keys stay in memory")
 	state := flag.String("state", "", "absolute fresh state file")
+	checkpoint := flag.String("checkpoint", "", "trusted checkpoint hash for restore")
+	info := flag.Bool("info", false, "read local live ABCI checkpoint")
 	flag.Parse()
+	if *info {
+		return readCheckpoint()
+	}
 	if *fixture {
 		return makeFixture()
 	}
-	base, err := voin.NewFreshPersistentApp(*state)
+	var base *voin.App
+	var err error
+	if *checkpoint == "" {
+		base, err = voin.NewFreshPersistentApp(*state)
+	} else {
+		decoded, parseErr := hex.DecodeString(*checkpoint)
+		if parseErr != nil || len(decoded) != 32 {
+			return fmt.Errorf("checkpoint must be 32 bytes of hex")
+		}
+		var trusted [32]byte
+		copy(trusted[:], decoded)
+		base, err = voin.NewAppFromCheckpoint(*state, trusted)
+	}
 	if err != nil {
 		return err
 	}
@@ -98,4 +118,28 @@ func makeFixture() error {
 		Genesis     [][]string      `json:"genesis"`
 		Transaction json.RawMessage `json:"transaction"`
 	}{sender, recipient, [][]string{{sender, "1000"}}, raw})
+}
+
+func readCheckpoint() error {
+	client, err := abciclient.NewClient("tcp://127.0.0.1:28658", "socket", true)
+	if err != nil {
+		return err
+	}
+	if err := client.Start(); err != nil {
+		return err
+	}
+	defer client.Stop()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	info, err := client.Info(ctx, &abci.InfoRequest{})
+	if err != nil {
+		return err
+	}
+	if info == nil || info.LastBlockHeight < 1 || len(info.LastBlockAppHash) != 32 {
+		return fmt.Errorf("no valid committed checkpoint")
+	}
+	return json.NewEncoder(os.Stdout).Encode(struct {
+		Height int64  `json:"height"`
+		Hash   string `json:"hash"`
+	}{info.LastBlockHeight, hex.EncodeToString(info.LastBlockAppHash)})
 }
