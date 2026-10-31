@@ -9,6 +9,7 @@ import (
 // App is an unfinished scaffold, not a runnable VOIN ledger.
 type App struct {
 	abci.BaseApplication
+	state *State
 }
 
 var _ abci.Application = (*App)(nil)
