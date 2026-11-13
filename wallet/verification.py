@@ -1,68 +1,108 @@
-VERSION = "1.0"
-CHALLENGE_EXPIRY = 300
+import time
+import secrets
+from eth_account import Account
+from eth_account.messages import encode_defunct
 
-def __init__(self):
-    self.challenges = {}
+class VOINWalletVerification:
 
-def create_challenge(self, wallet_address):
+    VERSION = "1.0"
+    CHALLENGE_EXPIRY = 300
 
-    if not isinstance(wallet_address, str):
-        raise TypeError("Invalid wallet address")
+    def __init__(self):
+        self.challenges = {}
 
-    if not Account.is_address(wallet_address):
-        raise ValueError("Invalid wallet address")
+    def create_challenge(self, wallet_address):
 
-    nonce = secrets.token_hex(32)
+        if not isinstance(wallet_address, str):
+            raise TypeError("Wallet address must be a string")
 
-    message = (
-        "VOIN Wallet Verification\n"
-        "Platform: VOIN\n"
-        f"Wallet: {wallet_address}\n"
-        f"Nonce: {nonce}\n"
-        f"Timestamp: {int(time.time())}"
-    )
+        if not Account.is_address(wallet_address):
+            raise ValueError("Invalid wallet address")
 
-    self.challenges[wallet_address.lower()] = {
-        "message": message,
-        "nonce": nonce,
-        "created_at": time.time()
-    }
+        checksum_address = Account.to_checksum_address(wallet_address)
 
-    return message
+        nonce = secrets.token_hex(32)
+        timestamp = int(time.time())
 
-def verify_signature(
-    self,
-    wallet_address,
-    signature
-):
-
-    key = wallet_address.lower()
-
-    challenge = self.challenges.get(key)
-
-    if not challenge:
-        return False
-
-    if time.time() - challenge["created_at"] > self.CHALLENGE_EXPIRY:
-        del self.challenges[key]
-        return False
-
-    try:
-        signable_message = encode_defunct(
-            text=challenge["message"]
+        message = (
+            "VOIN Wallet Verification\n"
+            "Platform: VOIN\n"
+            f"Wallet: {checksum_address}\n"
+            f"Nonce: {nonce}\n"
+            f"Timestamp: {timestamp}\n"
+            "Purpose: Verify wallet ownership"
         )
 
-        recovered_address = Account.recover_message(
-            signable_message,
-            signature=signature
-        )
+        self.challenges[checksum_address.lower()] = {
+            "message": message,
+            "created_at": time.time()
+        }
 
-        if recovered_address.lower() != key:
+        return message
+
+    def verify_signature(self, wallet_address, signature):
+
+        if not isinstance(wallet_address, str):
             return False
 
-        del self.challenges[key]
+        if not Account.is_address(wallet_address):
+            return False
 
-        return True
+        if not isinstance(signature, str):
+            return False
 
-    except Exception:
-        return False
+        key = wallet_address.lower()
+
+        challenge = self.challenges.get(key)
+
+        if challenge is None:
+            return False
+
+        if time.time() - challenge["created_at"] > self.CHALLENGE_EXPIRY:
+            del self.challenges[key]
+            return False
+
+        try:
+            signable_message = encode_defunct(
+                text=challenge["message"]
+            )
+
+            recovered_address = Account.recover_message(
+                signable_message,
+                signature=signature
+            )
+
+            if recovered_address.lower() != key:
+                return False
+
+            del self.challenges[key]
+
+            return True
+
+        except (ValueError, TypeError):
+            return False
+
+    def clear_expired_challenges(self):
+
+        current_time = time.time()
+
+        expired_addresses = []
+
+        for address, challenge in self.challenges.items():
+
+            if current_time - challenge["created_at"] > self.CHALLENGE_EXPIRY:
+                expired_addresses.append(address)
+
+        for address in expired_addresses:
+            del self.challenges[address]
+
+        return len(expired_addresses)
+
+
+if __name__ == "__main__":
+    verifier = VOINWalletVerification()
+
+    print("VOIN WALLET VERIFICATION ENGINE")
+    print("Version:", verifier.VERSION)
+    print("Status: INITIALIZED")
+    print("Challenge Expiry:", verifier.CHALLENGE_EXPIRY)
