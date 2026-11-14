@@ -1,6 +1,4 @@
-"""
-VOIN NETWORK COMMUNICATION ENGINE TEST SUITE V1.0
-"""
+""" VOIN NETWORK COMMUNICATION ENGINE TEST SUITE V1.0 """
 
 import time
 import uuid
@@ -35,16 +33,14 @@ def network():
 
 @pytest.fixture
 def communication(network):
-    return VOINCommunicationEngine(
-        network_engine=network
-    )
+    return VOINCommunicationEngine(network_engine=network)
 
 
 @pytest.fixture
 def peer_ids():
     return (
         "0x1234567890abcdef1234567890abcdef12345678",
-        "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+        "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
     )
 
 
@@ -56,11 +52,10 @@ def valid_message(communication, peer_ids):
         sender,
         receiver,
         "PING",
-        {"status": "active"}
+        {"status": "active"},
     )
 
     assert result["success"] is True
-
     return result["message"]
 
 
@@ -87,15 +82,11 @@ def test_engine_info(communication):
 # ==================================================
 
 def test_valid_message_id(communication):
-    assert communication.validate_message_id(
-        str(uuid.uuid4())
-    )
+    assert communication.validate_message_id(str(uuid.uuid4()))
 
 
 def test_invalid_message_id(communication):
-    assert not communication.validate_message_id(
-        "invalid-message-id"
-    )
+    assert not communication.validate_message_id("invalid-message-id")
 
 
 def test_non_string_message_id(communication):
@@ -135,92 +126,74 @@ def test_create_valid_message(communication, peer_ids):
         sender,
         receiver,
         "PING",
-        {"status": "active"}
+        {"status": "active"},
     )
 
     assert result["success"] is True
     assert result["message"]["message_type"] == "PING"
 
 
-def test_create_message_unauthorized_sender(
-    communication,
-    peer_ids
-):
+def test_create_message_unauthorized_sender(communication, peer_ids):
     result = communication.create_message(
         "0x9999999999999999999999999999999999999999",
         peer_ids[1],
         "PING",
-        {}
+        {},
     )
 
     assert result["success"] is False
 
 
-def test_create_message_unauthorized_receiver(
-    communication,
-    peer_ids
-):
+def test_create_message_unauthorized_receiver(communication, peer_ids):
     result = communication.create_message(
         peer_ids[0],
         "0x9999999999999999999999999999999999999999",
         "PING",
-        {}
+        {},
     )
 
     assert result["success"] is False
 
 
-def test_create_message_invalid_type(
-    communication,
-    peer_ids
-):
+def test_create_message_invalid_type(communication, peer_ids):
     result = communication.create_message(
         peer_ids[0],
         peer_ids[1],
         "INVALID",
-        {}
+        {},
     )
 
     assert result["success"] is False
 
 
-def test_create_message_invalid_payload(
-    communication,
-    peer_ids
-):
+def test_create_message_invalid_payload(communication, peer_ids):
     result = communication.create_message(
         peer_ids[0],
         peer_ids[1],
         "PING",
-        "invalid"
+        "invalid",
     )
 
     assert result["success"] is False
 
 
-def test_create_message_oversized_payload(
-    communication,
-    peer_ids
-):
+def test_create_message_oversized_payload(communication, peer_ids):
     result = communication.create_message(
         peer_ids[0],
         peer_ids[1],
         "PING",
-        {"data": "A" * communication.MAX_MESSAGE_SIZE}
+        {"data": "A" * communication.MAX_MESSAGE_SIZE},
     )
 
     assert result["success"] is False
 
 
-def test_create_message_non_serializable_payload(
-    communication,
-    peer_ids
-):
+def test_create_message_non_serializable_payload(communication, peer_ids):
     result = communication.create_message(
         peer_ids[0],
         peer_ids[1],
         "PING",
-        {"data": object()}
+        {"data": object()},
     )
 
     assert result["success"] is False
@@ -261,7 +234,6 @@ def test_validate_invalid_message_id(communication, valid_message):
 
 def test_validate_unauthorized_sender(communication, valid_message):
     message = dict(valid_message)
-
     message["sender_id"] = (
         "0x9999999999999999999999999999999999999999"
     )
@@ -271,7 +243,6 @@ def test_validate_unauthorized_sender(communication, valid_message):
 
 def test_validate_unauthorized_receiver(communication, valid_message):
     message = dict(valid_message)
-
     message["receiver_id"] = (
         "0x9999999999999999999999999999999999999999"
     )
@@ -295,11 +266,8 @@ def test_validate_invalid_payload(communication, valid_message):
 
 def test_validate_old_timestamp(communication, valid_message):
     message = dict(valid_message)
-
     message["timestamp"] = (
-        time.time()
-        - communication.MAX_TIMESTAMP_AGE
-        - 10
+        time.time() - communication.MAX_TIMESTAMP_AGE - 10
     )
 
     assert not communication.validate_message(message)
@@ -307,11 +275,8 @@ def test_validate_old_timestamp(communication, valid_message):
 
 def test_validate_future_timestamp(communication, valid_message):
     message = dict(valid_message)
-
     message["timestamp"] = (
-        time.time()
-        + communication.MAX_FUTURE_OFFSET
-        + 10
+        time.time() + communication.MAX_FUTURE_OFFSET + 10
     )
 
     assert not communication.validate_message(message)
@@ -333,7 +298,6 @@ def test_validate_non_numeric_timestamp(communication, valid_message):
 
 def test_validate_oversized_message(communication, valid_message):
     message = dict(valid_message)
-
     message["payload"] = {
         "data": "A" * communication.MAX_MESSAGE_SIZE
     }
@@ -348,128 +312,71 @@ def test_validate_oversized_message(communication, valid_message):
 def test_register_valid_handler(communication):
     handler = lambda payload: payload
 
-    assert communication.register_handler(
-        "PING",
-        handler
-    )
+    assert communication.register_handler("PING", handler)
 
 
 def test_register_invalid_handler_type(communication):
     assert not communication.register_handler(
         "INVALID",
-        lambda payload: payload
+        lambda payload: payload,
     )
 
 
 def test_register_non_callable_handler(communication):
-    assert not communication.register_handler(
-        "PING",
-        "invalid"
-    )
+    assert not communication.register_handler("PING", "invalid")
 
 
 # ==================================================
 # MESSAGE RECEIVING
 # ==================================================
 
-def test_receive_valid_message(
-    communication,
-    valid_message,
-    peer_ids
-):
-    communication.register_handler(
-        "PING",
-        lambda payload: "PONG"
-    )
+def test_receive_valid_message(communication, valid_message, peer_ids):
+    communication.register_handler("PING", lambda payload: "PONG")
 
-    result = communication.receive_message(
-        valid_message,
-        peer_ids[1]
-    )
+    result = communication.receive_message(valid_message, peer_ids[1])
 
     assert result["success"] is True
     assert result["result"] == "PONG"
 
 
 def test_receive_invalid_message(communication, peer_ids):
-    result = communication.receive_message(
-        {},
-        peer_ids[1]
-    )
+    result = communication.receive_message({}, peer_ids[1])
 
     assert result["success"] is False
 
 
-def test_receive_wrong_receiver(
-    communication,
-    valid_message,
-    peer_ids
-):
-    result = communication.receive_message(
-        valid_message,
-        peer_ids[0]
-    )
+def test_receive_wrong_receiver(communication, valid_message, peer_ids):
+    result = communication.receive_message(valid_message, peer_ids[0])
 
     assert result["success"] is False
     assert result["error"] == "Receiver mismatch"
 
 
-def test_receive_duplicate_message(
-    communication,
-    valid_message,
-    peer_ids
-):
-    communication.register_handler(
-        "PING",
-        lambda payload: "PONG"
-    )
+def test_receive_duplicate_message(communication, valid_message, peer_ids):
+    communication.register_handler("PING", lambda payload: "PONG")
 
-    first = communication.receive_message(
-        valid_message,
-        peer_ids[1]
-    )
-
-    second = communication.receive_message(
-        valid_message,
-        peer_ids[1]
-    )
+    first = communication.receive_message(valid_message, peer_ids[1])
+    second = communication.receive_message(valid_message, peer_ids[1])
 
     assert first["success"] is True
     assert second["success"] is False
     assert second["error"] == "Duplicate message"
 
 
-def test_receive_without_handler(
-    communication,
-    valid_message,
-    peer_ids
-):
-    result = communication.receive_message(
-        valid_message,
-        peer_ids[1]
-    )
+def test_receive_without_handler(communication, valid_message, peer_ids):
+    result = communication.receive_message(valid_message, peer_ids[1])
 
     assert result["success"] is False
     assert result["error"] == "Message handler not found"
 
 
-def test_receive_handler_exception(
-    communication,
-    valid_message,
-    peer_ids
-):
+def test_receive_handler_exception(communication, valid_message, peer_ids):
     def failing_handler(payload):
         raise RuntimeError("Test error")
 
-    communication.register_handler(
-        "PING",
-        failing_handler
-    )
+    communication.register_handler("PING", failing_handler)
 
-    result = communication.receive_message(
-        valid_message,
-        peer_ids[1]
-    )
+    result = communication.receive_message(valid_message, peer_ids[1])
 
     assert result["success"] is False
     assert result["error"] == "Message processing failed"
@@ -479,15 +386,8 @@ def test_receive_handler_exception(
 # SECURITY EVENTS
 # ==================================================
 
-def test_invalid_message_generates_event(
-    communication,
-    peer_ids
-):
-    communication.receive_message(
-        {},
-        peer_ids[1]
-    )
-
+def test_invalid_message_generates_event(communication, peer_ids):
+    communication.receive_message({}, peer_ids[1])
     events = communication.get_security_events()
 
     assert any(
@@ -496,25 +396,11 @@ def test_invalid_message_generates_event(
     )
 
 
-def test_replay_generates_event(
-    communication,
-    valid_message,
-    peer_ids
-):
-    communication.register_handler(
-        "PING",
-        lambda payload: "PONG"
-    )
+def test_replay_generates_event(communication, valid_message, peer_ids):
+    communication.register_handler("PING", lambda payload: "PONG")
 
-    communication.receive_message(
-        valid_message,
-        peer_ids[1]
-    )
-
-    communication.receive_message(
-        valid_message,
-        peer_ids[1]
-    )
+    communication.receive_message(valid_message, peer_ids[1])
+    communication.receive_message(valid_message, peer_ids[1])
 
     events = communication.get_security_events()
 
@@ -524,23 +410,12 @@ def test_replay_generates_event(
     )
 
 
-def test_handler_error_generates_event(
-    communication,
-    valid_message,
-    peer_ids
-):
+def test_handler_error_generates_event(communication, valid_message, peer_ids):
     def failing_handler(payload):
         raise RuntimeError("Test error")
 
-    communication.register_handler(
-        "PING",
-        failing_handler
-    )
-
-    communication.receive_message(
-        valid_message,
-        peer_ids[1]
-    )
+    communication.register_handler("PING", failing_handler)
+    communication.receive_message(valid_message, peer_ids[1])
 
     events = communication.get_security_events()
 
@@ -550,4 +425,42 @@ def test_handler_error_generates_event(
     )
 
 
-def test_get_security_events_returns_copy(
+def test_get_security_events_returns_copy(communication):
+    events = communication.get_security_events()
+    events.append({"event_type": "FAKE"})
+
+    assert communication.get_security_events() == []
+
+
+# ==================================================
+# SQLITE INTEGRATION
+# ==================================================
+
+def test_communication_with_persistent_network(tmp_path):
+    database_path = tmp_path / "communication.db"
+
+    # VOINStorageEngine menerima path database sebagai argumen positional.
+    storage = VOINStorageEngine(str(database_path))
+
+    network = VOINNetworkSecurityEngine(storage_engine=storage)
+
+    network.register_peer(
+        "0x1234567890abcdef1234567890abcdef12345678",
+        "http://127.0.0.1:8001",
+    )
+
+    network.register_peer(
+        "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+        "http://127.0.0.1:8002",
+    )
+
+    communication = VOINCommunicationEngine(network_engine=network)
+
+    result = communication.create_message(
+        "0x1234567890abcdef1234567890abcdef12345678",
+        "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+        "PING",
+        {"status": "active"},
+    )
+
+    assert result["success"] is True
