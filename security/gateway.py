@@ -1,114 +1,117 @@
 """
 VOIN SECURITY GATEWAY ENGINE V1.1.1
 """
+
 from security.api import VOINSecurityAPIEngine
 from security.api_integration import VOINSecurityAPIIntegration
 from security.http_server import VOINSecurityHTTPServer
 from security.integration import VOINSecurityIntegration
 from security.middleware import VOINSecurityMiddleware
+
+
 class VOINSecurityGateway:
-VERSION = "1.1.1"
-DEFAULT_HOST = "127.0.0.1"
-DEFAULT_PORT = 8080
-def __init__(
-    self,
-    api_engine,
-    security_integration,
-    host=DEFAULT_HOST,
-    port=DEFAULT_PORT
-):
-    if not isinstance(api_engine, VOINSecurityAPIEngine):
-        raise TypeError("Invalid VOIN Security API Engine")
+    VERSION = "1.1.1"
+    DEFAULT_HOST = "127.0.0.1"
+    DEFAULT_PORT = 8080
 
-    if not isinstance(security_integration, VOINSecurityIntegration):
-        raise TypeError("Invalid VOIN Security Integration Engine")
+    def __init__(
+        self,
+        api_engine,
+        security_integration,
+        host=DEFAULT_HOST,
+        port=DEFAULT_PORT
+    ):
+        if not isinstance(api_engine, VOINSecurityAPIEngine):
+            raise TypeError("Invalid VOIN Security API Engine")
 
-    self.api_engine = api_engine
-    self.security_integration = security_integration
+        if not isinstance(security_integration, VOINSecurityIntegration):
+            raise TypeError("Invalid VOIN Security Integration Engine")
 
-    self.api_integration = VOINSecurityAPIIntegration(
-        api_engine=self.api_engine,
-        security_integration=self.security_integration
-    )
+        self.api_engine = api_engine
+        self.security_integration = security_integration
 
-    self.http_server = VOINSecurityHTTPServer(
-        api_integration=self.api_integration,
-        host=host,
-        port=port
-    )
+        self.api_integration = VOINSecurityAPIIntegration(
+            api_engine=self.api_engine,
+            security_integration=self.security_integration
+        )
 
-    self.middleware = VOINSecurityMiddleware(
-        lambda environ, start_response:
-            self.http_server.application(environ, start_response)
-    )
+        self.http_server = VOINSecurityHTTPServer(
+            api_integration=self.api_integration,
+            host=host,
+            port=port
+        )
 
-def create_wallet_authentication(self, wallet_address):
-    return self.api_integration.create_wallet_authentication(
-        wallet_address=wallet_address
-    )
+        self.middleware = VOINSecurityMiddleware(
+            lambda environ, start_response:
+                self.http_server.application(environ, start_response)
+        )
 
-def verify_wallet_authentication(
-    self,
-    wallet_address,
-    challenge_id,
-    signature
-):
-    return self.api_integration.verify_wallet_authentication(
-        wallet_address=wallet_address,
-        challenge_id=challenge_id,
-        signature=signature
-    )
+    def create_wallet_authentication(self, wallet_address):
+        return self.api_integration.create_wallet_authentication(
+            wallet_address=wallet_address
+        )
 
-def handle_api_request(
-    self,
-    method,
-    path,
-    headers=None,
-    query=None
-):
-    return self.api_integration.handle_api_request(
-        method=method,
-        path=path,
-        headers=headers,
-        query=query
-    )
+    def verify_wallet_authentication(
+        self,
+        wallet_address,
+        challenge_id,
+        signature
+    ):
+        return self.api_integration.verify_wallet_authentication(
+            wallet_address=wallet_address,
+            challenge_id=challenge_id,
+            signature=signature
+        )
 
-def application(self, environ, start_response):
-    return self.middleware(environ, start_response)
+    def handle_api_request(
+        self,
+        method,
+        path,
+        headers=None,
+        query=None
+    ):
+        return self.api_integration.handle_api_request(
+            method=method,
+            path=path,
+            headers=headers,
+            query=query
+        )
 
-def create_server(self):
-    return self.http_server.create_server()
+    def application(self, environ, start_response):
+        return self.middleware(environ, start_response)
 
-def serve_forever(self):
-    return self.http_server.serve_forever()
+    def create_server(self):
+        return self.http_server.create_server()
 
-def close(self):
-    return self.http_server.close()
+    def serve_forever(self):
+        return self.http_server.serve_forever()
 
-def engine_info(self):
-    return {
-        "engine": "VOIN Security Gateway",
-        "version": self.VERSION,
-        "security_integration": self.security_integration.VERSION,
-        "api_integration": self.api_integration.VERSION,
-        "http_server": self.http_server.VERSION,
-        "middleware": self.middleware.VERSION,
-        "wallet_authentication": True,
-        "api_access": True,
-        "http_access": True,
-        "wsgi_support": True,
-        "middleware_enabled": True,
-        "request_validation": True,
-        "request_id": True,
-        "security_headers": True,
-        "nonce_protection": True,
-        "replay_protection": True,
-        "digital_signature": True,
-        "persistent_storage": True,
-        "security_audit": True,
-        "rate_limiting": True,
-        "host": self.http_server.host,
-        "port": self.http_server.port,
-        "status": "READY_FOR_TESTING"
-    }
+    def close(self):
+        return self.http_server.close()
 
+    def engine_info(self):
+        return {
+            "engine": "VOIN Security Gateway",
+            "version": self.VERSION,
+            "security_integration": self.security_integration.VERSION,
+            "api_integration": self.api_integration.VERSION,
+            "http_server": self.http_server.VERSION,
+            "middleware": self.middleware.VERSION,
+            "wallet_authentication": True,
+            "api_access": True,
+            "http_access": True,
+            "wsgi_support": True,
+            "middleware_enabled": True,
+            "request_validation": True,
+            "request_id": True,
+            "security_headers": True,
+            "nonce_protection": True,
+            "replay_protection": True,
+            "digital_signature": True,
+            "persistent_storage": True,
+            "security_audit": True,
+            "rate_limiting": True,
+            "host": self.http_server.host,
+            "port": self.http_server.port,
+            "status": "READY_FOR_TESTING"
+        }
