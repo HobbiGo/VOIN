@@ -7,12 +7,15 @@ Connects:
 
 Features:
 - Unified security API access
-- Wallet authentication delegation
-- Legacy authentication compatibility
-- Challenge ID authentication support
+- Wallet authentication creation
+- Wallet authentication verification
+- Challenge ID support
+- Legacy challenge and nonce compatibility
 - API request delegation
 - Engine status reporting
 """
+
+import inspect
 
 from security.api import VOINSecurityAPIEngine
 
@@ -64,6 +67,26 @@ class VOINSecurityAPIIntegration:
             query=query
         )
 
+    def create_wallet_authentication(
+        self,
+        wallet_address
+    ):
+
+        create_method = getattr(
+            self.security_integration,
+            "create_authentication",
+            None
+        )
+
+        if not callable(create_method):
+            raise TypeError(
+                "Security Integration does not support challenge creation"
+            )
+
+        return create_method(
+            wallet_address=wallet_address
+        )
+
     def verify_wallet_authentication(
         self,
         wallet_address,
@@ -73,19 +96,35 @@ class VOINSecurityAPIIntegration:
         challenge_id=None
     ):
 
-        if challenge_id is not None:
+        verify_method = (
+            self.security_integration.verify_authentication
+        )
 
-            return self.security_integration.verify_authentication(
-                challenge_id=challenge_id,
+        parameters = inspect.signature(
+            verify_method
+        ).parameters
+
+        supports_legacy = (
+            "challenge" in parameters
+            and "nonce" in parameters
+        )
+
+        if supports_legacy:
+
+            return verify_method(
                 wallet_address=wallet_address,
-                signature=signature
+                challenge=challenge,
+                signature=signature,
+                nonce=nonce
             )
 
-        return self.security_integration.verify_authentication(
+        if challenge_id is None:
+            challenge_id = challenge
+
+        return verify_method(
+            challenge_id=challenge_id,
             wallet_address=wallet_address,
-            challenge=challenge,
-            signature=signature,
-            nonce=nonce
+            signature=signature
         )
 
     def engine_info(self):
@@ -95,8 +134,15 @@ class VOINSecurityAPIIntegration:
             "version": self.VERSION,
             "api_engine": True,
             "wallet_authentication": True,
+            "challenge_creation": callable(
+                getattr(
+                    self.security_integration,
+                    "create_authentication",
+                    None
+                )
+            ),
+            "challenge_id_verification": True,
+            "persistent_nonce_compatibility": True,
             "security_integration": True,
-            "challenge_id_support": True,
-            "legacy_compatibility": True,
             "status": "READY_FOR_TESTING"
         }
