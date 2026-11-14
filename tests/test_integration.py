@@ -90,7 +90,7 @@ def integration(api_engine, security_integration):
 
 def test_integration_engine_creation(integration):
 
-    assert integration.VERSION == "1.1.0"
+    assert info["version"] == "1.1.0"
 
 
 def test_api_request_delegation(integration):
