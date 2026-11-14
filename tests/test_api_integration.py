@@ -1,10 +1,13 @@
 """
-VOIN SECURITY API INTEGRATION TEST SUITE V1.0
+VOIN SECURITY API INTEGRATION TEST SUITE V1.1.0
 
 Tests:
-- API integration creation
+- Integration engine creation
 - API request delegation
-- Wallet authentication delegation
+- API authentication rejection
+- Wallet authentication creation
+- Wallet authentication verification
+- Challenge ID support
 - Invalid engine rejection
 - Engine information
 """
@@ -37,26 +40,35 @@ class FakeSecurityIntegration:
         self.called = False
         self.last_arguments = None
 
-    def verify_authentication(
-        self,
-        wallet_address,
-        challenge,
-        signature,
-        nonce
-    ):
+    def create_authentication(self, wallet_address):
 
         self.called = True
-
         self.last_arguments = {
-            "wallet_address": wallet_address,
-            "challenge": challenge,
-            "signature": signature,
-            "nonce": nonce
+            "wallet_address": wallet_address
         }
 
         return {
             "success": True,
-            "status": "AUTHENTICATED"
+            "status": "AUTHENTICATION_CHALLENGE_CREATED"
+        }
+
+    def verify_authentication(
+        self,
+        challenge_id,
+        wallet_address,
+        signature
+    ):
+
+        self.called = True
+        self.last_arguments = {
+            "challenge_id": challenge_id,
+            "wallet_address": wallet_address,
+            "signature": signature
+        }
+
+        return {
+            "success": True,
+            "status": "AUTHENTICATION_SUCCESSFUL"
         }
 
 
@@ -76,7 +88,10 @@ def security_integration():
 
 
 @pytest.fixture
-def integration(api_engine, security_integration):
+def integration(
+    api_engine,
+    security_integration
+):
 
     return VOINSecurityAPIIntegration(
         api_engine=api_engine,
@@ -86,7 +101,7 @@ def integration(api_engine, security_integration):
 
 def test_integration_engine_creation(integration):
 
-    assert integration.VERSION == "1.0.0"
+    assert integration.VERSION == "1.1.0"
 
 
 def test_api_request_delegation(integration):
@@ -99,60 +114,78 @@ def test_api_request_delegation(integration):
         }
     )
 
-    assert response["status_code"] == 200
-    assert response["body"]["success"] is True
-    assert response["body"]["data"]["status"] == "OPERATIONAL"
+    assert response.status_code == 200
+    assert response.body["success"] is True
+    assert response.body["data"]["status"] == "OPERATIONAL"
 
 
-def test_unauthorized_api_request(integration):
+def test_api_request_without_authentication(integration):
 
     response = integration.handle_api_request(
         method="GET",
         path="/api/security/dashboard"
     )
 
-    assert response["status_code"] == 401
+    assert response.status_code == 401
 
 
-def test_wallet_authentication_delegation(
+def test_create_wallet_authentication(
     integration,
     security_integration
 ):
 
-    result = integration.verify_wallet_authentication(
-        wallet_address="0x1234567890",
-        challenge="test-challenge",
-        signature="test-signature",
-        nonce="test-nonce"
+    wallet_address = "0x1234567890abcdef"
+
+    response = integration.create_wallet_authentication(
+        wallet_address=wallet_address
     )
 
-    assert result["success"] is True
-    assert result["status"] == "AUTHENTICATED"
+    assert response["success"] is True
+
+    assert (
+        response["status"]
+        == "AUTHENTICATION_CHALLENGE_CREATED"
+    )
 
     assert security_integration.called is True
 
+    assert security_integration.last_arguments == {
+        "wallet_address": wallet_address
+    }
 
-def test_wallet_authentication_arguments(
+
+def test_verify_wallet_authentication(
     integration,
     security_integration
 ):
 
-    integration.verify_wallet_authentication(
-        wallet_address="0x1234567890",
-        challenge="challenge-1",
-        signature="signature-1",
-        nonce="nonce-1"
+    wallet_address = "0x1234567890abcdef"
+    challenge_id = "challenge-test-001"
+    signature = "test-signature"
+
+    response = integration.verify_wallet_authentication(
+        wallet_address=wallet_address,
+        challenge_id=challenge_id,
+        signature=signature
     )
 
+    assert response["success"] is True
+
+    assert (
+        response["status"]
+        == "AUTHENTICATION_SUCCESSFUL"
+    )
+
+    assert security_integration.called is True
+
     assert security_integration.last_arguments == {
-        "wallet_address": "0x1234567890",
-        "challenge": "challenge-1",
-        "signature": "signature-1",
-        "nonce": "nonce-1"
+        "challenge_id": challenge_id,
+        "wallet_address": wallet_address,
+        "signature": signature
     }
 
 
-def test_invalid_api_engine_rejected():
+def test_invalid_api_engine():
 
     with pytest.raises(TypeError):
 
@@ -162,7 +195,7 @@ def test_invalid_api_engine_rejected():
         )
 
 
-def test_invalid_security_integration_rejected(api_engine):
+def test_invalid_security_integration(api_engine):
 
     with pytest.raises(TypeError):
 
@@ -176,8 +209,10 @@ def test_engine_info(integration):
 
     info = integration.engine_info()
 
-    assert info["version"] == "1.0.0"
+    assert info["version"] == "1.1.0"
     assert info["api_engine"] is True
     assert info["wallet_authentication"] is True
+    assert info["challenge_creation"] is True
+    assert info["challenge_id_verification"] is True
     assert info["security_integration"] is True
     assert info["status"] == "READY_FOR_TESTING"
