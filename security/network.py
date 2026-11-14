@@ -168,6 +168,39 @@ class VOINNetworkSecurityEngine:
 
         return event
 
+    def _record_persistent_event_locally(
+        self,
+        event_type,
+        peer_id,
+        details=None
+    ):
+
+        event = {
+            "event_type": event_type,
+            "peer_id": peer_id,
+            "details": details or {},
+            "timestamp": time.time()
+        }
+
+        self.security_events.append(event)
+
+        if self.audit_engine is not None:
+
+            record_method = getattr(
+                self.audit_engine,
+                "record_event",
+                None
+            )
+
+            if callable(record_method):
+
+                record_method(
+                    event_type=event_type,
+                    details=event
+                )
+
+        return event
+
     # --------------------------------------------------
     # PEER REGISTRATION
     # --------------------------------------------------
@@ -277,10 +310,19 @@ class VOINNetworkSecurityEngine:
             "updated_at": updated_at
         }
 
-        self._record_event(
-            "PEER_REGISTERED",
-            peer_id
-        )
+        if self.storage_engine is None:
+
+            self._record_event(
+                "PEER_REGISTERED",
+                peer_id
+            )
+
+        else:
+
+            self._record_persistent_event_locally(
+                "PEER_REGISTERED",
+                peer_id
+            )
 
         return {
             "success": True,
@@ -340,10 +382,19 @@ class VOINNetworkSecurityEngine:
 
         peer["status"] = "REVOKED"
 
-        self._record_event(
-            "PEER_REVOKED",
-            peer_id
-        )
+        if self.storage_engine is None:
+
+            self._record_event(
+                "PEER_REVOKED",
+                peer_id
+            )
+
+        else:
+
+            self._record_persistent_event_locally(
+                "PEER_REVOKED",
+                peer_id
+            )
 
         return {
             "success": True,
