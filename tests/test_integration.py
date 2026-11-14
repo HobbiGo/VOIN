@@ -1,5 +1,5 @@
 """
-VOIN SECURITY INTEGRATION TEST SUITE V1.0
+VOIN SECURITY INTEGRATION TEST SUITE V1.1
 
 Tests integrated wallet authentication,
 challenge validation, digital signatures,
@@ -142,14 +142,34 @@ def test_nonce_consumed_after_authentication(integration, wallet):
         private_key=wallet.key
     )
 
-    integration.verify_authentication(
+    result = integration.verify_authentication(
         challenge["challenge_id"],
         wallet.address,
         signed.signature
     )
 
-    nonce_record = integration.nonce_engine.wallet_nonces[
-        wallet.address.lower()
-    ]
+    assert result["success"] is True
 
-    assert nonce_record["used"] is True
+    storage = integration.challenge_engine.storage
+
+    nonce_hash = storage._hash_nonce(
+        challenge["nonce"]
+    )
+
+    with storage._connect() as connection:
+
+        nonce_record = connection.execute(
+            """
+            SELECT used
+            FROM nonces
+            WHERE wallet_address = ?
+            AND nonce_hash = ?
+            """,
+            (
+                wallet.address.lower(),
+                nonce_hash
+            )
+        ).fetchone()
+
+    assert nonce_record is not None
+    assert nonce_record[0] == 1
