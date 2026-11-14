@@ -1,198 +1,129 @@
 """
-VOIN SECURITY MIDDLEWARE TEST SUITE V1.0
+VOIN SECURITY MIDDLEWARE TEST SUITE V1.1
 """
+
 import json
 import pytest
+
 from security.middleware import VOINSecurityMiddleware
-check = lambda condition: (
-(_ for _ in ()).throw(
-AssertionError("Middleware test failed")
-)
-if not condition else None
-)
-make_application = lambda: (
-lambda environ, start_response: (
-start_response(
-"200 OK",
-[("Content-Type", "text/plain")]
-),
-[b"VOIN OK"]
-)[1]
-)
-application = pytest.fixture(
-lambda: make_application()
-)
-middleware = pytest.fixture(
-lambda application: VOINSecurityMiddleware(application)
-)
-invoke = lambda middleware, environ: (
-lambda events: (
-middleware(
-environ,
-lambda status, headers, *args: events.update({
-"status": status,
-"headers": dict(headers)
-})
-),
-events
-)
-)({})
-test_middleware_creation = lambda middleware: (
-check(callable(middleware)),
-check(middleware.VERSION == "1.0.0")
-)[-1]
-test_valid_request = lambda middleware: (
-lambda result: (
-check(result[1]["status"] == "200 OK"),
-check(result[0] == [b"VOIN OK"])
-)[-1]
-)(
-invoke(
-middleware,
-{
-"REQUEST_METHOD": "GET",
-"PATH_INFO": "/dashboard"
-}
-)
-)
-test_request_id_generation = lambda middleware: (
-lambda result: (
-check("voin.request_id" in result[2]),
-check(len(result[2]["voin.request_id"]) == 32),
-check(
-result[1]["headers"]["X-Request-ID"]
-== result[2]["voin.request_id"]
-)
-)[-1]
-)(
-(
-lambda environ: (
-invoke(middleware, environ)[0],
-invoke(middleware, environ)[1],
-environ
-)
-)(
-{
-"REQUEST_METHOD": "GET",
-"PATH_INFO": "/dashboard"
-}
-)
-)
-test_security_headers = lambda middleware: (
-lambda result: (
-check(
-result[1]["headers"]["X-Content-Type-Options"]
-== "nosniff"
-),
-check(
-result[1]["headers"]["X-Frame-Options"]
-== "DENY"
-),
-check(
-result[1]["headers"]["Cache-Control"]
-== "no-store"
-),
-check(
-result[1]["headers"]["Referrer-Policy"]
-== "no-referrer"
-)
-)[-1]
-)(
-invoke(
-middleware,
-{
-"REQUEST_METHOD": "GET",
-"PATH_INFO": "/dashboard"
-}
-)
-)
-test_invalid_request = lambda middleware: (
-lambda result: (
-check(result[1]["status"] == "400 Bad Request"),
-check(
-json.loads(result[0][0])["error"]
-== "Invalid request"
-)
-)[-1]
-)(
-invoke(
-middleware,
-{
-"REQUEST_METHOD": "GET",
-"PATH_INFO": "invalid-path"
-}
-)
-)
-test_missing_request_method = lambda middleware: (
-lambda result: (
-check(result[1]["status"] == "400 Bad Request"),
-check(
-json.loads(result[0][0])["error"]
-== "Invalid request"
-)
-)[-1]
-)(
-invoke(
-middleware,
-{
-"PATH_INFO": "/dashboard"
-}
-)
-)
-test_internal_error_handling = lambda monkeypatch: (
-lambda engine: (
-monkeypatch.setattr(
-engine,
-"application",
-lambda environ, start_response: (
-_ for _ in ()
-).throw(RuntimeError("test error"))
-),
-lambda result: (
-check(
-result[1]["status"]
-== "500 Internal Server Error"
-),
-check(
-json.loads(result[0][0])["error"]
-== "Internal server error"
-)
-)[-1]
-)(
-invoke(
-engine,
-{
-"REQUEST_METHOD": "GET",
-"PATH_INFO": "/dashboard"
-}
-)
-)
-)-1
-test_invalid_application = lambda: (
-lambda result: (
-check(result is True)
-)[-1]
-)(
-(
-lambda: (
-pytest.raises(
-TypeError,
-VOINSecurityMiddleware,
-None
-)
-)()
-)()
-)
-test_engine_info = lambda: (
-lambda info: (
-check(info["engine"] == "VOIN Security Middleware"),
-check(info["version"] == "1.0.0"),
-check(info["wsgi_support"] is True),
-check(info["request_validation"] is True),
-check(info["request_id"] is True),
-check(info["security_headers"] is True),
-check(info["error_handling"] is True)
-)[-1]
-)(
-VOINSecurityMiddleware.engine_info()
-)
+
+
+@pytest.fixture
+def middleware():
+    def application(environ, start_response):
+        body = json.dumps({"success": True}).encode("utf-8")
+        start_response(
+            "200 OK",
+            [
+                ("Content-Type", "application/json"),
+                ("Content-Length", str(len(body)))
+            ]
+        )
+        return [body]
+
+    return VOINSecurityMiddleware(application)
+
+
+def invoke(middleware, environ):
+    result = {}
+
+    def start_response(status, headers, exc_info=None):
+        result["status"] = status
+        result["headers"] = dict(headers)
+
+    body = middleware(environ, start_response)
+
+    return {
+        "status": result["status"],
+        "headers": result["headers"],
+        "body": body,
+        "json": json.loads(body[0].decode("utf-8"))
+    }
+
+
+def valid_environ():
+    return {
+        "REQUEST_METHOD": "GET",
+        "PATH_INFO": "/dashboard"
+    }
+
+
+def test_middleware_creation(middleware):
+    assert callable(middleware)
+    assert middleware.VERSION == "1.0.4"
+
+
+def test_valid_request(middleware):
+    result = invoke(middleware, valid_environ())
+
+    assert result["status"] == "200 OK"
+    assert result["json"]["success"] is True
+
+
+def test_request_id_generation(middleware):
+    environ = valid_environ()
+    invoke(middleware, environ)
+
+    assert "voin.request_id" in environ
+    assert len(environ["voin.request_id"]) == 32
+
+
+def test_security_headers(middleware):
+    result = invoke(middleware, valid_environ())
+    headers = result["headers"]
+
+    assert headers["X-Content-Type-Options"] == "nosniff"
+    assert headers["X-Frame-Options"] == "DENY"
+    assert headers["Cache-Control"] == "no-store"
+    assert headers["Referrer-Policy"] == "no-referrer"
+    assert "X-Request-ID" in headers
+
+
+def test_invalid_request(middleware):
+    environ = {
+        "REQUEST_METHOD": "GET",
+        "PATH_INFO": "invalid-path"
+    }
+
+    result = invoke(middleware, environ)
+
+    assert result["status"] == "400 Bad Request"
+    assert result["json"]["error"] == "Invalid request"
+
+
+def test_missing_request_method(middleware):
+    environ = {
+        "PATH_INFO": "/dashboard"
+    }
+
+    result = invoke(middleware, environ)
+
+    assert result["status"] == "400 Bad Request"
+
+
+def test_internal_error_handling():
+    def failing_application(environ, start_response):
+        raise RuntimeError("Internal test error")
+
+    engine = VOINSecurityMiddleware(failing_application)
+    result = invoke(engine, valid_environ())
+
+    assert result["status"] == "500 Internal Server Error"
+    assert result["json"]["error"] == "Internal server error"
+
+
+def test_invalid_application():
+    with pytest.raises(TypeError):
+        VOINSecurityMiddleware(None)
+
+
+def test_engine_info():
+    info = VOINSecurityMiddleware.engine_info()
+
+    assert info["engine"] == "VOIN Security Middleware"
+    assert info["version"] == "1.0.4"
+    assert info["wsgi_support"] is True
+    assert info["request_validation"] is True
+    assert info["request_id"] is True
+    assert info["security_headers"] is True
+    assert info["error_handling"] is True
