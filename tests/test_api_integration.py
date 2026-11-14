@@ -1,5 +1,5 @@
 """
-VOIN SECURITY API INTEGRATION TEST SUITE V1.1.0
+VOIN SECURITY API INTEGRATION TEST SUITE V1.1.1
 
 Tests:
 - Integration engine creation
@@ -114,9 +114,9 @@ def test_api_request_delegation(integration):
         }
     )
 
-    assert response.status_code == 200
-    assert response.body["success"] is True
-    assert response.body["data"]["status"] == "OPERATIONAL"
+    assert response["status_code"] == 200
+    assert response["body"]["success"] is True
+    assert response["body"]["data"]["status"] == "OPERATIONAL"
 
 
 def test_api_request_without_authentication(integration):
@@ -126,7 +126,8 @@ def test_api_request_without_authentication(integration):
         path="/api/security/dashboard"
     )
 
-    assert response.status_code == 401
+    assert response["status_code"] == 401
+    assert response["body"]["error"] == "Unauthorized"
 
 
 def test_create_wallet_authentication(
