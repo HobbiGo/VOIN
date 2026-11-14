@@ -1,5 +1,5 @@
 """
-VOIN NETWORK SECURITY ENGINE V1.1
+VOIN NETWORK SECURITY ENGINE V1.1.1
 
 Provides defensive network peer management.
 
@@ -30,7 +30,7 @@ from urllib.parse import urlparse
 
 class VOINNetworkSecurityEngine:
 
-    VERSION = "1.1.0"
+    VERSION = "1.1.1"
 
     def __init__(
         self,
@@ -120,7 +120,10 @@ class VOINNetworkSecurityEngine:
         if not endpoint or endpoint != endpoint.strip():
             return False
 
-        if any(ord(char) < 32 or ord(char) == 127 for char in endpoint):
+        if any(
+            ord(char) < 32 or ord(char) == 127
+            for char in endpoint
+        ):
             return False
 
         try:
@@ -155,6 +158,7 @@ class VOINNetworkSecurityEngine:
             # Validate IP addresses when hostname is an IP.
             try:
                 ipaddress.ip_address(hostname)
+
             except ValueError:
 
                 if len(hostname) > 253:
@@ -208,6 +212,7 @@ class VOINNetworkSecurityEngine:
 
         self.security_events.append(event)
 
+        # Persistent storage event logging.
         if self.storage_engine is not None:
 
             try:
@@ -216,8 +221,55 @@ class VOINNetworkSecurityEngine:
                     peer_id,
                     event["details"]
                 )
+
             except Exception:
                 pass
+
+        # Audit logging.
+        if self.audit_engine is not None:
+
+            record_method = getattr(
+                self.audit_engine,
+                "record_event",
+                None
+            )
+
+            if callable(record_method):
+
+                try:
+                    record_method(
+                        event_type=event_type,
+                        details=copy.deepcopy(event)
+                    )
+
+                except Exception:
+                    pass
+
+        return copy.deepcopy(event)
+
+    def _record_persistent_event_locally(
+        self,
+        event_type,
+        peer_id,
+        details=None
+    ):
+
+        """
+        Record an event locally and in the audit engine.
+
+        The storage engine has already recorded persistent
+        registration/revocation events. Therefore this method
+        must not call storage_engine.log_network_event().
+        """
+
+        event = {
+            "event_type": event_type,
+            "peer_id": peer_id,
+            "details": copy.deepcopy(details or {}),
+            "timestamp": time.time()
+        }
+
+        self.security_events.append(event)
 
         if self.audit_engine is not None:
 
@@ -234,23 +286,11 @@ class VOINNetworkSecurityEngine:
                         event_type=event_type,
                         details=copy.deepcopy(event)
                     )
+
                 except Exception:
                     pass
 
         return copy.deepcopy(event)
-
-    def _record_persistent_event_locally(
-        self,
-        event_type,
-        peer_id,
-        details=None
-    ):
-
-        return self._record_event(
-            event_type,
-            peer_id,
-            details
-        )
 
     # --------------------------------------------------
     # PEER REGISTRATION
@@ -337,7 +377,9 @@ class VOINNetworkSecurityEngine:
                 )
 
                 if not isinstance(saved_peer, dict):
-                    raise RuntimeError("Peer persistence verification failed")
+                    raise RuntimeError(
+                        "Peer persistence verification failed"
+                    )
 
                 registered_at = saved_peer["registered_at"]
                 updated_at = saved_peer["updated_at"]
@@ -362,10 +404,19 @@ class VOINNetworkSecurityEngine:
             "updated_at": updated_at
         }
 
-        self._record_event(
-            "PEER_REGISTERED",
-            peer_id
-        )
+        if self.storage_engine is not None:
+
+            self._record_persistent_event_locally(
+                "PEER_REGISTERED",
+                peer_id
+            )
+
+        else:
+
+            self._record_event(
+                "PEER_REGISTERED",
+                peer_id
+            )
 
         return {
             "success": True,
@@ -422,7 +473,9 @@ class VOINNetworkSecurityEngine:
                 )
 
                 if not isinstance(saved_peer, dict):
-                    raise RuntimeError("Peer update verification failed")
+                    raise RuntimeError(
+                        "Peer update verification failed"
+                    )
 
                 updated_at = saved_peer["updated_at"]
 
@@ -442,10 +495,19 @@ class VOINNetworkSecurityEngine:
         peer["status"] = "REVOKED"
         peer["updated_at"] = updated_at
 
-        self._record_event(
-            "PEER_REVOKED",
-            peer_id
-        )
+        if self.storage_engine is not None:
+
+            self._record_persistent_event_locally(
+                "PEER_REVOKED",
+                peer_id
+            )
+
+        else:
+
+            self._record_event(
+                "PEER_REVOKED",
+                peer_id
+            )
 
         return {
             "success": True,
