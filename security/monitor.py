@@ -27,16 +27,20 @@ class VOINSecurityMonitor:
 
     def __init__(self, audit_engine=None):
 
-        self.audit = audit_engine or VO​INAuditEngine()
+        self.audit = audit_engine or VOINAuditEngine()
 
     @staticmethod
     def _validate_positive_integer(value, name):
 
         if isinstance(value, bool) or not isinstance(value, int):
-            raise ValueError(f"{name} must be a positive integer")
+            raise ValueError(
+                f"{name} must be a positive integer"
+            )
 
         if value <= 0:
-            raise ValueError(f"{name} must be a positive integer")
+            raise ValueError(
+                f"{name} must be a positive integer"
+            )
 
     @staticmethod
     def _get_event_type(event):
@@ -46,6 +50,7 @@ class VOINSecurityMonitor:
 
         try:
             return event["event_type"]
+
         except (KeyError, TypeError, IndexError):
             return "UNKNOWN"
 
@@ -62,14 +67,31 @@ class VOINSecurityMonitor:
 
         summary = {
             "total_events": len(events),
-            "authentication_success": counts["AUTHENTICATION_SUCCESS"],
-            "authentication_failed": counts["AUTHENTICATION_FAILED"],
-            "replay_attempts": counts["REPLAY_ATTEMPT"],
-            "expired_challenges": counts["EXPIRED_CHALLENGE"],
-            "invalid_challenges": counts["INVALID_CHALLENGE"],
-            "invalid_nonces": counts["INVALID_NONCE"],
-            "unauthorized_access": counts["UNAUTHORIZED_ACCESS"],
-            "security_warnings": counts["SECURITY_WARNING"],
+
+            "authentication_success":
+                counts["AUTHENTICATION_SUCCESS"],
+
+            "authentication_failed":
+                counts["AUTHENTICATION_FAILED"],
+
+            "replay_attempts":
+                counts["REPLAY_ATTEMPT"],
+
+            "expired_challenges":
+                counts["EXPIRED_CHALLENGE"],
+
+            "invalid_challenges":
+                counts["INVALID_CHALLENGE"],
+
+            "invalid_nonces":
+                counts["INVALID_NONCE"],
+
+            "unauthorized_access":
+                counts["UNAUTHORIZED_ACCESS"],
+
+            "security_warnings":
+                counts["SECURITY_WARNING"],
+
             "other_events": sum(
                 count
                 for event_type, count in counts.items()
@@ -79,9 +101,16 @@ class VOINSecurityMonitor:
 
         return summary
 
-    def get_wallet_activity(self, wallet_address, limit=100):
+    def get_wallet_activity(
+        self,
+        wallet_address,
+        limit=100
+    ):
 
-        if not isinstance(wallet_address, str) or not wallet_address.strip():
+        if (
+            not isinstance(wallet_address, str)
+            or not wallet_address.strip()
+        ):
             raise ValueError("Invalid wallet address")
 
         self._validate_positive_integer(limit, "limit")
@@ -98,17 +127,24 @@ class VOINSecurityMonitor:
         replay_threshold=3
     ):
 
-        self._validate_positive_integer(window_events, "window_events")
+        self._validate_positive_integer(
+            window_events,
+            "window_events"
+        )
+
         self._validate_positive_integer(
             failure_threshold,
             "failure_threshold"
         )
+
         self._validate_positive_integer(
             replay_threshold,
             "replay_threshold"
         )
 
-        events = self.audit.get_events(limit=window_events)
+        events = self.audit.get_events(
+            limit=window_events
+        )
 
         counts = Counter(
             self._get_event_type(event)
@@ -121,19 +157,27 @@ class VOINSecurityMonitor:
         alerts = []
 
         if failures >= failure_threshold:
+
             alerts.append({
                 "type": "AUTHENTICATION_FAILURE_SPIKE",
                 "severity": "HIGH",
                 "count": failures,
-                "message": "Authentication failures exceeded the threshold."
+                "message": (
+                    "Authentication failures exceeded "
+                    "the threshold."
+                )
             })
 
         if replays >= replay_threshold:
+
             alerts.append({
                 "type": "REPLAY_ACTIVITY_SPIKE",
                 "severity": "HIGH",
                 "count": replays,
-                "message": "Replay attempts exceeded the threshold."
+                "message": (
+                    "Replay attempts exceeded "
+                    "the threshold."
+                )
             })
 
         return {
