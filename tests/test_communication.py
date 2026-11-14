@@ -12,6 +12,10 @@ from security.communication import VOINCommunicationEngine
 from security.storage import VOINStorageEngine
 
 
+# ==================================================
+# FIXTURES
+# ==================================================
+
 @pytest.fixture
 def network():
     engine = VOINNetworkSecurityEngine()
@@ -46,7 +50,6 @@ def peer_ids():
 
 @pytest.fixture
 def valid_message(communication, peer_ids):
-
     sender, receiver = peer_ids
 
     result = communication.create_message(
@@ -61,17 +64,15 @@ def valid_message(communication, peer_ids):
     return result["message"]
 
 
-# --------------------------------------------------
+# ==================================================
 # ENGINE INITIALIZATION
-# --------------------------------------------------
+# ==================================================
 
 def test_engine_creation(communication):
-
     assert communication.VERSION == "1.0.0"
 
 
 def test_engine_info(communication):
-
     info = communication.engine_info()
 
     assert info["message_protocol"] is True
@@ -81,47 +82,41 @@ def test_engine_info(communication):
     assert info["live_network_transport"] is False
 
 
-# --------------------------------------------------
+# ==================================================
 # MESSAGE ID VALIDATION
-# --------------------------------------------------
+# ==================================================
 
 def test_valid_message_id(communication):
-
     assert communication.validate_message_id(
         str(uuid.uuid4())
     )
 
 
 def test_invalid_message_id(communication):
-
     assert not communication.validate_message_id(
         "invalid-message-id"
     )
 
 
 def test_non_string_message_id(communication):
-
     assert not communication.validate_message_id(123)
 
 
-# --------------------------------------------------
+# ==================================================
 # PEER AUTHORIZATION
-# --------------------------------------------------
+# ==================================================
 
 def test_authorized_peer(communication, peer_ids):
-
     assert communication.is_authorized_peer(peer_ids[0])
 
 
 def test_unauthorized_peer(communication):
-
     assert not communication.is_authorized_peer(
         "0x9999999999999999999999999999999999999999"
     )
 
 
 def test_missing_network_engine():
-
     engine = VOINCommunicationEngine()
 
     assert not engine.is_authorized_peer(
@@ -129,12 +124,11 @@ def test_missing_network_engine():
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # MESSAGE CREATION
-# --------------------------------------------------
+# ==================================================
 
 def test_create_valid_message(communication, peer_ids):
-
     sender, receiver = peer_ids
 
     result = communication.create_message(
@@ -152,7 +146,6 @@ def test_create_message_unauthorized_sender(
     communication,
     peer_ids
 ):
-
     result = communication.create_message(
         "0x9999999999999999999999999999999999999999",
         peer_ids[1],
@@ -167,7 +160,6 @@ def test_create_message_unauthorized_receiver(
     communication,
     peer_ids
 ):
-
     result = communication.create_message(
         peer_ids[0],
         "0x9999999999999999999999999999999999999999",
@@ -182,7 +174,6 @@ def test_create_message_invalid_type(
     communication,
     peer_ids
 ):
-
     result = communication.create_message(
         peer_ids[0],
         peer_ids[1],
@@ -197,7 +188,6 @@ def test_create_message_invalid_payload(
     communication,
     peer_ids
 ):
-
     result = communication.create_message(
         peer_ids[0],
         peer_ids[1],
@@ -212,7 +202,6 @@ def test_create_message_oversized_payload(
     communication,
     peer_ids
 ):
-
     result = communication.create_message(
         peer_ids[0],
         peer_ids[1],
@@ -227,7 +216,6 @@ def test_create_message_non_serializable_payload(
     communication,
     peer_ids
 ):
-
     result = communication.create_message(
         peer_ids[0],
         peer_ids[1],
@@ -238,61 +226,40 @@ def test_create_message_non_serializable_payload(
     assert result["success"] is False
 
 
-# --------------------------------------------------
+# ==================================================
 # MESSAGE VALIDATION
-# --------------------------------------------------
+# ==================================================
 
-def test_validate_valid_message(
-    communication,
-    valid_message
-):
-
+def test_validate_valid_message(communication, valid_message):
     assert communication.validate_message(valid_message)
 
 
 def test_validate_non_dictionary_message(communication):
-
     assert not communication.validate_message("invalid")
 
 
-def test_validate_missing_field(
-    communication,
-    valid_message
-):
-
+def test_validate_missing_field(communication, valid_message):
     message = dict(valid_message)
     message.pop("payload")
 
     assert not communication.validate_message(message)
 
 
-def test_validate_extra_field(
-    communication,
-    valid_message
-):
-
+def test_validate_extra_field(communication, valid_message):
     message = dict(valid_message)
     message["extra"] = True
 
     assert not communication.validate_message(message)
 
 
-def test_validate_invalid_message_id(
-    communication,
-    valid_message
-):
-
+def test_validate_invalid_message_id(communication, valid_message):
     message = dict(valid_message)
     message["message_id"] = "invalid"
 
     assert not communication.validate_message(message)
 
 
-def test_validate_unauthorized_sender(
-    communication,
-    valid_message
-):
-
+def test_validate_unauthorized_sender(communication, valid_message):
     message = dict(valid_message)
 
     message["sender_id"] = (
@@ -302,11 +269,7 @@ def test_validate_unauthorized_sender(
     assert not communication.validate_message(message)
 
 
-def test_validate_unauthorized_receiver(
-    communication,
-    valid_message
-):
-
+def test_validate_unauthorized_receiver(communication, valid_message):
     message = dict(valid_message)
 
     message["receiver_id"] = (
@@ -316,83 +279,59 @@ def test_validate_unauthorized_receiver(
     assert not communication.validate_message(message)
 
 
-def test_validate_invalid_message_type(
-    communication,
-    valid_message
-):
-
+def test_validate_invalid_message_type(communication, valid_message):
     message = dict(valid_message)
     message["message_type"] = "INVALID"
 
     assert not communication.validate_message(message)
 
 
-def test_validate_invalid_payload(
-    communication,
-    valid_message
-):
-
+def test_validate_invalid_payload(communication, valid_message):
     message = dict(valid_message)
     message["payload"] = "invalid"
 
     assert not communication.validate_message(message)
 
 
-def test_validate_old_timestamp(
-    communication,
-    valid_message
-):
-
+def test_validate_old_timestamp(communication, valid_message):
     message = dict(valid_message)
 
     message["timestamp"] = (
-        time.time() - communication.MAX_TIMESTAMP_AGE - 10
+        time.time()
+        - communication.MAX_TIMESTAMP_AGE
+        - 10
     )
 
     assert not communication.validate_message(message)
 
 
-def test_validate_future_timestamp(
-    communication,
-    valid_message
-):
-
+def test_validate_future_timestamp(communication, valid_message):
     message = dict(valid_message)
 
     message["timestamp"] = (
-        time.time() + communication.MAX_FUTURE_OFFSET + 10
+        time.time()
+        + communication.MAX_FUTURE_OFFSET
+        + 10
     )
 
     assert not communication.validate_message(message)
 
 
-def test_validate_boolean_timestamp(
-    communication,
-    valid_message
-):
-
+def test_validate_boolean_timestamp(communication, valid_message):
     message = dict(valid_message)
     message["timestamp"] = True
 
     assert not communication.validate_message(message)
 
 
-def test_validate_non_numeric_timestamp(
-    communication,
-    valid_message
-):
-
+def test_validate_non_numeric_timestamp(communication, valid_message):
     message = dict(valid_message)
     message["timestamp"] = "invalid"
 
     assert not communication.validate_message(message)
 
 
-def test_validate_oversized_message(
-    communication,
-    valid_message
-):
-
+def test_validate_oversized_message(communication, valid_message):
     message = dict(valid_message)
 
     message["payload"] = {
@@ -402,12 +341,11 @@ def test_validate_oversized_message(
     assert not communication.validate_message(message)
 
 
-# --------------------------------------------------
+# ==================================================
 # MESSAGE HANDLERS
-# --------------------------------------------------
+# ==================================================
 
 def test_register_valid_handler(communication):
-
     handler = lambda payload: payload
 
     assert communication.register_handler(
@@ -417,7 +355,6 @@ def test_register_valid_handler(communication):
 
 
 def test_register_invalid_handler_type(communication):
-
     assert not communication.register_handler(
         "INVALID",
         lambda payload: payload
@@ -425,23 +362,21 @@ def test_register_invalid_handler_type(communication):
 
 
 def test_register_non_callable_handler(communication):
-
     assert not communication.register_handler(
         "PING",
         "invalid"
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # MESSAGE RECEIVING
-# --------------------------------------------------
+# ==================================================
 
 def test_receive_valid_message(
     communication,
     valid_message,
     peer_ids
 ):
-
     communication.register_handler(
         "PING",
         lambda payload: "PONG"
@@ -456,11 +391,7 @@ def test_receive_valid_message(
     assert result["result"] == "PONG"
 
 
-def test_receive_invalid_message(
-    communication,
-    peer_ids
-):
-
+def test_receive_invalid_message(communication, peer_ids):
     result = communication.receive_message(
         {},
         peer_ids[1]
@@ -474,7 +405,6 @@ def test_receive_wrong_receiver(
     valid_message,
     peer_ids
 ):
-
     result = communication.receive_message(
         valid_message,
         peer_ids[0]
@@ -489,7 +419,6 @@ def test_receive_duplicate_message(
     valid_message,
     peer_ids
 ):
-
     communication.register_handler(
         "PING",
         lambda payload: "PONG"
@@ -515,7 +444,6 @@ def test_receive_without_handler(
     valid_message,
     peer_ids
 ):
-
     result = communication.receive_message(
         valid_message,
         peer_ids[1]
@@ -530,7 +458,6 @@ def test_receive_handler_exception(
     valid_message,
     peer_ids
 ):
-
     def failing_handler(payload):
         raise RuntimeError("Test error")
 
@@ -548,15 +475,14 @@ def test_receive_handler_exception(
     assert result["error"] == "Message processing failed"
 
 
-# --------------------------------------------------
+# ==================================================
 # SECURITY EVENTS
-# --------------------------------------------------
+# ==================================================
 
 def test_invalid_message_generates_event(
     communication,
     peer_ids
 ):
-
     communication.receive_message(
         {},
         peer_ids[1]
@@ -575,7 +501,6 @@ def test_replay_generates_event(
     valid_message,
     peer_ids
 ):
-
     communication.register_handler(
         "PING",
         lambda payload: "PONG"
@@ -604,7 +529,6 @@ def test_handler_error_generates_event(
     valid_message,
     peer_ids
 ):
-
     def failing_handler(payload):
         raise RuntimeError("Test error")
 
@@ -621,4 +545,9 @@ def test_handler_error_generates_event(
     events = communication.get_security_events()
 
     assert any(
-        event["event
+        event["event_type"] == "MESSAGE_HANDLER_ERROR"
+        for event in events
+    )
+
+
+def test_get_security_events_returns_copy(
