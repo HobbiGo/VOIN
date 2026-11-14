@@ -1,17 +1,17 @@
 """
-VOIN DIGITAL SIGNATURE ENGINE V1.0
+VOIN DIGITAL SIGNATURE ENGINE V1.1
 
-Provides EVM-compatible digital signature
-verification for VOIN.
+EVM-compatible digital signature verification.
 """
 
 from eth_account import Account
 from eth_account.messages import encode_defunct
+from eth_utils import is_address, to_checksum_address
 
 
 class VOINSignatureEngine:
 
-    VERSION = "1.0.0"
+    VERSION = "1.1.0"
 
     @staticmethod
     def validate_address(address):
@@ -19,7 +19,7 @@ class VOINSignatureEngine:
         if not isinstance(address, str):
             return False
 
-        return Account.is_address(address)
+        return is_address(address)
 
     @staticmethod
     def recover_signer(message, signature):
@@ -40,7 +40,7 @@ class VOINSignatureEngine:
                 signature=signature
             )
 
-            return Account.to_checksum_address(signer)
+            return to_checksum_address(signer)
 
         except Exception as error:
             raise ValueError(
@@ -68,7 +68,7 @@ class VOINSignatureEngine:
                 signature
             )
 
-            expected = Account.to_checksum_address(
+            expected = to_checksum_address(
                 expected_address
             )
 
