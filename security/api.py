@@ -8,6 +8,8 @@ Features:
 - Wallet rate-limit status access
 - Bearer token authentication
 - Constant-time token comparison
+- Strict request validation
+- Secure error handling
 - Read-only API endpoints
 """
 
@@ -27,9 +29,24 @@ class VOINSecurityAPIEngine:
         rate_limit_engine=None
     ):
 
-        if not isinstance(api_token, str) or len(api_token) < 32:
+        if (
+            not isinstance(api_token, str)
+            or len(api_token) < 32
+        ):
             raise ValueError(
                 "API token must contain at least 32 characters"
+            )
+
+        if dashboard is None:
+            raise ValueError(
+                "Dashboard engine is required"
+            )
+
+        if not callable(
+            getattr(dashboard, "get_dashboard", None)
+        ):
+            raise TypeError(
+                "Invalid dashboard engine"
             )
 
         self.dashboard = dashboard
@@ -37,17 +54,20 @@ class VOINSecurityAPIEngine:
 
         self.alert_engine = (
             alert_engine
-            or dashboard.alert_engine
+            if alert_engine is not None
+            else getattr(dashboard, "alert_engine", None)
         )
 
         self.monitor_engine = (
             monitor_engine
-            or dashboard.monitor_engine
+            if monitor_engine is not None
+            else getattr(dashboard, "monitor_engine", None)
         )
 
         self.rate_limit_engine = (
             rate_limit_engine
-            or dashboard.rate_limit_engine
+            if rate_limit_engine is not None
+            else getattr(dashboard, "rate_limit_engine", None)
         )
 
     def _response(self, status_code, data):
@@ -66,7 +86,10 @@ class VOINSecurityAPIEngine:
 
         for key, value in headers.items():
 
-            if isinstance(key, str) and key.lower() == "authorization":
+            if (
+                isinstance(key, str)
+                and key.lower() == "authorization"
+            ):
                 authorization = value
                 break
 
@@ -79,13 +102,21 @@ class VOINSecurityAPIEngine:
             not separator
             or scheme.lower() != "bearer"
             or not token
+            or token != token.strip()
+            or any(char.isspace() for char in token)
         ):
             return False
 
-        return hmac.compare_digest(
-            token.encode("utf-8"),
-            self.api_token.encode("utf-8")
-        )
+        try:
+
+            return hmac.compare_digest(
+                token.encode("utf-8"),
+                self.api_token.encode("utf-8")
+            )
+
+        except (TypeError, ValueError):
+
+            return False
 
     def get_dashboard(self):
 
@@ -99,11 +130,21 @@ class VOINSecurityAPIEngine:
                 "alerts": []
             }
 
+        get_alerts = getattr(
+            self.alert_engine,
+            "get_alerts",
+            None
+        )
+
+        if not callable(get_alerts):
+            return {
+                "available": False,
+                "alerts": []
+            }
+
         return {
             "available": True,
-            "alerts": self.alert_engine.get_alerts(
-                limit=limit
-            )
+            "alerts": get_alerts(limit=limit)
         }
 
     def get_monitoring(self):
@@ -114,7 +155,19 @@ class VOINSecurityAPIEngine:
                 "status": "NOT_CONFIGURED"
             }
 
-        return self.monitor_engine.get_security_status()
+        get_status = getattr(
+            self.monitor_engine,
+            "get_security_status",
+            None
+        )
+
+        if not callable(get_status):
+            return {
+                "available": False,
+                "status": "NOT_CONFIGURED"
+            }
+
+        return get_status()
 
     def get_wallet_rate_limit(self, wallet_address):
 
@@ -124,9 +177,19 @@ class VOINSecurityAPIEngine:
                 "status": "NOT_CONFIGURED"
             }
 
-        return self.rate_limit_engine.get_status(
-            wallet_address
+        get_status = getattr(
+            self.rate_limit_engine,
+            "get_status",
+            None
         )
+
+        if not callable(get_status):
+            return {
+                "available": False,
+                "status": "NOT_CONFIGURED"
+            }
+
+        return get_status(wallet_address)
 
     def handle_request(
         self,
@@ -197,9 +260,15 @@ class VOINSecurityAPIEngine:
 
             elif path == "/api/security/rate-limit":
 
-                wallet_address = query.get("wallet_address")
+                wallet_address = query.get(
+                    "wallet_address"
+                )
 
-                if not isinstance(wallet_address, str):
+                if (
+                    not isinstance(wallet_address, str)
+                    or not wallet_address.strip()
+                    or wallet_address != wallet_address.strip()
+                ):
                     return self._response(
                         400,
                         {"error": "Wallet address is required"}
@@ -250,6 +319,8 @@ class VOINSecurityAPIEngine:
             "monitoring_api": True,
             "rate_limit_api": True,
             "bearer_authentication": True,
+            "constant_time_comparison": True,
+            "strict_validation": True,
             "read_only": True,
             "status": "READY_FOR_TESTING"
         }
