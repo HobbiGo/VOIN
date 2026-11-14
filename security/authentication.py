@@ -1,9 +1,17 @@
 """
-VOIN AUTHENTICATION ENGINE V1.0
+VOIN AUTHENTICATION ENGINE V1.1
 
-Integrates wallet identity, challenge,
-nonce and digital signature verification.
+Persistent wallet authentication.
+
+Features:
+- Wallet identity verification
+- SQLite challenge storage
+- Persistent nonce management
+- Digital signature verification
+- Replay attack protection
 """
+
+import re
 
 from wallet.identity import VOINIdentity
 from security.challenge import VOINChallengeEngine
@@ -13,17 +21,23 @@ from security.signatures import VOINSignatureEngine
 
 class VOINAuthenticationEngine:
 
-    VERSION = "1.0.0"
+    VERSION = "1.1.0"
 
     def __init__(self, expiry_seconds=300, network="BSC"):
 
         self.identity_engine = VOINIdentity()
+
         self.challenge_engine = VOINChallengeEngine(
             expiry_seconds=expiry_seconds
         )
-        self.nonce_engine = VOINNonceEngine()
+
+        # Share the same SQLite storage.
+        self.nonce_engine = VOINNonceEngine(
+            storage=self.challenge_engine.storage
+        )
 
         self.signature_engine = VOINSignatureEngine
+
         self.network = network
 
         self.identities = {}
@@ -50,14 +64,17 @@ class VOINAuthenticationEngine:
 
         identity = self.identities[wallet]
 
-        nonce_result = self.nonce_engine.generate_nonce(
+        # Challenge Engine generates and registers
+        # the nonce exactly once.
+        challenge = self.challenge_engine.create_challenge(
             wallet_address
         )
 
-        challenge = self.challenge_engine.create_challenge(
-            wallet_address,
-            nonce=nonce_result["nonce"]
-        )
+        if not challenge["success"]:
+            return {
+                "success": False,
+                "status": "CHALLENGE_GENERATION_FAILED"
+            }
 
         return {
             "success": True,
@@ -114,10 +131,33 @@ class VOINAuthenticationEngine:
                 "status": "INVALID_OR_EXPIRED_CHALLENGE"
             }
 
-        challenge = self.challenge_engine.challenges.get(
+        # Retrieve challenge from SQLite.
+        challenge = self.challenge_engine.storage.get_challenge(
             challenge_id
         )
 
+        if not challenge:
+            return {
+                "success": False,
+                "status": "CHALLENGE_NOT_FOUND"
+            }
+
+        # Extract nonce from the stored challenge message.
+        match = re.search(
+            r"^Nonce: ([a-fA-F0-9]{64})$",
+            challenge["message"],
+            re.MULTILINE
+        )
+
+        if not match:
+            return {
+                "success": False,
+                "status": "INVALID_CHALLENGE_NONCE"
+            }
+
+        nonce = match.group(1)
+
+        # Verify digital signature first.
         signature_result = self.signature_engine.verify_signature(
             message=challenge["message"],
             signature=signature,
@@ -130,21 +170,24 @@ class VOINAuthenticationEngine:
                 "status": signature_result["status"]
             }
 
-        nonce_valid = self.nonce_engine.verify_nonce(
-            wallet_address,
-            challenge["nonce"]
-        )
-
-        if not nonce_valid:
-            return {
-                "success": False,
-                "status": "INVALID_OR_USED_NONCE"
-            }
-
-        if not self.challenge_engine.consume_challenge(challenge_id):
+        # Consume challenge.
+        if not self.challenge_engine.consume_challenge(
+            challenge_id,
+            wallet_address
+        ):
             return {
                 "success": False,
                 "status": "CHALLENGE_ALREADY_USED"
+            }
+
+        # Consume associated nonce.
+        if not self.nonce_engine.verify_nonce(
+            wallet_address,
+            nonce
+        ):
+            return {
+                "success": False,
+                "status": "INVALID_OR_USED_NONCE"
             }
 
         return {
@@ -168,5 +211,7 @@ class VOINAuthenticationEngine:
             "challenge_verification": True,
             "nonce_protection": True,
             "digital_signature": True,
+            "persistent_storage": True,
+            "replay_protection": True,
             "status": "READY_FOR_TESTING"
         }
