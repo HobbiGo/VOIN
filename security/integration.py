@@ -1,5 +1,5 @@
 """
-VOIN SECURITY INTEGRATION ENGINE V1.1
+VOIN SECURITY INTEGRATION ENGINE V1.2
 
 Integrates:
 - Wallet Verification Engine
@@ -11,6 +11,7 @@ Integrates:
 """
 
 import re
+import hashlib
 
 from security.verification import VOINVerificationEngine
 from security.nonce import VOINNonceEngine
@@ -18,7 +19,7 @@ from security.nonce import VOINNonceEngine
 
 class VOINSecurityIntegration:
 
-    VERSION = "1.1.0"
+    VERSION = "1.2.0"
 
     def __init__(self, expiry_seconds=300):
 
@@ -34,7 +35,6 @@ class VOINSecurityIntegration:
             self.verification_engine.signature_engine
         )
 
-        # Share the same persistent SQLite storage.
         self.nonce_engine = VOINNonceEngine(
             storage=self.challenge_engine.storage
         )
@@ -49,8 +49,6 @@ class VOINSecurityIntegration:
                 "status": "INVALID_ADDRESS"
             }
 
-        # Challenge Engine generates and registers
-        # the nonce exactly once in SQLite.
         challenge_result = self.challenge_engine.create_challenge(
             wallet_address
         )
@@ -97,7 +95,6 @@ class VOINSecurityIntegration:
                 "status": "INVALID_OR_EXPIRED_CHALLENGE"
             }
 
-        # Retrieve challenge from persistent SQLite storage.
         challenge = self.challenge_engine.storage.get_challenge(
             challenge_id
         )
@@ -108,7 +105,6 @@ class VOINSecurityIntegration:
                 "status": "CHALLENGE_NOT_FOUND"
             }
 
-        # Extract nonce from the signed challenge message.
         match = re.search(
             r"^Nonce: ([a-fA-F0-9]{64})$",
             challenge["message"],
@@ -123,7 +119,38 @@ class VOINSecurityIntegration:
 
         nonce = match.group(1)
 
-        # Verify digital signature.
+        # Verify the nonce record before signature verification.
+        nonce_hash = hashlib.sha256(
+            nonce.encode()
+        ).hexdigest()
+
+        with self.challenge_engine.storage._connect() as connection:
+
+            nonce_record = connection.execute(
+                """
+                SELECT used
+                FROM nonces
+                WHERE wallet_address = ?
+                AND nonce_hash = ?
+                """,
+                (
+                    wallet_address.lower(),
+                    nonce_hash
+                )
+            ).fetchone()
+
+        if nonce_record is None:
+            return {
+                "success": False,
+                "status": "NONCE_MISMATCH"
+            }
+
+        if nonce_record[0] == 1:
+            return {
+                "success": False,
+                "status": "NONCE_ALREADY_USED"
+            }
+
         result = self.signature_engine.verify_signature(
             message=challenge["message"],
             signature=signature,
@@ -136,7 +163,6 @@ class VOINSecurityIntegration:
                 "status": result["status"]
             }
 
-        # Atomically consume challenge.
         if not self.challenge_engine.consume_challenge(
             challenge_id,
             wallet_address
@@ -146,7 +172,6 @@ class VOINSecurityIntegration:
                 "status": "CHALLENGE_ALREADY_USED"
             }
 
-        # Atomically consume the associated nonce.
         if not self.nonce_engine.verify_nonce(
             wallet_address,
             nonce
