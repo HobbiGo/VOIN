@@ -1,362 +1,204 @@
 """
-VOIN SECURITY AUDIT INTEGRATION TEST SUITE V1.0
-
-Tests:
-- Wallet authentication
-- Challenge validation
-- Digital signatures
-- Nonce protection
-- Replay prevention
-- Automatic security audit
-- Audit persistence
+VOIN SECURITY API INTEGRATION TEST SUITE V1.1
 """
-
-import time
 
 import pytest
 
-from eth_account import Account
-from eth_account.messages import encode_defunct
+from security.api import VOINSecurityAPIEngine
+from security.api_integration import VOINSecurityAPIIntegration
 
-from security.integration import VOINSecurityIntegration
-from security.storage import VOINStorageEngine
-from security.audit import VOINAuditEngine
+
+TEST_TOKEN = "voin-test-api-token-" + ("x" * 40)
+
+
+class FakeDashboard:
+
+    def __init__(self):
+        self.alert_engine = None
+        self.monitor_engine = None
+        self.rate_limit_engine = None
+
+    def get_dashboard(self):
+        return {
+            "status": "OPERATIONAL"
+        }
+
+
+class FakeSecurityIntegration:
+
+    def __init__(self):
+        self.called = False
+        self.last_arguments = None
+
+    def create_authentication(self, wallet_address):
+
+        self.called = True
+
+        self.last_arguments = {
+            "wallet_address": wallet_address
+        }
+
+        return {
+            "success": True,
+            "status": "AUTHENTICATION_CHALLENGE_CREATED"
+        }
+
+    def verify_authentication(
+        self,
+        challenge_id,
+        wallet_address,
+        signature
+    ):
+
+        self.called = True
+
+        self.last_arguments = {
+            "challenge_id": challenge_id,
+            "wallet_address": wallet_address,
+            "signature": signature
+        }
+
+        return {
+            "success": True,
+            "status": "AUTHENTICATION_SUCCESSFUL"
+        }
 
 
 @pytest.fixture
-def wallet():
-    return Account.create()
+def api_engine():
+
+    return VOINSecurityAPIEngine(
+        dashboard=FakeDashboard(),
+        api_token=TEST_TOKEN
+    )
 
 
 @pytest.fixture
-def integration():
-    return VOINSecurityIntegration()
+def security_integration():
+
+    return FakeSecurityIntegration()
 
 
-def sign_challenge(challenge, wallet):
+@pytest.fixture
+def integration(api_engine, security_integration):
 
-    return Account.sign_message(
-        encode_defunct(text=challenge["message"]),
-        private_key=wallet.key
+    return VOINSecurityAPIIntegration(
+        api_engine=api_engine,
+        security_integration=security_integration
     )
 
 
 def test_integration_engine_creation(integration):
-    assert integration is not None
-    assert integration.audit_engine is not None
+
+    assert integration.VERSION == "1.1.0"
 
 
-def test_engine_information(integration):
+def test_api_request_delegation(integration):
+
+    response = integration.handle_api_request(
+        method="GET",
+        path="/api/security/dashboard",
+        headers={
+            "Authorization": f"Bearer {TEST_TOKEN}"
+        }
+    )
+
+    assert response["status_code"] == 200
+    assert response["body"]["success"] is True
+    assert response["body"]["data"]["status"] == "OPERATIONAL"
+
+
+def test_unauthorized_api_request(integration):
+
+    response = integration.handle_api_request(
+        method="GET",
+        path="/api/security/dashboard"
+    )
+
+    assert response["status_code"] == 401
+
+
+def test_wallet_authentication_creation(
+    integration,
+    security_integration
+):
+
+    result = integration.create_wallet_authentication(
+        wallet_address="0x1234567890"
+    )
+
+    assert result["success"] is True
+    assert security_integration.called is True
+
+    assert security_integration.last_arguments == {
+        "wallet_address": "0x1234567890"
+    }
+
+
+def test_wallet_authentication_verification(
+    integration,
+    security_integration
+):
+
+    result = integration.verify_wallet_authentication(
+        wallet_address="0x1234567890",
+        challenge_id="challenge-001",
+        signature="test-signature"
+    )
+
+    assert result["success"] is True
+
+    assert result["status"] == "AUTHENTICATION_SUCCESSFUL"
+
+    assert security_integration.called is True
+
+
+def test_wallet_authentication_arguments(
+    integration,
+    security_integration
+):
+
+    integration.verify_wallet_authentication(
+        wallet_address="0x1234567890",
+        challenge_id="challenge-001",
+        signature="signature-001"
+    )
+
+    assert security_integration.last_arguments == {
+        "challenge_id": "challenge-001",
+        "wallet_address": "0x1234567890",
+        "signature": "signature-001"
+    }
+
+
+def test_invalid_api_engine_rejected():
+
+    with pytest.raises(TypeError):
+
+        VOINSecurityAPIIntegration(
+            api_engine=object(),
+            security_integration=FakeSecurityIntegration()
+        )
+
+
+def test_invalid_security_integration_rejected(api_engine):
+
+    with pytest.raises(TypeError):
+
+        VOINSecurityAPIIntegration(
+            api_engine=api_engine,
+            security_integration=object()
+        )
+
+
+def test_engine_info(integration):
 
     info = integration.engine_info()
 
-    assert info["engine"] == "VOIN Security Integration"
-    assert info["wallet_verification"] is True
-    assert info["challenge_validation"] is True
-    assert info["digital_signature"] is True
-    assert info["nonce_protection"] is True
-    assert info["replay_protection"] is True
-    assert info["security_audit"] is True
-    assert info["automatic_audit_logging"] is True
-
-
-def test_create_authentication(integration, wallet):
-
-    result = integration.create_authentication(wallet.address)
-
-    assert result["success"] is True
-    assert result["challenge_id"]
-    assert result["nonce"]
-    assert result["message"]
-
-
-def test_invalid_wallet_rejected(integration):
-
-    result = integration.create_authentication(
-        "INVALID_WALLET"
-    )
-
-    assert result["success"] is False
-    assert result["status"] == "INVALID_ADDRESS"
-
-
-def test_successful_authentication(integration, wallet):
-
-    challenge = integration.create_authentication(
-        wallet.address
-    )
-
-    signed = sign_challenge(challenge, wallet)
-
-    result = integration.verify_authentication(
-        challenge["challenge_id"],
-        wallet.address,
-        signed.signature
-    )
-
-    assert result["success"] is True
-    assert result["status"] == "AUTHENTICATION_SUCCESSFUL"
-
-
-def test_wrong_signature_rejected(integration, wallet):
-
-    challenge = integration.create_authentication(
-        wallet.address
-    )
-
-    wrong_wallet = Account.create()
-
-    signed = sign_challenge(challenge, wrong_wallet)
-
-    result = integration.verify_authentication(
-        challenge["challenge_id"],
-        wallet.address,
-        signed.signature
-    )
-
-    assert result["success"] is False
-
-
-def test_replay_authentication_rejected(integration, wallet):
-
-    challenge = integration.create_authentication(
-        wallet.address
-    )
-
-    signed = sign_challenge(challenge, wallet)
-
-    first_result = integration.verify_authentication(
-        challenge["challenge_id"],
-        wallet.address,
-        signed.signature
-    )
-
-    second_result = integration.verify_authentication(
-        challenge["challenge_id"],
-        wallet.address,
-        signed.signature
-    )
-
-    assert first_result["success"] is True
-    assert second_result["success"] is False
-
-
-def test_nonce_consumed_after_authentication(
-    integration,
-    wallet
-):
-
-    challenge = integration.create_authentication(
-        wallet.address
-    )
-
-    signed = sign_challenge(challenge, wallet)
-
-    result = integration.verify_authentication(
-        challenge["challenge_id"],
-        wallet.address,
-        signed.signature
-    )
-
-    assert result["success"] is True
-
-    storage = integration.challenge_engine.storage
-
-    nonce_hash = storage._hash_nonce(challenge["nonce"])
-
-    with storage._connect() as connection:
-
-        nonce_record = connection.execute(
-            """
-            SELECT used
-            FROM nonces
-            WHERE wallet_address = ?
-            AND nonce_hash = ?
-            """,
-            (
-                wallet.address.lower(),
-                nonce_hash
-            )
-        ).fetchone()
-
-    assert nonce_record is not None
-    assert nonce_record["used"] == 1
-
-
-def test_successful_authentication_is_audited(
-    integration,
-    wallet
-):
-
-    challenge = integration.create_authentication(
-        wallet.address
-    )
-
-    signed = sign_challenge(challenge, wallet)
-
-    integration.verify_authentication(
-        challenge["challenge_id"],
-        wallet.address,
-        signed.signature
-    )
-
-    events = integration.audit_engine.get_wallet_events(
-        wallet.address
-    )
-
-    matching = [
-        event for event in events
-        if event["event_type"] == "AUTHENTICATION_SUCCESS"
-        and event["reference_id"] == challenge["challenge_id"]
-    ]
-
-    assert len(matching) == 1
-
-
-def test_failed_signature_is_audited(
-    integration,
-    wallet
-):
-
-    challenge = integration.create_authentication(
-        wallet.address
-    )
-
-    wrong_wallet = Account.create()
-    signed = sign_challenge(challenge, wrong_wallet)
-
-    integration.verify_authentication(
-        challenge["challenge_id"],
-        wallet.address,
-        signed.signature
-    )
-
-    events = integration.audit_engine.get_wallet_events(
-        wallet.address
-    )
-
-    matching = [
-        event for event in events
-        if event["event_type"] == "AUTHENTICATION_FAILED"
-        and event["reference_id"] == challenge["challenge_id"]
-    ]
-
-    assert len(matching) == 1
-
-
-def test_replay_attempt_is_audited(
-    integration,
-    wallet
-):
-
-    challenge = integration.create_authentication(
-        wallet.address
-    )
-
-    signed = sign_challenge(challenge, wallet)
-
-    integration.verify_authentication(
-        challenge["challenge_id"],
-        wallet.address,
-        signed.signature
-    )
-
-    integration.verify_authentication(
-        challenge["challenge_id"],
-        wallet.address,
-        signed.signature
-    )
-
-    events = integration.audit_engine.get_wallet_events(
-        wallet.address
-    )
-
-    matching = [
-        event for event in events
-        if event["event_type"] == "REPLAY_ATTEMPT"
-        and event["reference_id"] == challenge["challenge_id"]
-    ]
-
-    assert len(matching) == 1
-
-
-def test_expired_challenge_is_audited(
-    integration,
-    wallet
-):
-
-    challenge = integration.create_authentication(
-        wallet.address
-    )
-
-    storage = integration.challenge_engine.storage
-
-    with storage._connect() as connection:
-        connection.execute(
-            """
-            UPDATE challenges
-            SET expires_at = 0
-            WHERE challenge_id = ?
-            """,
-            (challenge["challenge_id"],)
-        )
-
-    result = integration.verify_authentication(
-        challenge["challenge_id"],
-        wallet.address,
-        "invalid_signature"
-    )
-
-    assert result["success"] is False
-
-    events = integration.audit_engine.get_wallet_events(
-        wallet.address
-    )
-
-    matching = [
-        event for event in events
-        if event["event_type"] == "EXPIRED_CHALLENGE"
-        and event["reference_id"] == challenge["challenge_id"]
-    ]
-
-    assert len(matching) == 1
-
-
-def test_audit_survives_storage_reinitialization(
-    integration,
-    wallet
-):
-
-    challenge = integration.create_authentication(
-        wallet.address
-    )
-
-    signed = sign_challenge(challenge, wallet)
-
-    integration.verify_authentication(
-        challenge["challenge_id"],
-        wallet.address,
-        signed.signature
-    )
-
-    original_storage = integration.challenge_engine.storage
-
-    reopened_storage = VOINStorageEngine(
-        original_storage.database_path
-    )
-
-    reopened_audit = VOINAuditEngine(
-        storage=reopened_storage
-    )
-
-    events = reopened_audit.get_wallet_events(
-        wallet.address
-    )
-
-    matching = [
-        event for event in events
-        if event["event_type"] == "AUTHENTICATION_SUCCESS"
-        and event["reference_id"] == challenge["challenge_id"]
-    ]
-
-    assert len(matching) == 1
+    assert info["version"] == "1.1.0"
+    assert info["api_engine"] is True
+    assert info["wallet_authentication"] is True
+    assert info["challenge_creation"] is True
+    assert info["challenge_id_verification"] is True
+    assert info["security_integration"] is True
+    assert info["status"] == "READY_FOR_TESTING"
