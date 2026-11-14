@@ -1,5 +1,5 @@
 """
-VOIN SECURITY API INTEGRATION ENGINE V1.1
+VOIN SECURITY API INTEGRATION ENGINE V1.0
 
 Connects:
 - VOIN Security API Engine
@@ -10,7 +10,7 @@ Features:
 - Wallet authentication creation
 - Wallet authentication verification
 - Challenge ID support
-- Legacy challenge and nonce compatibility
+- Legacy authentication compatibility
 - API request delegation
 - Engine status reporting
 """
@@ -22,7 +22,7 @@ from security.api import VOINSecurityAPIEngine
 
 class VOINSecurityAPIIntegration:
 
-    VERSION = "1.1.0"
+    VERSION = "1.0.0"
 
     def __init__(
         self,
