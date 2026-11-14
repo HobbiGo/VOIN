@@ -1,5 +1,11 @@
+"""
+VOIN SECURITY MIDDLEWARE ENGINE V1.0.2
+"""
+import json
+import secrets
+class VOINSecurityMiddleware:
+VERSION = "1.0.2"
 MAX_PATH_LENGTH = 2048
-
 SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
@@ -14,10 +20,7 @@ def __init__(self, application):
     self.application = application
 
 def _response(self, start_response, status, data, request_id):
-    body = json.dumps(
-        data,
-        default=str
-    ).encode("utf-8")
+    body = json.dumps(data, default=str).encode("utf-8")
 
     headers = [
         ("Content-Type", "application/json; charset=utf-8"),
@@ -71,11 +74,7 @@ def _start_response(self, start_response, request_id):
         for name, value in self.SECURITY_HEADERS.items():
             updated_headers.append((name, value))
 
-        return start_response(
-            status,
-            updated_headers,
-            exc_info
-        )
+        return start_response(status, updated_headers, exc_info)
 
     return wrapped_start_response
 
@@ -99,7 +98,6 @@ def __call__(self, environ, start_response):
             environ,
             self._start_response(start_response, request_id)
         )
-
     except Exception:
         return self._response(
             start_response,
@@ -123,3 +121,4 @@ def engine_info(cls):
         "error_handling": True,
         "status": "READY_FOR_TESTING"
     }
+
