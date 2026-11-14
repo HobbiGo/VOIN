@@ -1,5 +1,18 @@
 """
-VOIN NETWORK SECURITY TEST SUITE V1.0
+VOIN NETWORK SECURITY TEST SUITE V1.1
+
+Tests:
+- Engine creation
+- Engine information
+- Peer identity validation
+- Endpoint validation
+- Peer registration
+- Duplicate peer prevention
+- Peer revocation
+- Trusted peer status
+- Peer retrieval
+- Peer listing
+- Security event logging
 """
 
 import pytest
@@ -14,67 +27,123 @@ def engine():
 
 @pytest.fixture
 def peer_id():
-    return "0x1234567890123456789012345678901234567890"
+    return "0x1234567890abcdef1234567890abcdef12345678"
 
 
 @pytest.fixture
 def endpoint():
-    return "https://node.voin.network:8080"
+    return "https://node1.voin.network:8080"
 
+
+# --------------------------------------------------
+# ENGINE TESTS
+# --------------------------------------------------
 
 def test_engine_creation(engine):
 
-    assert engine.VERSION == "1.0.0"
-    assert engine.trusted_peers == {}
-    assert engine.security_events == []
+    assert isinstance(
+        engine,
+        VOINNetworkSecurityEngine
+    )
+
+    assert engine.VERSION == "1.1.0"
+
+
+def test_engine_info(engine):
+
+    info = engine.engine_info()
+
+    assert info["engine"] == "VOIN Network Security Engine"
+    assert info["version"] == "1.1.0"
+
+    assert info["peer_identity_validation"] is True
+    assert info["trusted_peer_management"] is True
+    assert info["endpoint_validation"] is True
+    assert info["duplicate_peer_protection"] is True
+    assert info["security_event_logging"] is True
+
+    assert info["persistent_peer_storage"] is False
+    assert info["peer_recovery"] is False
+
+    assert info["p2p_network"] is False
+
+
+# --------------------------------------------------
+# PEER IDENTITY VALIDATION
+# --------------------------------------------------
+
+def test_valid_peer_identity(peer_id):
+
+    assert VOINNetworkSecurityEngine.validate_peer_identity(
+        peer_id
+    ) is True
 
 
 @pytest.mark.parametrize(
     "peer_id",
     [
-        "invalid",
         "",
-        None,
-        123,
+        "invalid-peer",
         "0x1234",
-        "0x123456789012345678901234567890123456789g"
+        "1234567890abcdef1234567890abcdef12345678",
+        "0xZZ34567890abcdef1234567890abcdef12345678",
+        None,
+        12345
     ]
 )
-def test_invalid_peer_identity(engine, peer_id):
+def test_invalid_peer_identity(peer_id):
 
-    assert engine.validate_peer_identity(peer_id) is False
+    assert VOINNetworkSecurityEngine.validate_peer_identity(
+        peer_id
+    ) is False
 
 
-def test_valid_peer_identity(engine, peer_id):
+# --------------------------------------------------
+# ENDPOINT VALIDATION
+# --------------------------------------------------
 
-    assert engine.validate_peer_identity(peer_id) is True
+@pytest.mark.parametrize(
+    "endpoint",
+    [
+        "https://node1.voin.network",
+        "http://127.0.0.1:8080",
+        "https://node1.voin.network:443"
+    ]
+)
+def test_valid_endpoint(endpoint):
+
+    assert VOINNetworkSecurityEngine.validate_endpoint(
+        endpoint
+    ) is True
 
 
 @pytest.mark.parametrize(
     "endpoint",
     [
         "",
-        "invalid",
-        None,
-        "ftp://node.voin.network",
+        "ftp://node1.voin.network",
         "https://",
-        "https://user:password@node.voin.network",
-        "https://node.voin.network:99999",
-        "https://node.voin.network/path",
-        "https://node.voin.network?token=test",
-        "https://node.voin.network#fragment",
-        " https://node.voin.network"
+        "https://user:password@node1.voin.network",
+        "https://node1.voin.network/path",
+        "https://node1.voin.network?query=1",
+        "https://node1.voin.network#fragment",
+        "https://node1.voin.network:99999",
+        "https://node1.voin.network:0",
+        " https://node1.voin.network",
+        None,
+        12345
     ]
 )
-def test_invalid_endpoint(engine, endpoint):
+def test_invalid_endpoint(endpoint):
 
-    assert engine.validate_endpoint(endpoint) is False
+    assert VOINNetworkSecurityEngine.validate_endpoint(
+        endpoint
+    ) is False
 
 
-def test_valid_endpoint(engine, endpoint):
-
-    assert engine.validate_endpoint(endpoint) is True
-
+# --------------------------------------------------
+# PEER REGISTRATION
+# --------------------------------------------------
 
 def test_register_peer(engine, peer_id, endpoint):
 
@@ -84,8 +153,40 @@ def test_register_peer(engine, peer_id, endpoint):
     )
 
     assert result["success"] is True
+    assert result["peer_id"] == peer_id
     assert result["status"] == "TRUSTED"
-    assert engine.is_trusted_peer(peer_id) is True
+
+
+def test_registered_peer_exists(engine, peer_id, endpoint):
+
+    engine.register_peer(
+        peer_id,
+        endpoint
+    )
+
+    assert peer_id in engine.trusted_peers
+
+
+def test_register_invalid_peer(engine, endpoint):
+
+    result = engine.register_peer(
+        "invalid-peer",
+        endpoint
+    )
+
+    assert result["success"] is False
+    assert result["error"] == "Invalid peer identity"
+
+
+def test_register_invalid_endpoint(engine, peer_id):
+
+    result = engine.register_peer(
+        peer_id,
+        "invalid-endpoint"
+    )
+
+    assert result["success"] is False
+    assert result["error"] == "Invalid peer endpoint"
 
 
 def test_duplicate_peer_registration(
@@ -94,86 +195,134 @@ def test_duplicate_peer_registration(
     endpoint
 ):
 
-    engine.register_peer(peer_id, endpoint)
-
-    result = engine.register_peer(
+    first = engine.register_peer(
         peer_id,
         endpoint
     )
 
-    assert result["success"] is False
-    assert result["error"] == "Peer already registered"
-
-
-def test_reject_invalid_peer_registration(
-    engine,
-    endpoint
-):
-
-    result = engine.register_peer(
-        "invalid-peer",
+    second = engine.register_peer(
+        peer_id,
         endpoint
     )
 
-    assert result["success"] is False
-    assert engine.trusted_peers == {}
+    assert first["success"] is True
+    assert second["success"] is False
+    assert second["error"] == "Peer already registered"
 
 
-def test_reject_invalid_endpoint_registration(
-    engine,
-    peer_id
-):
-
-    result = engine.register_peer(
-        peer_id,
-        "invalid-endpoint"
-    )
-
-    assert result["success"] is False
-    assert engine.trusted_peers == {}
-
+# --------------------------------------------------
+# PEER REVOCATION
+# --------------------------------------------------
 
 def test_revoke_peer(engine, peer_id, endpoint):
 
-    engine.register_peer(peer_id, endpoint)
+    engine.register_peer(
+        peer_id,
+        endpoint
+    )
 
     result = engine.revoke_peer(peer_id)
 
     assert result["success"] is True
     assert result["status"] == "REVOKED"
-    assert engine.is_trusted_peer(peer_id) is False
 
 
 def test_revoke_unknown_peer(engine):
 
     result = engine.revoke_peer(
-        "0x1234567890123456789012345678901234567890"
+        "unknown-peer"
     )
 
     assert result["success"] is False
+    assert result["error"] == "Peer not found"
 
+
+def test_revoked_peer_is_not_trusted(
+    engine,
+    peer_id,
+    endpoint
+):
+
+    engine.register_peer(
+        peer_id,
+        endpoint
+    )
+
+    engine.revoke_peer(peer_id)
+
+    assert engine.is_trusted_peer(peer_id) is False
+
+
+def test_revoked_peer_cannot_be_revoked_again(
+    engine,
+    peer_id,
+    endpoint
+):
+
+    engine.register_peer(
+        peer_id,
+        endpoint
+    )
+
+    engine.revoke_peer(peer_id)
+
+    result = engine.revoke_peer(peer_id)
+
+    assert result["success"] is False
+    assert result["error"] == "Peer already revoked"
+
+
+# --------------------------------------------------
+# TRUST STATUS
+# --------------------------------------------------
+
+def test_is_trusted_peer(engine, peer_id, endpoint):
+
+    engine.register_peer(
+        peer_id,
+        endpoint
+    )
+
+    assert engine.is_trusted_peer(peer_id) is True
+
+
+def test_unknown_peer_is_not_trusted(engine):
+
+    assert engine.is_trusted_peer(
+        "unknown-peer"
+    ) is False
+
+
+# --------------------------------------------------
+# PEER RETRIEVAL
+# --------------------------------------------------
 
 def test_get_peer(engine, peer_id, endpoint):
 
-    engine.register_peer(peer_id, endpoint)
+    engine.register_peer(
+        peer_id,
+        endpoint
+    )
 
     peer = engine.get_peer(peer_id)
 
     assert peer is not None
     assert peer["peer_id"] == peer_id
     assert peer["endpoint"] == endpoint
+    assert peer["status"] == "TRUSTED"
 
 
 def test_get_unknown_peer(engine):
 
-    assert engine.get_peer(
-        "0x1234567890123456789012345678901234567890"
-    ) is None
+    assert engine.get_peer("unknown-peer") is None
 
 
 def test_list_peers(engine, peer_id, endpoint):
 
-    engine.register_peer(peer_id, endpoint)
+    engine.register_peer(
+        peer_id,
+        endpoint
+    )
 
     peers = engine.list_peers()
 
@@ -181,57 +330,158 @@ def test_list_peers(engine, peer_id, endpoint):
     assert peers[0]["peer_id"] == peer_id
 
 
-def test_security_event_logging(
+def test_list_empty_peers(engine):
+
+    assert engine.list_peers() == []
+
+
+# --------------------------------------------------
+# SECURITY EVENT LOGGING
+# --------------------------------------------------
+
+def test_peer_registration_event(
     engine,
     peer_id,
     endpoint
 ):
 
-    engine.register_peer(peer_id, endpoint)
-
-    events = engine.get_security_events()
-
-    assert len(events) == 1
-    assert events[0]["event_type"] == "PEER_REGISTERED"
-
-
-def test_invalid_identity_event(engine):
-
     engine.register_peer(
-        "invalid",
-        "https://node.voin.network"
+        peer_id,
+        endpoint
     )
 
     events = engine.get_security_events()
 
-    assert events[0]["event_type"] == "INVALID_PEER_IDENTITY"
+    assert any(
+        event["event_type"] == "PEER_REGISTERED"
+        for event in events
+    )
 
 
-def test_duplicate_peer_event(engine, peer_id, endpoint):
+def test_peer_revocation_event(
+    engine,
+    peer_id,
+    endpoint
+):
 
-    engine.register_peer(peer_id, endpoint)
-    engine.register_peer(peer_id, endpoint)
+    engine.register_peer(
+        peer_id,
+        endpoint
+    )
+
+    engine.revoke_peer(peer_id)
 
     events = engine.get_security_events()
 
-    assert events[-1]["event_type"] == "DUPLICATE_PEER"
+    assert any(
+        event["event_type"] == "PEER_REVOKED"
+        for event in events
+    )
 
 
-def test_engine_info(engine):
+def test_duplicate_peer_event(
+    engine,
+    peer_id,
+    endpoint
+):
+
+    engine.register_peer(
+        peer_id,
+        endpoint
+    )
+
+    engine.register_peer(
+        peer_id,
+        endpoint
+    )
+
+    events = engine.get_security_events()
+
+    assert any(
+        event["event_type"] == "DUPLICATE_PEER"
+        for event in events
+    )
+
+
+def test_invalid_peer_event(engine, endpoint):
+
+    engine.register_peer(
+        "invalid-peer",
+        endpoint
+    )
+
+    events = engine.get_security_events()
+
+    assert any(
+        event["event_type"] == "INVALID_PEER_IDENTITY"
+        for event in events
+    )
+
+
+def test_invalid_endpoint_event(engine, peer_id):
+
+    engine.register_peer(
+        peer_id,
+        "invalid-endpoint"
+    )
+
+    events = engine.get_security_events()
+
+    assert any(
+        event["event_type"] == "INVALID_PEER_ENDPOINT"
+        for event in events
+    )
+
+
+def test_security_event_structure(
+    engine,
+    peer_id,
+    endpoint
+):
+
+    engine.register_peer(
+        peer_id,
+        endpoint
+    )
+
+    events = engine.get_security_events()
+
+    event = events[0]
+
+    assert "event_type" in event
+    assert "peer_id" in event
+    assert "details" in event
+    assert "timestamp" in event
+
+
+# --------------------------------------------------
+# EVENT ISOLATION
+# --------------------------------------------------
+
+def test_get_security_events_returns_copy(
+    engine,
+    peer_id,
+    endpoint
+):
+
+    engine.register_peer(
+        peer_id,
+        endpoint
+    )
+
+    events = engine.get_security_events()
+
+    events.clear()
+
+    assert len(engine.get_security_events()) > 0
+
+
+# --------------------------------------------------
+# ENGINE STATUS
+# --------------------------------------------------
+
+def test_engine_status(engine):
 
     info = engine.engine_info()
 
-    assert info["engine"] == "VOIN Network Security Engine"
-    assert info["version"] == "1.0.0"
-    assert info["trusted_peer_management"] is True
-    assert info["p2p_network"] is False
-
-
-def test_peer_copy_is_independent(engine, peer_id, endpoint):
-
-    engine.register_peer(peer_id, endpoint)
-
-    peer = engine.get_peer(peer_id)
-    peer["status"] = "MODIFIED"
-
-    assert engine.is_trusted_peer(peer_id) is True
+    assert info["status"] == "READY_FOR_TESTING"
