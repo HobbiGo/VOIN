@@ -1,5 +1,5 @@
 """
-VOIN SECURITY INTEGRATION ENGINE V1.2
+VOIN SECURITY INTEGRATION ENGINE V1.3
 
 Integrates:
 - Wallet Verification Engine
@@ -7,11 +7,11 @@ Integrates:
 - Persistent Nonce Engine
 - Digital Signature Engine
 - SQLite Storage
+- Atomic Authentication Consumption
 - Replay Protection
 """
 
 import re
-import hashlib
 
 from security.verification import VOINVerificationEngine
 from security.nonce import VOINNonceEngine
@@ -19,7 +19,7 @@ from security.nonce import VOINNonceEngine
 
 class VOINSecurityIntegration:
 
-    VERSION = "1.2.0"
+    VERSION = "1.3.0"
 
     def __init__(self, expiry_seconds=300):
 
@@ -95,9 +95,9 @@ class VOINSecurityIntegration:
                 "status": "INVALID_OR_EXPIRED_CHALLENGE"
             }
 
-        challenge = self.challenge_engine.storage.get_challenge(
-            challenge_id
-        )
+        storage = self.challenge_engine.storage
+
+        challenge = storage.get_challenge(challenge_id)
 
         if not challenge:
             return {
@@ -119,12 +119,10 @@ class VOINSecurityIntegration:
 
         nonce = match.group(1)
 
-        # Verify the nonce record before signature verification.
-        nonce_hash = hashlib.sha256(
-            nonce.encode()
-        ).hexdigest()
+        nonce_hash = storage._hash_nonce(nonce)
 
-        with self.challenge_engine.storage._connect() as connection:
+        # Check that the nonce belongs to this wallet.
+        with storage._connect() as connection:
 
             nonce_record = connection.execute(
                 """
@@ -145,12 +143,13 @@ class VOINSecurityIntegration:
                 "status": "NONCE_MISMATCH"
             }
 
-        if nonce_record[0] == 1:
+        if nonce_record["used"] == 1:
             return {
                 "success": False,
                 "status": "NONCE_ALREADY_USED"
             }
 
+        # Verify digital signature before consuming credentials.
         result = self.signature_engine.verify_signature(
             message=challenge["message"],
             signature=signature,
@@ -163,22 +162,17 @@ class VOINSecurityIntegration:
                 "status": result["status"]
             }
 
-        if not self.challenge_engine.consume_challenge(
+        # Consume challenge and nonce in ONE SQLite transaction.
+        consumed = storage.consume_authentication(
             challenge_id,
-            wallet_address
-        ):
-            return {
-                "success": False,
-                "status": "CHALLENGE_ALREADY_USED"
-            }
-
-        if not self.nonce_engine.verify_nonce(
             wallet_address,
             nonce
-        ):
+        )
+
+        if not consumed:
             return {
                 "success": False,
-                "status": "NONCE_VERIFICATION_FAILED"
+                "status": "AUTHENTICATION_CONSUMPTION_FAILED"
             }
 
         return {
@@ -201,6 +195,7 @@ class VOINSecurityIntegration:
             "digital_signature": True,
             "nonce_protection": True,
             "persistent_storage": True,
+            "atomic_authentication": True,
             "replay_protection": True,
             "status": "READY_FOR_TESTING"
         }
