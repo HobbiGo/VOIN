@@ -1,5 +1,5 @@
 """
-VOIN SECURITY INTEGRATION ENGINE V1.4
+VOIN SECURITY INTEGRATION ENGINE V1.5
 
 Integrates:
 - Wallet Verification Engine
@@ -10,6 +10,7 @@ Integrates:
 - Atomic Authentication Consumption
 - Replay Protection
 - Security Audit Engine
+- Rate Limiting Engine
 """
 
 import re
@@ -18,13 +19,20 @@ import time
 from security.verification import VOINVerificationEngine
 from security.nonce import VOINNonceEngine
 from security.audit import VOINAuditEngine
+from security.rate_limit import VOINRateLimitEngine
 
 
 class VOINSecurityIntegration:
 
-    VERSION = "1.4.0"
+    VERSION = "1.5.0"
 
-    def __init__(self, expiry_seconds=300):
+    def __init__(
+        self,
+        expiry_seconds=300,
+        max_attempts=5,
+        window_seconds=300,
+        cooldown_seconds=300
+    ):
 
         self.verification_engine = VOINVerificationEngine(
             expiry_seconds=expiry_seconds
@@ -46,6 +54,13 @@ class VOINSecurityIntegration:
 
         self.audit_engine = VOINAuditEngine(
             storage=storage
+        )
+
+        self.rate_limit_engine = VOINRateLimitEngine(
+            storage=storage,
+            max_attempts=max_attempts,
+            window_seconds=window_seconds,
+            cooldown_seconds=cooldown_seconds
         )
 
     def _audit_failure(
@@ -117,6 +132,23 @@ class VOINSecurityIntegration:
             return {
                 "success": False,
                 "status": "INVALID_ADDRESS"
+            }
+
+        # RATE LIMITING CHECK
+
+        rate_result = self.rate_limit_engine.consume_attempt(
+            wallet_address
+        )
+
+        if not rate_result["allowed"]:
+
+            return {
+                "success": False,
+                "status": "RATE_LIMIT_EXCEEDED",
+                "wallet_address": wallet_address,
+                "attempts": rate_result["attempts"],
+                "remaining": 0,
+                "retry_after": rate_result["retry_after"]
             }
 
         storage = self.challenge_engine.storage
@@ -320,5 +352,6 @@ class VOINSecurityIntegration:
             "replay_protection": True,
             "security_audit": True,
             "automatic_audit_logging": True,
+            "rate_limiting": True,
             "status": "READY_FOR_TESTING"
         }
