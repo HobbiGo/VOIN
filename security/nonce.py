@@ -1,64 +1,93 @@
 """
-VOIN NONCE ENGINE V1.0
+VOIN NONCE ENGINE V1.1
 
-Prevents nonce reuse and replay attacks.
+SQLite-based persistent nonce management.
+
+Features:
+- Cryptographically secure nonce generation
+- Persistent nonce storage
+- Atomic nonce consumption
+- Replay attack protection
+- Wallet-based nonce management
+- Security audit integration
 """
 
 import secrets
 import time
+import sqlite3
+
+from security.storage import VOINStorageEngine
 
 
 class VOINNonceEngine:
 
-    VERSION = "1.0.0"
+    VERSION = "1.1.0"
 
-    def __init__(self):
-        self.wallet_nonces = {}
+    def __init__(self, storage=None):
 
-    # Generate nonce
+        self.storage = storage or VOINStorageEngine()
+
+    # Generate and persist nonce
     def generate_nonce(self, wallet_address):
 
         if not isinstance(wallet_address, str):
             raise ValueError("Invalid wallet address")
 
-        wallet = wallet_address.lower()
+        if not wallet_address.strip():
+            raise ValueError("Empty wallet address")
 
-        nonce = secrets.token_hex(32)
+        wallet = wallet_address.strip()
 
-        timestamp = int(time.time())
+        # Retry in the extremely unlikely event of a collision.
+        for _ in range(3):
 
-        self.wallet_nonces[wallet] = {
-            "nonce": nonce,
-            "created_at": timestamp,
-            "used": False
-        }
+            nonce = secrets.token_hex(32)
 
-        return {
-            "success": True,
-            "wallet": wallet_address,
-            "nonce": nonce,
-            "timestamp": timestamp
-        }
+            timestamp = int(time.time())
 
-    # Verify nonce
+            try:
+
+                self.storage.save_nonce(
+                    wallet,
+                    nonce
+                )
+
+                return {
+                    "success": True,
+                    "wallet": wallet,
+                    "nonce": nonce,
+                    "timestamp": timestamp
+                }
+
+            except sqlite3.IntegrityError:
+                continue
+
+        raise RuntimeError("Unable to generate unique nonce")
+
+    # Verify and atomically consume nonce
     def verify_nonce(self, wallet_address, nonce):
 
-        wallet = wallet_address.lower()
-
-        record = self.wallet_nonces.get(wallet)
-
-        if not record:
+        if not isinstance(wallet_address, str):
             return False
 
-        if record["used"]:
+        if not wallet_address.strip():
             return False
 
-        if record["nonce"] != nonce:
+        if not isinstance(nonce, str):
             return False
 
-        record["used"] = True
+        if not nonce:
+            return False
 
-        return True
+        try:
+
+            return self.storage.consume_nonce(
+                wallet_address,
+                nonce
+            )
+
+        except (ValueError, TypeError):
+            return False
 
     # Engine information
     @classmethod
@@ -67,7 +96,11 @@ class VOINNonceEngine:
         return {
             "engine": "VOIN Nonce Engine",
             "version": cls.VERSION,
-            "random_nonce": True,
+            "storage": "SQLite",
+            "cryptographic_random_nonce": True,
+            "persistent_nonce_storage": True,
+            "atomic_consumption": True,
             "replay_protection": True,
+            "restart_protection": True,
             "status": "READY_FOR_TESTING"
         }
