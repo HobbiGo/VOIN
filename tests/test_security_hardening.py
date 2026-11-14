@@ -1,5 +1,5 @@
 """
-VOIN SECURITY HARDENING TEST SUITE V1.1
+VOIN SECURITY HARDENING TEST SUITE V1.2
 
 Tests additional security protections:
 - Invalid signatures
@@ -9,6 +9,8 @@ Tests additional security protections:
 - Nonce mismatch
 - Invalid wallet addresses
 """
+
+import hashlib
 
 import pytest
 
@@ -60,9 +62,17 @@ def test_expired_challenge(integration, wallet):
 
     challenge_id = challenge["challenge_id"]
 
-    integration.challenge_engine.challenges[
-        challenge_id
-    ]["expires_at"] = 0
+    storage = integration.challenge_engine.storage
+
+    with storage._connect() as connection:
+        connection.execute(
+            """
+            UPDATE challenges
+            SET expires_at = 0
+            WHERE challenge_id = ?
+            """,
+            (challenge_id,)
+        )
 
     signed = Account.sign_message(
         encode_defunct(text=challenge["message"]),
@@ -85,9 +95,32 @@ def test_nonce_mismatch(integration, wallet):
         wallet.address
     )
 
-    integration.nonce_engine.wallet_nonces[
-        wallet.address.lower()
-    ]["nonce"] = "0" * 64
+    nonce = challenge["nonce"]
+
+    storage = integration.challenge_engine.storage
+
+    original_hash = hashlib.sha256(
+        nonce.encode()
+    ).hexdigest()
+
+    wrong_hash = hashlib.sha256(
+        ("wrong-" + nonce).encode()
+    ).hexdigest()
+
+    with storage._connect() as connection:
+        connection.execute(
+            """
+            UPDATE nonces
+            SET nonce_hash = ?
+            WHERE wallet_address = ?
+            AND nonce_hash = ?
+            """,
+            (
+                wrong_hash,
+                wallet.address.lower(),
+                original_hash
+            )
+        )
 
     signed = Account.sign_message(
         encode_defunct(text=challenge["message"]),
@@ -135,11 +168,13 @@ def test_challenge_replay_rejected(integration, wallet):
     challenge_id = challenge["challenge_id"]
 
     first = integration.challenge_engine.consume_challenge(
-        challenge_id
+        challenge_id,
+        wallet.address
     )
 
     second = integration.challenge_engine.consume_challenge(
-        challenge_id
+        challenge_id,
+        wallet.address
     )
 
     assert first is True
