@@ -75,6 +75,7 @@ def create_authentication(self, wallet_address):
     if not self.signature_engine.validate_address(
         wallet_address
     ):
+
         return {
             "success": False,
             "status": "INVALID_ADDRESS"
@@ -87,7 +88,7 @@ def create_authentication(self, wallet_address):
     if not challenge_result["success"]:
 
         self._audit_failure(
-            wallet_address,
+            wallet_address=wallet_address,
             reason="CHALLENGE_GENERATION_FAILED"
         )
 
@@ -203,9 +204,9 @@ def verify_authentication(
     if not challenge:
 
         self._audit_failure(
-            wallet_address,
-            challenge_id,
-            "CHALLENGE_NOT_FOUND"
+            wallet_address=wallet_address,
+            challenge_id=challenge_id,
+            reason="CHALLENGE_NOT_FOUND"
         )
 
         return {
@@ -222,9 +223,9 @@ def verify_authentication(
     if not match:
 
         self._audit_failure(
-            wallet_address,
-            challenge_id,
-            "INVALID_CHALLENGE_NONCE"
+            wallet_address=wallet_address,
+            challenge_id=challenge_id,
+            reason="INVALID_CHALLENGE_NONCE"
         )
 
         return {
@@ -289,9 +290,9 @@ def verify_authentication(
     if not result["success"]:
 
         self._audit_failure(
-            wallet_address,
-            challenge_id,
-            result["status"]
+            wallet_address=wallet_address,
+            challenge_id=challenge_id,
+            reason=result["status"]
         )
 
         return {
