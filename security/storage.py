@@ -1,5 +1,5 @@
 """
-VOIN SECURITY PERSISTENCE ENGINE V1.1
+VOIN SECURITY PERSISTENCE ENGINE V1.2
 
 SQLite-based persistent security storage.
 
@@ -10,6 +10,8 @@ Features:
 - Atomic nonce consumption
 - Atomic authentication consumption
 - Security audit event logging
+- Persistent network peer management
+- Persistent network security events
 
 Security note:
 This module stores security metadata, not private keys.
@@ -19,12 +21,13 @@ import sqlite3
 import time
 import json
 import hashlib
+
 from pathlib import Path
 
 
 class VOINStorageEngine:
 
-    VERSION = "1.1.0"
+    VERSION = "1.2.0"
 
     def __init__(self, database_path="voin_security.db"):
 
@@ -93,6 +96,27 @@ class VOINStorageEngine:
                 )
             """)
 
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS network_peers (
+                    peer_id TEXT PRIMARY KEY,
+                    endpoint TEXT NOT NULL,
+                    status TEXT NOT NULL
+                        CHECK (status IN ('TRUSTED', 'REVOKED')),
+                    registered_at INTEGER NOT NULL,
+                    updated_at INTEGER NOT NULL
+                )
+            """)
+
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS network_security_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_type TEXT NOT NULL,
+                    peer_id TEXT,
+                    created_at INTEGER NOT NULL,
+                    details TEXT
+                )
+            """)
+
     @staticmethod
     def _hash_nonce(nonce):
 
@@ -115,6 +139,10 @@ class VOINStorageEngine:
             raise ValueError("Empty wallet address")
 
         return wallet.lower()
+
+    # --------------------------------------------------
+    # NONCE STORAGE
+    # --------------------------------------------------
 
     def save_nonce(self, wallet_address, nonce):
 
@@ -178,6 +206,10 @@ class VOINStorageEngine:
             connection.commit()
 
             return success
+
+    # --------------------------------------------------
+    # CHALLENGE STORAGE
+    # --------------------------------------------------
 
     def save_challenge(
         self,
@@ -294,18 +326,16 @@ class VOINStorageEngine:
 
             return success
 
+    # --------------------------------------------------
+    # ATOMIC AUTHENTICATION
+    # --------------------------------------------------
+
     def consume_authentication(
         self,
         challenge_id,
         wallet_address,
         nonce
     ):
-        """
-        Atomically consume challenge and nonce.
-
-        Both records must be valid.
-        If either operation fails, neither is consumed.
-        """
 
         wallet = self._normalize_wallet(wallet_address)
         nonce_hash = self._hash_nonce(nonce)
@@ -317,7 +347,6 @@ class VOINStorageEngine:
 
                 connection.execute("BEGIN IMMEDIATE")
 
-                # Validate and consume challenge.
                 challenge_cursor = connection.execute("""
                     UPDATE challenges
                     SET used = 1
@@ -337,7 +366,6 @@ class VOINStorageEngine:
                     connection.rollback()
                     return False
 
-                # Validate and consume nonce.
                 nonce_cursor = connection.execute("""
                     UPDATE nonces
                     SET used = 1
@@ -353,7 +381,6 @@ class VOINStorageEngine:
                     connection.rollback()
                     return False
 
-                # Record successful atomic consumption.
                 connection.execute("""
                     INSERT INTO security_events (
                         event_type,
@@ -382,6 +409,10 @@ class VOINStorageEngine:
 
                 connection.rollback()
                 raise
+
+    # --------------------------------------------------
+    # GENERAL SECURITY AUDIT
+    # --------------------------------------------------
 
     def log_event(
         self,
@@ -442,6 +473,200 @@ class VOINStorageEngine:
 
         return [dict(row) for row in rows]
 
+    # --------------------------------------------------
+    # NETWORK PEER PERSISTENCE
+    # --------------------------------------------------
+
+    def save_network_peer(self, peer_id, endpoint):
+
+        if not isinstance(peer_id, str) or not peer_id:
+            raise ValueError("Invalid peer ID")
+
+        if not isinstance(endpoint, str) or not endpoint:
+            raise ValueError("Invalid peer endpoint")
+
+        timestamp = int(time.time())
+
+        with self._connect() as connection:
+
+            connection.execute("""
+                INSERT INTO network_peers (
+                    peer_id,
+                    endpoint,
+                    status,
+                    registered_at,
+                    updated_at
+                )
+                VALUES (?, ?, 'TRUSTED', ?, ?)
+            """, (
+                peer_id,
+                endpoint,
+                timestamp,
+                timestamp
+            ))
+
+            connection.execute("""
+                INSERT INTO network_security_events (
+                    event_type,
+                    peer_id,
+                    created_at
+                )
+                VALUES (?, ?, ?)
+            """, (
+                "PEER_REGISTERED",
+                peer_id,
+                timestamp
+            ))
+
+        return True
+
+    def get_network_peer(self, peer_id):
+
+        with self._connect() as connection:
+
+            row = connection.execute("""
+                SELECT *
+                FROM network_peers
+                WHERE peer_id = ?
+            """, (peer_id,)).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def list_network_peers(self, status=None):
+
+        with self._connect() as connection:
+
+            if status is None:
+
+                rows = connection.execute("""
+                    SELECT *
+                    FROM network_peers
+                    ORDER BY registered_at ASC
+                """).fetchall()
+
+            else:
+
+                if status not in {"TRUSTED", "REVOKED"}:
+                    raise ValueError("Invalid peer status")
+
+                rows = connection.execute("""
+                    SELECT *
+                    FROM network_peers
+                    WHERE status = ?
+                    ORDER BY registered_at ASC
+                """, (status,)).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def revoke_network_peer(self, peer_id):
+
+        timestamp = int(time.time())
+
+        with self._connect() as connection:
+
+            connection.execute("BEGIN IMMEDIATE")
+
+            cursor = connection.execute("""
+                UPDATE network_peers
+                SET status = 'REVOKED',
+                    updated_at = ?
+                WHERE peer_id = ?
+                AND status = 'TRUSTED'
+            """, (
+                timestamp,
+                peer_id
+            ))
+
+            success = cursor.rowcount == 1
+
+            if success:
+
+                connection.execute("""
+                    INSERT INTO network_security_events (
+                        event_type,
+                        peer_id,
+                        created_at
+                    )
+                    VALUES (?, ?, ?)
+                """, (
+                    "PEER_REVOKED",
+                    peer_id,
+                    timestamp
+                ))
+
+            connection.commit()
+
+            return success
+
+    def log_network_event(
+        self,
+        event_type,
+        peer_id=None,
+        details=None
+    ):
+
+        if not isinstance(event_type, str) or not event_type:
+            raise ValueError("Invalid network event type")
+
+        if peer_id is not None:
+            if not isinstance(peer_id, str) or not peer_id:
+                raise ValueError("Invalid peer ID")
+
+        if details is not None:
+            details = json.dumps(
+                details,
+                sort_keys=True
+            )
+
+        with self._connect() as connection:
+
+            connection.execute("""
+                INSERT INTO network_security_events (
+                    event_type,
+                    peer_id,
+                    created_at,
+                    details
+                )
+                VALUES (?, ?, ?, ?)
+            """, (
+                event_type,
+                peer_id,
+                int(time.time()),
+                details
+            ))
+
+        return True
+
+    def get_network_security_events(self, limit=100):
+
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or limit <= 0
+        ):
+            raise ValueError("Invalid event limit")
+
+        with self._connect() as connection:
+
+            rows = connection.execute("""
+                SELECT *
+                FROM network_security_events
+                ORDER BY id DESC
+                LIMIT ?
+            """, (limit,)).fetchall()
+
+        return [
+            dict(row)
+            for row in rows
+        ]
+
+    # --------------------------------------------------
+    # ENGINE INFORMATION
+    # --------------------------------------------------
+
     @classmethod
     def engine_info(cls):
 
@@ -454,6 +679,8 @@ class VOINStorageEngine:
             "atomic_consumption": True,
             "atomic_authentication": True,
             "security_audit_logging": True,
+            "persistent_network_peers": True,
+            "persistent_network_events": True,
             "private_key_storage": False,
             "status": "READY_FOR_TESTING"
         }
