@@ -1,26 +1,25 @@
 """
-VOIN SECURITY GATEWAY TEST SUITE V1.0.1
-Tests:
-Gateway creation
-Invalid engine rejection
-Engine information
-HTTP server creation and shutdown
+VOIN SECURITY GATEWAY TEST SUITE V1.0.2
 """
 import pytest
 from security.api import VOINSecurityAPIEngine
 from security.gateway import VOINSecurityGateway
 from security.integration import VOINSecurityIntegration
 TEST_TOKEN = "voin-test-api-token-" + ("x" * 40)
-class FakeDashboard:
-def get_dashboard(self):
-    return {
-        "status": "OPERATIONAL"
-    }
-
+def make_dashboard():
+return type(
+"FakeDashboard",
+(),
+{
+"get_dashboard": lambda self: {
+"status": "OPERATIONAL"
+}
+}
+)()
 @pytest.fixture
 def api_engine():
 return VOINSecurityAPIEngine(
-dashboard=FakeDashboard(),
+dashboard=make_dashboard(),
 api_token=TEST_TOKEN
 )
 @pytest.fixture
