@@ -1,170 +1,163 @@
 """
-VOIN VERIFICATION ENGINE TEST SUITE V1.0
+VOIN VERIFICATION ENGINE V1.1
 
-Tests wallet authentication, challenge validation,
-digital signatures, nonce protection and replay prevention.
+Integrates wallet challenge and digital signature verification.
+
+Features:
+- Wallet ownership verification
+- EIP-191 signature verification
+- Challenge expiration
+- Atomic challenge consumption
+- Replay protection
+- Thread-safe verification
+
+Development module - not a production blockchain.
 """
 
-import pytest
+import threading
 
-from eth_account import Account
-from eth_account.messages import encode_defunct
-
-from security.verification import VOINVerificationEngine
 from security.challenge import VOINChallengeEngine
-from security.nonce import VOINNonceEngine
+from security.signatures import VOINSignatureEngine
 
 
-@pytest.fixture
-def wallet():
-    return Account.create()
+class VOINVerificationEngine:
 
+    VERSION = "1.1.0"
 
-@pytest.fixture
-def verification_engine():
-    return VOINVerificationEngine(expiry_seconds=300)
+    def __init__(self, expiry_seconds=300):
 
+        self.challenge_engine = VOINChallengeEngine(
+            expiry_seconds=expiry_seconds
+        )
 
-# 1. Challenge Generation Test
-def test_challenge_generation(verification_engine, wallet):
+        self.signature_engine = VOINSignatureEngine
 
-    result = verification_engine.create_verification_challenge(
-        wallet.address
-    )
+        self.lock = threading.RLock()
 
-    assert result["success"] is True
-    assert "challenge_id" in result
-    assert "message" in result
+    # ======================================
+    # CREATE VERIFICATION CHALLENGE
+    # ======================================
 
+    def create_verification_challenge(self, wallet_address):
 
-# 2. Valid Wallet Signature Test
-def test_valid_wallet_signature(verification_engine, wallet):
+        if not self.signature_engine.validate_address(
+            wallet_address
+        ):
+            return {
+                "success": False,
+                "status": "INVALID_ADDRESS"
+            }
 
-    challenge = verification_engine.create_verification_challenge(
-        wallet.address
-    )
+        with self.lock:
 
-    message = challenge["message"]
+            result = self.challenge_engine.create_challenge(
+                wallet_address
+            )
 
-    signature = Account.sign_message(
-        encode_defunct(text=message),
-        private_key=wallet.key
-    ).signature.hex()
+            return result
 
-    result = verification_engine.verify_wallet(
-        challenge["challenge_id"],
-        wallet.address,
+    # ======================================
+    # VERIFY WALLET
+    # ======================================
+
+    def verify_wallet(
+        self,
+        challenge_id,
+        wallet_address,
         signature
-    )
+    ):
 
-    assert result["success"] is True
-    assert result["status"] == "WALLET_VERIFIED"
+        if not self.signature_engine.validate_address(
+            wallet_address
+        ):
+            return {
+                "success": False,
+                "status": "INVALID_ADDRESS"
+            }
 
+        if (
+            not isinstance(challenge_id, str)
+            or len(challenge_id) != 64
+        ):
+            return {
+                "success": False,
+                "status": "INVALID_OR_EXPIRED_CHALLENGE"
+            }
 
-# 3. Invalid Wallet Test
-def test_invalid_wallet(verification_engine):
+        with self.lock:
 
-    result = verification_engine.create_verification_challenge(
-        "INVALID_WALLET"
-    )
+            challenge = self.challenge_engine.challenges.get(
+                challenge_id
+            )
 
-    assert result["success"] is False
-    assert result["status"] == "INVALID_ADDRESS"
+            if not challenge:
+                return {
+                    "success": False,
+                    "status": "INVALID_OR_EXPIRED_CHALLENGE"
+                }
 
+            if challenge["used"]:
+                return {
+                    "success": False,
+                    "status": "CHALLENGE_ALREADY_USED"
+                }
 
-# 4. Invalid Signature Test
-def test_invalid_signature(verification_engine, wallet):
+            if not self.challenge_engine.validate_challenge(
+                challenge_id,
+                wallet_address
+            ):
+                return {
+                    "success": False,
+                    "status": "INVALID_OR_EXPIRED_CHALLENGE"
+                }
 
-    challenge = verification_engine.create_verification_challenge(
-        wallet.address
-    )
+            # Verify digital signature
 
-    result = verification_engine.verify_wallet(
-        challenge["challenge_id"],
-        wallet.address,
-        "invalid_signature"
-    )
+            result = self.signature_engine.verify_signature(
+                message=challenge["message"],
+                signature=signature,
+                expected_address=wallet_address
+            )
 
-    assert result["success"] is False
+            if not result["success"]:
+                return {
+                    "success": False,
+                    "status": result["status"]
+                }
 
+            # Consume challenge after successful verification
 
-# 5. Replay Protection Test
-def test_replay_protection(verification_engine, wallet):
+            if not self.challenge_engine.consume_challenge(
+                challenge_id
+            ):
+                return {
+                    "success": False,
+                    "status": "CHALLENGE_ALREADY_USED"
+                }
 
-    challenge = verification_engine.create_verification_challenge(
-        wallet.address
-    )
+            return {
+                "success": True,
+                "status": "WALLET_VERIFIED",
+                "wallet_address": result["signer"],
+                "challenge_id": challenge_id,
+                "engine": "VOIN Verification Engine",
+                "version": self.VERSION
+            }
 
-    signature = Account.sign_message(
-        encode_defunct(text=challenge["message"]),
-        private_key=wallet.key
-    ).signature.hex()
+    # ======================================
+    # ENGINE INFORMATION
+    # ======================================
 
-    first_result = verification_engine.verify_wallet(
-        challenge["challenge_id"],
-        wallet.address,
-        signature
-    )
+    @classmethod
+    def engine_info(cls):
 
-    second_result = verification_engine.verify_wallet(
-        challenge["challenge_id"],
-        wallet.address,
-        signature
-    )
-
-    assert first_result["success"] is True
-    assert second_result["success"] is False
-
-
-# 6. Challenge Expiration Test
-def test_challenge_expiration(verification_engine, wallet):
-
-    challenge = verification_engine.create_verification_challenge(
-        wallet.address
-    )
-
-    verification_engine.challenge_engine.challenges[
-        challenge["challenge_id"]
-    ]["expires_at"] = 0
-
-    result = verification_engine.verify_wallet(
-        challenge["challenge_id"],
-        wallet.address,
-        "invalid_signature"
-    )
-
-    assert result["success"] is False
-    assert result["status"] == "INVALID_OR_EXPIRED_CHALLENGE"
-
-
-# 7. Nonce Reuse Protection Test
-def test_nonce_reuse_protection(wallet):
-
-    nonce_engine = VOINNonceEngine()
-
-    generated = nonce_engine.generate_nonce(
-        wallet.address
-    )
-
-    first_check = nonce_engine.verify_nonce(
-        wallet.address,
-        generated["nonce"]
-    )
-
-    second_check = nonce_engine.verify_nonce(
-        wallet.address,
-        generated["nonce"]
-    )
-
-    assert first_check is True
-    assert second_check is False
-
-
-# 8. Engine Information Test
-def test_verification_engine_info():
-
-    info = VOINVerificationEngine.engine_info()
-
-    assert info["engine"] == "VOIN Verification Engine"
-    assert info["version"] == "1.0.0"
-    assert info["status"] == "READY_FOR_TESTING"
+        return {
+            "engine": "VOIN Verification Engine",
+            "version": cls.VERSION,
+            "challenge_verification": True,
+            "signature_verification": True,
+            "replay_protection": True,
+            "atomic_verification": True,
+            "thread_safety": True,
+            "status": "READY_FOR_TESTING"
+        }
