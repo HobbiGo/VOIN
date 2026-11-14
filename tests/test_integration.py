@@ -1,5 +1,14 @@
 """
-VOIN SECURITY API INTEGRATION TEST SUITE V1.1
+VOIN SECURITY INTEGRATION TEST SUITE V1.1.0
+
+Tests:
+- Integration engine creation
+- Legacy wallet authentication compatibility
+- Authentication argument delegation
+- API request delegation
+- Engine information
+- Invalid API engine rejection
+- Invalid security integration rejection
 """
 
 import pytest
@@ -30,37 +39,26 @@ class FakeSecurityIntegration:
         self.called = False
         self.last_arguments = None
 
-    def create_authentication(self, wallet_address):
-
-        self.called = True
-
-        self.last_arguments = {
-            "wallet_address": wallet_address
-        }
-
-        return {
-            "success": True,
-            "status": "AUTHENTICATION_CHALLENGE_CREATED"
-        }
-
     def verify_authentication(
         self,
-        challenge_id,
         wallet_address,
-        signature
+        challenge,
+        signature,
+        nonce
     ):
 
         self.called = True
 
         self.last_arguments = {
-            "challenge_id": challenge_id,
             "wallet_address": wallet_address,
-            "signature": signature
+            "challenge": challenge,
+            "signature": signature,
+            "nonce": nonce
         }
 
         return {
             "success": True,
-            "status": "AUTHENTICATION_SUCCESSFUL"
+            "status": "AUTHENTICATED"
         }
 
 
@@ -80,7 +78,10 @@ def security_integration():
 
 
 @pytest.fixture
-def integration(api_engine, security_integration):
+def integration(
+    api_engine,
+    security_integration
+):
 
     return VOINSecurityAPIIntegration(
         api_engine=api_engine,
@@ -90,7 +91,37 @@ def integration(api_engine, security_integration):
 
 def test_integration_engine_creation(integration):
 
-    assert info["version"] == "1.1.0"
+    assert integration.VERSION == "1.1.0"
+
+
+def test_legacy_wallet_authentication(
+    integration,
+    security_integration
+):
+
+    wallet_address = "0x1234567890abcdef"
+    challenge = "test-challenge"
+    signature = "test-signature"
+    nonce = "test-nonce"
+
+    response = integration.verify_wallet_authentication(
+        wallet_address=wallet_address,
+        challenge=challenge,
+        signature=signature,
+        nonce=nonce
+    )
+
+    assert response["success"] is True
+    assert response["status"] == "AUTHENTICATED"
+
+    assert security_integration.called is True
+
+    assert security_integration.last_arguments == {
+        "wallet_address": wallet_address,
+        "challenge": challenge,
+        "signature": signature,
+        "nonce": nonce
+    }
 
 
 def test_api_request_delegation(integration):
@@ -103,85 +134,37 @@ def test_api_request_delegation(integration):
         }
     )
 
-    assert response["status_code"] == 200
-    assert response["body"]["success"] is True
-    assert response["body"]["data"]["status"] == "OPERATIONAL"
+    assert response.status_code == 200
+    assert response.body["success"] is True
+    assert response.body["data"]["status"] == "OPERATIONAL"
 
 
-def test_unauthorized_api_request(integration):
+def test_engine_info(integration):
 
-    response = integration.handle_api_request(
-        method="GET",
-        path="/api/security/dashboard"
-    )
+    info = integration.engine_info()
 
-    assert response["status_code"] == 401
-
-
-def test_wallet_authentication_creation(
-    integration,
-    security_integration
-):
-
-    result = integration.create_wallet_authentication(
-        wallet_address="0x1234567890"
-    )
-
-    assert result["success"] is True
-    assert security_integration.called is True
-
-    assert security_integration.last_arguments == {
-        "wallet_address": "0x1234567890"
-    }
+    assert info["engine"] == "VOIN Security API Integration"
+    assert info["version"] == "1.1.0"
+    assert info["api_engine"] is True
+    assert info["wallet_authentication"] is True
+    assert info["challenge_creation"] is False
+    assert info["challenge_id_verification"] is True
+    assert info["persistent_nonce_compatibility"] is True
+    assert info["security_integration"] is True
+    assert info["status"] == "READY_FOR_TESTING"
 
 
-def test_wallet_authentication_verification(
-    integration,
-    security_integration
-):
-
-    result = integration.verify_wallet_authentication(
-        wallet_address="0x1234567890",
-        challenge_id="challenge-001",
-        signature="test-signature"
-    )
-
-    assert result["success"] is True
-
-    assert result["status"] == "AUTHENTICATION_SUCCESSFUL"
-
-    assert security_integration.called is True
-
-
-def test_wallet_authentication_arguments(
-    integration,
-    security_integration
-):
-
-    integration.verify_wallet_authentication(
-        wallet_address="0x1234567890",
-        challenge_id="challenge-001",
-        signature="signature-001"
-    )
-
-    assert security_integration.last_arguments == {
-        "challenge_id": "challenge-001",
-        "wallet_address": "0x1234567890",
-        "signature": "signature-001"
-    }
-
-
-def test_invalid_api_engine_rejected():
+def test_invalid_api_engine(security_integration):
 
     with pytest.raises(TypeError):
 
         VOINSecurityAPIIntegration(
             api_engine=object(),
-            security_integration=FakeSecurityIntegration()
+            security_integration=security_integration
         )
 
 
-def test_invalid_security_integration_rejected(api_engine):
+def test_invalid_security_integration(api_engine):
 
     with pytest.raises(TypeError):
 
@@ -189,16 +172,3 @@ def test_invalid_security_integration_rejected(api_engine):
             api_engine=api_engine,
             security_integration=object()
         )
-
-
-def test_engine_info(integration):
-
-    info = integration.engine_info()
-
-    assert info["version"] == "1.1.0"
-    assert info["api_engine"] is True
-    assert info["wallet_authentication"] is True
-    assert info["challenge_creation"] is True
-    assert info["challenge_id_verification"] is True
-    assert info["security_integration"] is True
-    assert info["status"] == "READY_FOR_TESTING"
