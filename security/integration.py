@@ -1,5 +1,5 @@
 """
-VOIN SECURITY INTEGRATION ENGINE V1.3
+VOIN SECURITY INTEGRATION ENGINE V1.4
 
 Integrates:
 - Wallet Verification Engine
@@ -9,17 +9,20 @@ Integrates:
 - SQLite Storage
 - Atomic Authentication Consumption
 - Replay Protection
+- Security Audit Engine
 """
 
 import re
+import time
 
 from security.verification import VOINVerificationEngine
 from security.nonce import VOINNonceEngine
+from security.audit import VOINAuditEngine
 
 
 class VOINSecurityIntegration:
 
-    VERSION = "1.3.0"
+    VERSION = "1.4.0"
 
     def __init__(self, expiry_seconds=300):
 
@@ -35,8 +38,27 @@ class VOINSecurityIntegration:
             self.verification_engine.signature_engine
         )
 
+        storage = self.challenge_engine.storage
+
         self.nonce_engine = VOINNonceEngine(
-            storage=self.challenge_engine.storage
+            storage=storage
+        )
+
+        self.audit_engine = VOINAuditEngine(
+            storage=storage
+        )
+
+    def _audit_failure(
+        self,
+        wallet_address=None,
+        challenge_id=None,
+        reason="AUTHENTICATION_FAILED"
+    ):
+
+        self.audit_engine.record_authentication_failure(
+            wallet_address=wallet_address,
+            challenge_id=challenge_id,
+            reason=reason
         )
 
     def create_authentication(self, wallet_address):
@@ -54,6 +76,12 @@ class VOINSecurityIntegration:
         )
 
         if not challenge_result["success"]:
+
+            self._audit_failure(
+                wallet_address,
+                reason="CHALLENGE_GENERATION_FAILED"
+            )
+
             return {
                 "success": False,
                 "status": "CHALLENGE_GENERATION_FAILED"
@@ -81,25 +109,79 @@ class VOINSecurityIntegration:
         if not self.signature_engine.validate_address(
             wallet_address
         ):
+
+            self._audit_failure(
+                reason="INVALID_ADDRESS"
+            )
+
             return {
                 "success": False,
                 "status": "INVALID_ADDRESS"
             }
 
+        storage = self.challenge_engine.storage
+
         if not self.challenge_engine.validate_challenge(
             challenge_id,
             wallet_address
         ):
+
+            challenge = storage.get_challenge(challenge_id)
+
+            if challenge:
+
+                if challenge["used"] == 1:
+
+                    self.audit_engine.record_replay_attempt(
+                        wallet_address,
+                        challenge_id
+                    )
+
+                    return {
+                        "success": False,
+                        "status": "CHALLENGE_ALREADY_USED"
+                    }
+
+                if challenge["expires_at"] <= int(time.time()):
+
+                    self.audit_engine.record_event(
+                        event_type="EXPIRED_CHALLENGE",
+                        wallet_address=wallet_address,
+                        reference_id=challenge_id,
+                        details={
+                            "result": "REJECTED"
+                        }
+                    )
+
+                    return {
+                        "success": False,
+                        "status": "INVALID_OR_EXPIRED_CHALLENGE"
+                    }
+
+            self.audit_engine.record_event(
+                event_type="INVALID_CHALLENGE",
+                wallet_address=wallet_address,
+                reference_id=challenge_id,
+                details={
+                    "result": "REJECTED"
+                }
+            )
+
             return {
                 "success": False,
                 "status": "INVALID_OR_EXPIRED_CHALLENGE"
             }
 
-        storage = self.challenge_engine.storage
-
         challenge = storage.get_challenge(challenge_id)
 
         if not challenge:
+
+            self._audit_failure(
+                wallet_address,
+                challenge_id,
+                "CHALLENGE_NOT_FOUND"
+            )
+
             return {
                 "success": False,
                 "status": "CHALLENGE_NOT_FOUND"
@@ -112,6 +194,13 @@ class VOINSecurityIntegration:
         )
 
         if not match:
+
+            self._audit_failure(
+                wallet_address,
+                challenge_id,
+                "INVALID_CHALLENGE_NONCE"
+            )
+
             return {
                 "success": False,
                 "status": "INVALID_CHALLENGE_NONCE"
@@ -121,7 +210,6 @@ class VOINSecurityIntegration:
 
         nonce_hash = storage._hash_nonce(nonce)
 
-        # Check that the nonce belongs to this wallet.
         with storage._connect() as connection:
 
             nonce_record = connection.execute(
@@ -138,18 +226,34 @@ class VOINSecurityIntegration:
             ).fetchone()
 
         if nonce_record is None:
+
+            self.audit_engine.record_event(
+                event_type="INVALID_NONCE",
+                wallet_address=wallet_address,
+                reference_id=challenge_id,
+                details={
+                    "result": "REJECTED",
+                    "reason": "NONCE_MISMATCH"
+                }
+            )
+
             return {
                 "success": False,
                 "status": "NONCE_MISMATCH"
             }
 
         if nonce_record["used"] == 1:
+
+            self.audit_engine.record_replay_attempt(
+                wallet_address,
+                challenge_id
+            )
+
             return {
                 "success": False,
                 "status": "NONCE_ALREADY_USED"
             }
 
-        # Verify digital signature before consuming credentials.
         result = self.signature_engine.verify_signature(
             message=challenge["message"],
             signature=signature,
@@ -157,12 +261,18 @@ class VOINSecurityIntegration:
         )
 
         if not result["success"]:
+
+            self._audit_failure(
+                wallet_address,
+                challenge_id,
+                result["status"]
+            )
+
             return {
                 "success": False,
                 "status": result["status"]
             }
 
-        # Consume challenge and nonce in ONE SQLite transaction.
         consumed = storage.consume_authentication(
             challenge_id,
             wallet_address,
@@ -170,10 +280,21 @@ class VOINSecurityIntegration:
         )
 
         if not consumed:
+
+            self.audit_engine.record_replay_attempt(
+                wallet_address,
+                challenge_id
+            )
+
             return {
                 "success": False,
                 "status": "AUTHENTICATION_CONSUMPTION_FAILED"
             }
+
+        self.audit_engine.record_authentication_success(
+            wallet_address=wallet_address,
+            challenge_id=challenge_id
+        )
 
         return {
             "success": True,
@@ -197,5 +318,7 @@ class VOINSecurityIntegration:
             "persistent_storage": True,
             "atomic_authentication": True,
             "replay_protection": True,
+            "security_audit": True,
+            "automatic_audit_logging": True,
             "status": "READY_FOR_TESTING"
         }
