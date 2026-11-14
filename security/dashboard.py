@@ -1,14 +1,15 @@
 """
-VOIN SECURITY DASHBOARD ENGINE V1.0
+VOIN SECURITY DASHBOARD ENGINE V1.1
 
-Features:
-- Security event summary
-- Authentication statistics
-- Replay attempt monitoring
-- Rate limit violation monitoring
-- Security alert summary
-- Engine status overview
-- Recent security events
+Integrates:
+- SQLite Storage
+- Security Audit
+- Security Monitoring
+- Security Alerts
+- Rate Limiting
+- Authentication Statistics
+- Recent Security Events
+- Wallet Security Status
 """
 
 from collections import Counter
@@ -17,7 +18,7 @@ from datetime import datetime, timezone
 
 class VOINSecurityDashboard:
 
-    VERSION = "1.0.0"
+    VERSION = "1.1.0"
 
     def __init__(
         self,
@@ -44,10 +45,7 @@ class VOINSecurityDashboard:
 
         events = self.storage.get_security_events(limit=limit)
 
-        return [
-            dict(event)
-            for event in events
-        ]
+        return [dict(event) for event in events]
 
     def get_event_statistics(self, limit=1000):
 
@@ -60,42 +58,33 @@ class VOINSecurityDashboard:
 
         return {
             "total_events": len(events),
-
             "authentication_success": event_counts.get(
                 "AUTHENTICATION_SUCCESS", 0
             ),
-
             "authentication_failed": event_counts.get(
                 "AUTHENTICATION_FAILED", 0
             ),
-
             "replay_attempts": event_counts.get(
                 "REPLAY_ATTEMPT", 0
             ),
-
             "rate_limit_violations": event_counts.get(
                 "RATE_LIMIT_EXCEEDED", 0
             ),
-
             "invalid_challenges": event_counts.get(
                 "INVALID_CHALLENGE", 0
             ),
-
             "invalid_nonces": event_counts.get(
                 "INVALID_NONCE", 0
             ),
-
             "expired_challenges": event_counts.get(
                 "EXPIRED_CHALLENGE", 0
             ),
-
             "event_breakdown": dict(event_counts)
         }
 
     def get_alert_statistics(self):
 
         if self.alert_engine is None:
-
             return {
                 "available": False,
                 "alerts": {}
@@ -104,6 +93,23 @@ class VOINSecurityDashboard:
         return {
             "available": True,
             "alerts": self.alert_engine.get_alert_summary()
+        }
+
+    def get_monitoring_status(self):
+
+        if self.monitor_engine is None:
+            return {
+                "available": False,
+                "status": "NOT_CONFIGURED"
+            }
+
+        result = self.monitor_engine.get_security_status()
+
+        return {
+            "available": True,
+            "status": result.get("status", "UNKNOWN"),
+            "monitoring": result.get("monitoring", {}),
+            "version": result.get("version")
         }
 
     def get_engine_status(self):
@@ -121,29 +127,18 @@ class VOINSecurityDashboard:
         for name, engine in engines.items():
 
             if engine is None:
-
                 result[name] = {
                     "available": False,
                     "status": "NOT_CONFIGURED"
                 }
-
                 continue
 
-            if name == "storage":
-                info = engine.engine_info()
-            else:
-                info = engine.engine_info()
+            info = engine.engine_info()
 
             result[name] = {
                 "available": True,
-                "status": info.get(
-                    "status",
-                    "UNKNOWN"
-                ),
-                "version": info.get(
-                    "version",
-                    "UNKNOWN"
-                )
+                "status": info.get("status", "UNKNOWN"),
+                "version": info.get("version", "UNKNOWN")
             }
 
         return result
@@ -160,7 +155,6 @@ class VOINSecurityDashboard:
     def get_wallet_security_status(self, wallet_address):
 
         if self.rate_limit_engine is None:
-
             return {
                 "available": False,
                 "status": "RATE_LIMITING_NOT_CONFIGURED"
@@ -175,18 +169,6 @@ class VOINSecurityDashboard:
 
     def get_dashboard(self, event_limit=1000):
 
-        statistics = self.get_event_statistics(
-            limit=event_limit
-        )
-
-        alerts = self.get_alert_statistics()
-
-        engines = self.get_engine_status()
-
-        recent_events = self.get_recent_events(
-            limit=20
-        )
-
         return {
             "dashboard": "VOIN Security Dashboard",
             "version": self.VERSION,
@@ -194,13 +176,20 @@ class VOINSecurityDashboard:
                 timezone.utc
             ).isoformat(),
 
-            "security_statistics": statistics,
+            "security_statistics":
+                self.get_event_statistics(event_limit),
 
-            "alert_statistics": alerts,
+            "alert_statistics":
+                self.get_alert_statistics(),
 
-            "engine_status": engines,
+            "monitoring_status":
+                self.get_monitoring_status(),
 
-            "recent_events": recent_events,
+            "engine_status":
+                self.get_engine_status(),
+
+            "recent_events":
+                self.get_recent_events(20),
 
             "status": "READY_FOR_TESTING"
         }
@@ -213,6 +202,7 @@ class VOINSecurityDashboard:
             "version": cls.VERSION,
             "security_statistics": True,
             "alert_monitoring": True,
+            "security_monitoring": True,
             "engine_status": True,
             "recent_events": True,
             "wallet_security_status": True,
