@@ -1,4 +1,16 @@
-""" VOIN NETWORK TRANSPORT ENGINE V1.0 Bounded TCP transport adapter for the VOIN communication protocol. Security scope: - Loopback-only transport for initial local testing. - Newline-delimited JSON messages. - Strict message-size limits and socket timeouts. - Delegates message authorization and validation to VOINCommunicationEngine. - Does not provide TLS, cryptographic peer authentication, public-network exposure, or production P2P discovery. """
+"""
+VOIN NETWORK TRANSPORT ENGINE V1.0
+
+Bounded TCP transport adapter for the VOIN communication protocol.
+
+Security scope:
+- Loopback-only transport for initial local testing.
+- Newline-delimited JSON messages.
+- Strict message-size limits and socket timeouts.
+- Delegates message authorization and validation to VOINCommunicationEngine.
+- Does not provide TLS, cryptographic peer authentication,
+  public-network exposure, or production P2P discovery.
+"""
 
 import ipaddress
 import json
@@ -26,16 +38,17 @@ class VOINTransportEngine:
         self.server_thread = None
         self._lock = threading.RLock()
 
-@staticmethod
+    @staticmethod
     def _is_loopback_host(host):
         if not isinstance(host, str) or not host:
             return False
+
         try:
             return ipaddress.ip_address(host).is_loopback
         except ValueError:
             return host.lower() == "localhost"
 
-@staticmethod
+    @staticmethod
     def _encode_message(message):
         try:
             encoded = json.dumps(
@@ -43,6 +56,7 @@ class VOINTransportEngine:
                 separators=(",", ":"),
                 allow_nan=False
             ).encode("utf-8")
+
         except (TypeError, ValueError, UnicodeError):
             return None
 
@@ -52,6 +66,7 @@ class VOINTransportEngine:
         return encoded
 
     def start_server(self, host="127.0.0.1", port=0):
+
         if not self._is_loopback_host(host):
             return {
                 "success": False,
@@ -59,12 +74,19 @@ class VOINTransportEngine:
             }
 
         if isinstance(port, bool) or not isinstance(port, int):
-            return {"success": False, "error": "Invalid port"}
+            return {
+                "success": False,
+                "error": "Invalid port"
+            }
 
         if not 0 <= port <= 65535:
-            return {"success": False, "error": "Invalid port"}
+            return {
+                "success": False,
+                "error": "Invalid port"
+            }
 
         with self._lock:
+
             if self.server is not None:
                 return {
                     "success": False,
@@ -73,10 +95,15 @@ class VOINTransportEngine:
 
             engine = self
 
-            class RequestHandler(socketserver.StreamRequestHandler):
+            class RequestHandler(
+                socketserver.StreamRequestHandler
+            ):
 
                 def handle(self):
-                    self.connection.settimeout(engine.SOCKET_TIMEOUT)
+
+                    self.connection.settimeout(
+                        engine.SOCKET_TIMEOUT
+                    )
 
                     try:
                         raw = self.rfile.readline(
@@ -92,10 +119,17 @@ class VOINTransportEngine:
                                 "success": False,
                                 "error": "Invalid or oversized frame"
                             }
+
                         else:
                             try:
-                                message = json.loads(raw.decode("utf-8"))
-                            except (UnicodeDecodeError, json.JSONDecodeError):
+                                message = json.loads(
+                                    raw.decode("utf-8")
+                                )
+
+                            except (
+                                UnicodeDecodeError,
+                                json.JSONDecodeError
+                            ):
                                 message = None
 
                             if not isinstance(message, dict):
@@ -103,10 +137,14 @@ class VOINTransportEngine:
                                     "success": False,
                                     "error": "Invalid JSON message"
                                 }
+
                             else:
-                                response = engine.communication_engine.receive_message(
-                                    message,
-                                    engine.local_peer_id
+                                response = (
+                                    engine.communication_engine
+                                    .receive_message(
+                                        message,
+                                        engine.local_peer_id
+                                    )
                                 )
 
                         try:
@@ -116,28 +154,41 @@ class VOINTransportEngine:
                                 allow_nan=False,
                                 default=str
                             ).encode("utf-8") + b"\n"
+
                         except (TypeError, ValueError):
-                            output = b'{"success":false,"error":"Response encoding failed"}\n'
+                            output = (
+                                b'{"success":false,'
+                                b'"error":"Response encoding failed"}\n'
+                            )
 
                         self.wfile.write(output)
 
                     except (OSError, socket.timeout):
-                        # A disconnected or timed-out client is isolated
-                        # to this request handler.
                         return
 
-            class LocalTCPServer(socketserver.ThreadingTCPServer):
+            class LocalTCPServer(
+                socketserver.ThreadingTCPServer
+            ):
+
                 allow_reuse_address = True
                 daemon_threads = True
                 block_on_close = False
 
             try:
-                server = LocalTCPServer((host, port), RequestHandler)
+                server = LocalTCPServer(
+                    (host, port),
+                    RequestHandler
+                )
+
                 server.timeout = self.SOCKET_TIMEOUT
+
             except (OSError, ValueError) as exc:
                 return {
                     "success": False,
-                    "error": "Unable to start transport server: " + str(exc)
+                    "error": (
+                        "Unable to start transport server: "
+                        + str(exc)
+                    )
                 }
 
             thread = threading.Thread(
@@ -148,6 +199,7 @@ class VOINTransportEngine:
 
             self.server = server
             self.server_thread = thread
+
             thread.start()
 
             return {
@@ -158,9 +210,11 @@ class VOINTransportEngine:
             }
 
     def stop_server(self):
+
         with self._lock:
             server = self.server
             thread = self.server_thread
+
             self.server = None
             self.server_thread = None
 
@@ -174,7 +228,9 @@ class VOINTransportEngine:
         server.server_close()
 
         if thread is not None and thread.is_alive():
-            thread.join(timeout=self.SOCKET_TIMEOUT + 1)
+            thread.join(
+                timeout=self.SOCKET_TIMEOUT + 1
+            )
 
         return {
             "success": True,
@@ -182,6 +238,7 @@ class VOINTransportEngine:
         }
 
     def send_message(self, host, port, message):
+
         if not self._is_loopback_host(host):
             return {
                 "success": False,
@@ -189,10 +246,16 @@ class VOINTransportEngine:
             }
 
         if isinstance(port, bool) or not isinstance(port, int):
-            return {"success": False, "error": "Invalid port"}
+            return {
+                "success": False,
+                "error": "Invalid port"
+            }
 
         if not 1 <= port <= 65535:
-            return {"success": False, "error": "Invalid port"}
+            return {
+                "success": False,
+                "error": "Invalid port"
+            }
 
         if not self.communication_engine.validate_message(message):
             return {
@@ -213,8 +276,14 @@ class VOINTransportEngine:
                 (host, port),
                 timeout=self.SOCKET_TIMEOUT
             ) as connection:
-                connection.settimeout(self.SOCKET_TIMEOUT)
-                connection.sendall(encoded + b"\n")
+
+                connection.settimeout(
+                    self.SOCKET_TIMEOUT
+                )
+
+                connection.sendall(
+                    encoded + b"\n"
+                )
 
                 with connection.makefile("rb") as response_file:
                     raw_response = response_file.readline(
@@ -232,8 +301,14 @@ class VOINTransportEngine:
                 }
 
             try:
-                response = json.loads(raw_response.decode("utf-8"))
-            except (UnicodeDecodeError, json.JSONDecodeError):
+                response = json.loads(
+                    raw_response.decode("utf-8")
+                )
+
+            except (
+                UnicodeDecodeError,
+                json.JSONDecodeError
+            ):
                 return {
                     "success": False,
                     "error": "Invalid transport response"
@@ -254,6 +329,7 @@ class VOINTransportEngine:
             }
 
     def engine_info(self):
+
         with self._lock:
             running = self.server is not None
 
@@ -268,5 +344,9 @@ class VOINTransportEngine:
             "server_running": running,
             "tls_enabled": False,
             "cryptographic_peer_authentication": False,
-            "status": "RUNNING" if running else "READY_FOR_TESTING"
+            "status": (
+                "RUNNING"
+                if running
+                else "READY_FOR_TESTING"
+            )
         }
