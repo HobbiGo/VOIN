@@ -119,8 +119,13 @@ def test_wsgi_application_delegation(gateway, monkeypatch):
         gateway.http_server.application
     )
 
+    environ = {
+        "REQUEST_METHOD": "GET",
+        "PATH_INFO": "/"
+    }
+
     result = gateway.application(
-        {},
+        environ,
         lambda status, headers: None
     )
 
