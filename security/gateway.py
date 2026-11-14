@@ -1,21 +1,5 @@
 """
-VOIN SECURITY GATEWAY ENGINE V1.1
-Central gateway connecting:
-VOIN Security Integration
-VOIN Security API
-VOIN Security API Integration
-VOIN Security HTTP Server
-VOIN Security Middleware
-Features:
-Unified security gateway
-Wallet authentication delegation
-API request delegation
-HTTP WSGI application
-Middleware request validation
-Request ID generation
-Security response headers
-HTTP server lifecycle management
-Component status reporting
+VOIN SECURITY GATEWAY ENGINE V1.1.1
 """
 from security.api import VOINSecurityAPIEngine
 from security.api_integration import VOINSecurityAPIIntegration
@@ -23,11 +7,9 @@ from security.http_server import VOINSecurityHTTPServer
 from security.integration import VOINSecurityIntegration
 from security.middleware import VOINSecurityMiddleware
 class VOINSecurityGateway:
-VERSION = "1.1.0"
-
+VERSION = "1.1.1"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8080
-
 def __init__(
     self,
     api_engine,
@@ -35,25 +17,13 @@ def __init__(
     host=DEFAULT_HOST,
     port=DEFAULT_PORT
 ):
+    if not isinstance(api_engine, VOINSecurityAPIEngine):
+        raise TypeError("Invalid VOIN Security API Engine")
 
-    if not isinstance(
-        api_engine,
-        VOINSecurityAPIEngine
-    ):
-        raise TypeError(
-            "Invalid VOIN Security API Engine"
-        )
-
-    if not isinstance(
-        security_integration,
-        VOINSecurityIntegration
-    ):
-        raise TypeError(
-            "Invalid VOIN Security Integration Engine"
-        )
+    if not isinstance(security_integration, VOINSecurityIntegration):
+        raise TypeError("Invalid VOIN Security Integration Engine")
 
     self.api_engine = api_engine
-
     self.security_integration = security_integration
 
     self.api_integration = VOINSecurityAPIIntegration(
@@ -69,14 +39,10 @@ def __init__(
 
     self.middleware = VOINSecurityMiddleware(
         lambda environ, start_response:
-            self.http_server.application(
-                environ,
-                start_response
-            )
+            self.http_server.application(environ, start_response)
     )
 
 def create_wallet_authentication(self, wallet_address):
-
     return self.api_integration.create_wallet_authentication(
         wallet_address=wallet_address
     )
@@ -87,7 +53,6 @@ def verify_wallet_authentication(
     challenge_id,
     signature
 ):
-
     return self.api_integration.verify_wallet_authentication(
         wallet_address=wallet_address,
         challenge_id=challenge_id,
@@ -101,7 +66,6 @@ def handle_api_request(
     headers=None,
     query=None
 ):
-
     return self.api_integration.handle_api_request(
         method=method,
         path=path,
@@ -110,26 +74,18 @@ def handle_api_request(
     )
 
 def application(self, environ, start_response):
-
-    return self.middleware(
-        environ,
-        start_response
-    )
+    return self.middleware(environ, start_response)
 
 def create_server(self):
-
     return self.http_server.create_server()
 
 def serve_forever(self):
-
     return self.http_server.serve_forever()
 
 def close(self):
-
     return self.http_server.close()
 
 def engine_info(self):
-
     return {
         "engine": "VOIN Security Gateway",
         "version": self.VERSION,
