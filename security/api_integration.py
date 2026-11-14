@@ -1,17 +1,13 @@
 """
 VOIN SECURITY API INTEGRATION ENGINE V1.1.0
 
-Connects:
-- VOIN Security API Engine
-- VOIN Security Integration Engine
-
 Features:
-- Unified security API access
+- Security API delegation
 - Wallet authentication creation
 - Wallet authentication verification
 - Challenge ID support
 - Legacy authentication compatibility
-- API request delegation
+- Engine validation
 - Engine status reporting
 """
 
