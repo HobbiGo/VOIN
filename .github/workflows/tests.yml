@@ -1,6 +1,9 @@
 name: VOIN Tests
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -9,14 +12,22 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
     steps:
-      - name: Download repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Run tests
-        run: python -m unittest discover -s tests -v
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run Automated Tests
+        run: |
+          python -m pytest tests -v
