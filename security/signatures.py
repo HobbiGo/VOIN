@@ -1,7 +1,8 @@
 """
-VOIN DIGITAL SIGNATURE ENGINE V1.1
+VOIN DIGITAL SIGNATURE ENGINE V1.2
 
 EVM-compatible digital signature verification.
+Supports bytes, HexBytes and hexadecimal signatures.
 """
 
 from eth_account import Account
@@ -11,7 +12,7 @@ from eth_utils import is_address, to_checksum_address
 
 class VOINSignatureEngine:
 
-    VERSION = "1.1.0"
+    VERSION = "1.2.0"
 
     @staticmethod
     def validate_address(address):
@@ -22,27 +23,57 @@ class VOINSignatureEngine:
         return is_address(address)
 
     @staticmethod
-    def recover_signer(message, signature):
+    def normalize_signature(signature):
+
+        if isinstance(signature, (bytes, bytearray)):
+            signature = bytes(signature)
+
+        elif isinstance(signature, str):
+
+            signature = signature.strip()
+
+            if signature.startswith("0x"):
+                signature = signature[2:]
+
+            try:
+                signature = bytes.fromhex(signature)
+
+            except ValueError:
+                raise ValueError("Invalid signature format")
+
+        else:
+            raise ValueError("Invalid signature type")
+
+        if len(signature) != 65:
+            raise ValueError("Invalid signature length")
+
+        return signature
+
+    @classmethod
+    def recover_signer(cls, message, signature):
 
         if not isinstance(message, str):
             raise ValueError("Invalid message")
 
-        if not isinstance(signature, str):
-            raise ValueError("Invalid signature")
+        normalized_signature = cls.normalize_signature(
+            signature
+        )
 
         encoded_message = encode_defunct(
             text=message
         )
 
         try:
+
             signer = Account.recover_message(
                 encoded_message,
-                signature=signature
+                signature=normalized_signature
             )
 
             return to_checksum_address(signer)
 
         except Exception as error:
+
             raise ValueError(
                 "Signature verification failed"
             ) from error
@@ -72,7 +103,8 @@ class VOINSignatureEngine:
                 expected_address
             )
 
-            if recovered != expected:
+            if recovered.lower() != expected.lower():
+
                 return {
                     "success": False,
                     "status": "SIGNER_MISMATCH"
@@ -100,6 +132,11 @@ class VOINSignatureEngine:
             "engine": "VOIN Digital Signature Engine",
             "version": cls.VERSION,
             "algorithm": "EIP-191",
+            "signature_formats": [
+                "BYTES",
+                "HEXBYTES",
+                "HEX_STRING"
+            ],
             "network_support": [
                 "BSC",
                 "BSC_TESTNET",
