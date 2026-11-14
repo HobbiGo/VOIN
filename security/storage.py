@@ -1,5 +1,5 @@
 """
-VOIN SECURITY PERSISTENCE ENGINE V1.0
+VOIN SECURITY PERSISTENCE ENGINE V1.1
 
 SQLite-based persistent security storage.
 
@@ -8,6 +8,7 @@ Features:
 - Persistent nonce management
 - Atomic challenge consumption
 - Atomic nonce consumption
+- Atomic authentication consumption
 - Security audit event logging
 
 Security note:
@@ -23,7 +24,7 @@ from pathlib import Path
 
 class VOINStorageEngine:
 
-    VERSION = "1.0.0"
+    VERSION = "1.1.0"
 
     def __init__(self, database_path="voin_security.db"):
 
@@ -56,7 +57,8 @@ class VOINStorageEngine:
 
         with self._connect() as connection:
 
-            connection.execute("PRAGMA journal_mode = WAL")
+            if self.database_path != ":memory:":
+                connection.execute("PRAGMA journal_mode = WAL")
 
             connection.execute("""
                 CREATE TABLE IF NOT EXISTS challenges (
@@ -292,6 +294,95 @@ class VOINStorageEngine:
 
             return success
 
+    def consume_authentication(
+        self,
+        challenge_id,
+        wallet_address,
+        nonce
+    ):
+        """
+        Atomically consume challenge and nonce.
+
+        Both records must be valid.
+        If either operation fails, neither is consumed.
+        """
+
+        wallet = self._normalize_wallet(wallet_address)
+        nonce_hash = self._hash_nonce(nonce)
+        timestamp = int(time.time())
+
+        with self._connect() as connection:
+
+            try:
+
+                connection.execute("BEGIN IMMEDIATE")
+
+                # Validate and consume challenge.
+                challenge_cursor = connection.execute("""
+                    UPDATE challenges
+                    SET used = 1
+                    WHERE challenge_id = ?
+                    AND wallet_address = ?
+                    AND nonce_hash = ?
+                    AND used = 0
+                    AND expires_at > ?
+                """, (
+                    challenge_id,
+                    wallet,
+                    nonce_hash,
+                    timestamp
+                ))
+
+                if challenge_cursor.rowcount != 1:
+                    connection.rollback()
+                    return False
+
+                # Validate and consume nonce.
+                nonce_cursor = connection.execute("""
+                    UPDATE nonces
+                    SET used = 1
+                    WHERE wallet_address = ?
+                    AND nonce_hash = ?
+                    AND used = 0
+                """, (
+                    wallet,
+                    nonce_hash
+                ))
+
+                if nonce_cursor.rowcount != 1:
+                    connection.rollback()
+                    return False
+
+                # Record successful atomic consumption.
+                connection.execute("""
+                    INSERT INTO security_events (
+                        event_type,
+                        wallet_address,
+                        reference_id,
+                        created_at,
+                        details
+                    )
+                    VALUES (?, ?, ?, ?, ?)
+                """, (
+                    "AUTHENTICATION_CONSUMED",
+                    wallet,
+                    challenge_id,
+                    timestamp,
+                    json.dumps({
+                        "challenge_consumed": True,
+                        "nonce_consumed": True
+                    })
+                ))
+
+                connection.commit()
+
+                return True
+
+            except Exception:
+
+                connection.rollback()
+                raise
+
     def log_event(
         self,
         event_type,
@@ -361,6 +452,7 @@ class VOINStorageEngine:
             "persistent_challenges": True,
             "persistent_nonces": True,
             "atomic_consumption": True,
+            "atomic_authentication": True,
             "security_audit_logging": True,
             "private_key_storage": False,
             "status": "READY_FOR_TESTING"
