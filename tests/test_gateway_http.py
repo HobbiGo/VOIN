@@ -1,7 +1,8 @@
 """
-VOIN SECURITY GATEWAY HTTP TEST SUITE V1.2
+VOIN SECURITY GATEWAY HTTP TEST SUITE V1.2.1
 """
 import json
+from unittest.mock import Mock
 import pytest
 from security.api import VOINSecurityAPIEngine
 from security.gateway import VOINSecurityGateway
@@ -30,8 +31,9 @@ port=0
 )
 )
 check = lambda condition: (
-(_ for _ in ()).throw(AssertionError("HTTP gateway test failed"))
-if not condition else None
+(_ for _ in ()).throw(
+AssertionError("Gateway HTTP test failed")
+) if not condition else None
 )
 invoke_wsgi = lambda gateway, environ: (
 lambda events: (
@@ -51,7 +53,10 @@ gateway.http_server.api_integration,
 "handle_api_request",
 lambda **kwargs: {
 "status_code": 200,
-"body": {"success": True, "engine": "VOIN"}
+"body": {
+"success": True,
+"engine": "VOIN"
+}
 }
 ),
 lambda result: (
@@ -65,22 +70,20 @@ check(
 result[1]["headers"]["Cache-Control"]
 == "no-store"
 )
-)[-1]
-)(
-invoke_wsgi(
+)-1
+)(invoke_wsgi(
 gateway,
-{"REQUEST_METHOD": "GET", "PATH_INFO": "/dashboard"}
-)
-)[-1]
+{
+"REQUEST_METHOD": "GET",
+"PATH_INFO": "/dashboard"
+}
+))
 test_http_query_parsing = lambda gateway, monkeypatch: (
-lambda calls: (
+lambda spy: (
 monkeypatch.setattr(
 gateway.http_server.api_integration,
 "handle_api_request",
-lambda **kwargs: (
-calls.append(kwargs)
-or {"status_code": 200, "body": {"success": True}}
-)
+spy
 ),
 invoke_wsgi(
 gateway,
@@ -90,19 +93,21 @@ gateway,
 "QUERY_STRING": "limit=5&status=open"
 }
 ),
-check(calls[0]["query"]["limit"] == 5),
-check(calls[0]["query"]["status"] == "open")
+check(spy.call_args.kwargs["query"]["limit"] == 5),
+check(spy.call_args.kwargs["query"]["status"] == "open")
 )[-1]
-)([])
+)(
+Mock(return_value={
+"status_code": 200,
+"body": {"success": True}
+})
+)
 test_http_authorization_header = lambda gateway, monkeypatch: (
-lambda calls: (
+lambda spy: (
 monkeypatch.setattr(
 gateway.http_server.api_integration,
 "handle_api_request",
-lambda **kwargs: (
-calls.append(kwargs)
-or {"status_code": 200, "body": {"success": True}}
-)
+spy
 ),
 invoke_wsgi(
 gateway,
@@ -113,20 +118,22 @@ gateway,
 }
 ),
 check(
-calls[0]["headers"]["Authorization"]
+spy.call_args.kwargs["headers"]["Authorization"]
 == "Bearer " + TEST_TOKEN
 )
 )[-1]
-)([])
+)(
+Mock(return_value={
+"status_code": 200,
+"body": {"success": True}
+})
+)
 test_http_invalid_limit = lambda gateway, monkeypatch: (
-lambda calls: (
+lambda spy: (
 monkeypatch.setattr(
 gateway.http_server.api_integration,
 "handle_api_request",
-lambda **kwargs: (
-calls.append(kwargs)
-or {"status_code": 200, "body": {"success": True}}
-)
+spy
 ),
 invoke_wsgi(
 gateway,
@@ -136,14 +143,21 @@ gateway,
 "QUERY_STRING": "limit=invalid"
 }
 ),
-check(calls[0]["query"]["limit"] is None)
+check(spy.call_args.kwargs["query"]["limit"] is None)
 )[-1]
-)([])
+)(
+Mock(return_value={
+"status_code": 200,
+"body": {"success": True}
+})
+)
 test_http_internal_error_handling = lambda gateway, monkeypatch: (
 monkeypatch.setattr(
 gateway.http_server.api_integration,
 "handle_api_request",
-lambda **kwargs: (_ for _ in ()).throw(RuntimeError("test error"))
+lambda **kwargs: (_ for _ in ()).throw(
+RuntimeError("test error")
+)
 ),
 lambda result: (
 check(result[1]["status"] == "500 Internal Server Error"),
@@ -155,7 +169,10 @@ json.loads(result[0][0])["error"]
 )(
 invoke_wsgi(
 gateway,
-{"REQUEST_METHOD": "GET", "PATH_INFO": "/dashboard"}
+{
+"REQUEST_METHOD": "GET",
+"PATH_INFO": "/dashboard"
+}
 )
 )[-1]
 test_http_server_lifecycle = lambda gateway: (
