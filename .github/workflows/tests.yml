@@ -1,31 +1,35 @@
 name: VOIN Tests
+
 "on":
-push:
-pull_request:
-workflow_dispatch:
+  push:
+  pull_request:
+  workflow_dispatch:
+
 permissions:
-contents: read
+  contents: read
+
 jobs:
-test:
-name: VOIN Automated Tests
-runs-on: ubuntu-latest
-timeout-minutes: 15
-steps:
-  - name: Checkout Repository
-    uses: actions/checkout@v4
+  test:
+    name: VOIN Automated Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-  - name: Setup Python
-    uses: actions/setup-python@v5
-    with:
-      python-version: "3.13"
-      cache: pip
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  - name: Upgrade pip
-    run: python -m pip install --upgrade pip
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
 
-  - name: Install Project and Dependencies
-    run: python -m pip install ".[dev]"
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
 
-  - name: Run VOIN Tests
-    run: python -m pytest tests -v
+      - name: Install Project and Dependencies
+        run: uv sync --group dev
 
+      - name: Run VOIN Tests
+        run: uv run python -m pytest tests -v
