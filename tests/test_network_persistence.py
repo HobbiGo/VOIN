@@ -35,7 +35,7 @@ def peer():
 
 
 def test_storage_engine_version():
-    assert VOINStorageEngine.VERSION == "1.2.0"
+    assert VOINStorageEngine.VERSION == "1.3.0"
 
 
 def test_save_network_peer(storage, peer):
