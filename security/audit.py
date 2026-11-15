@@ -27,12 +27,10 @@ EVENT_TYPES = {
 }
 
 def __init__(self, storage=None):
-
     self.storage = storage or VOINStorageEngine()
 
 @staticmethod
 def _validate_event_type(event_type):
-
     if event_type not in VOINAuditEngine.EVENT_TYPES:
         raise ValueError("Unsupported security event type")
 
@@ -40,7 +38,6 @@ def _validate_event_type(event_type):
 
 @staticmethod
 def _validate_details(details):
-
     if details is None:
         return {}
 
@@ -56,7 +53,6 @@ def record_event(
     reference_id=None,
     details=None
 ):
-
     event_type = self._validate_event_type(event_type)
     details = self._validate_details(details)
 
@@ -74,7 +70,6 @@ def record_authentication_success(
     wallet_address,
     challenge_id
 ):
-
     return self.record_event(
         event_type="AUTHENTICATION_SUCCESS",
         wallet_address=wallet_address,
@@ -90,7 +85,6 @@ def record_authentication_failure(
     challenge_id=None,
     reason="AUTHENTICATION_FAILED"
 ):
-
     return self.record_event(
         event_type="AUTHENTICATION_FAILED",
         wallet_address=wallet_address,
@@ -106,7 +100,6 @@ def record_replay_attempt(
     wallet_address,
     reference_id=None
 ):
-
     return self.record_event(
         event_type="REPLAY_ATTEMPT",
         wallet_address=wallet_address,
@@ -123,7 +116,6 @@ def record_security_warning(
     reference_id=None,
     reason="SECURITY_WARNING"
 ):
-
     return self.record_event(
         event_type="SECURITY_WARNING",
         wallet_address=wallet_address,
@@ -134,7 +126,6 @@ def record_security_warning(
     )
 
 def get_events(self, limit=100):
-
     return self.storage.get_security_events(limit=limit)
 
 def get_wallet_events(
@@ -142,14 +133,12 @@ def get_wallet_events(
     wallet_address,
     limit=100
 ):
-
     return self.storage.get_wallet_security_events(
         wallet_address=wallet_address,
         limit=limit
     )
 
 def generate_report(self, limit=1000):
-
     events = self.get_events(limit=limit)
 
     report = {
@@ -164,7 +153,6 @@ def generate_report(self, limit=1000):
     }
 
     for event in events:
-
         event_type = event["event_type"]
 
         if event_type == "AUTHENTICATION_SUCCESS":
@@ -188,7 +176,6 @@ def generate_report(self, limit=1000):
 
 @classmethod
 def engine_info(cls):
-
     return {
         "engine": "VOIN Security Audit Engine",
         "version": cls.VERSION,
