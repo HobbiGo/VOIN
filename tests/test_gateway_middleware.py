@@ -83,7 +83,7 @@ def test_gateway_middleware_enabled(gateway):
 
     assert gateway.middleware is not None
 
-    assert gateway.middleware.VERSION == "1.0.0"
+    assert gateway.middleware.VERSION == "1.0.5"
 
     assert gateway.engine_info()["middleware_enabled"] is True
 
