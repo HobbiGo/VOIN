@@ -46,7 +46,7 @@ def test_engine_creation(engine):
         VOINNetworkSecurityEngine
     )
 
-    assert engine.VERSION == "1.1.0"
+    assert engine.VERSION == "1.1.1"
 
 
 def test_engine_info(engine):
@@ -54,7 +54,7 @@ def test_engine_info(engine):
     info = engine.engine_info()
 
     assert info["engine"] == "VOIN Network Security Engine"
-    assert info["version"] == "1.1.0"
+    assert info["version"] == "1.1.1"
 
     assert info["peer_identity_validation"] is True
     assert info["trusted_peer_management"] is True
