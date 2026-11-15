@@ -1,5 +1,5 @@
 """
-VOIN SECURITY PERSISTENCE ENGINE V1.2
+VOIN SECURITY PERSISTENCE ENGINE V1.3
 
 SQLite-based persistent security storage.
 
@@ -9,9 +9,12 @@ Features:
 - Atomic challenge consumption
 - Atomic nonce consumption
 - Atomic authentication consumption
-- Security audit event logging
+- Atomic security event persistence
+- Public wallet security event retrieval
 - Persistent network peer management
-- Persistent network security events
+- Atomic network peer event persistence
+- Explicit SQLite connection lifecycle management
+- Shared in-memory database support within storage engine
 
 Security note:
 This module stores security metadata, not private keys.
@@ -21,19 +24,58 @@ import sqlite3
 import time
 import json
 import hashlib
+import uuid
 
 from pathlib import Path
 
 
+class _ClosingConnection(sqlite3.Connection):
+    """
+    SQLite connection that closes automatically
+    when leaving a context manager.
+    """
+
+    def __exit__(self, exc_type, exc_value, traceback):
+
+        try:
+            return super().__exit__(
+                exc_type,
+                exc_value,
+                traceback
+            )
+
+        finally:
+            self.close()
+
+
 class VOINStorageEngine:
 
-    VERSION = "1.2.0"
+    VERSION = "1.3.0"
 
     def __init__(self, database_path="voin_security.db"):
 
         self.database_path = str(database_path)
 
-        if self.database_path != ":memory:":
+        self._memory_uri = None
+        self._memory_anchor = None
+
+        if self.database_path == ":memory:":
+
+            self._memory_uri = (
+                "file:voin_security_"
+                + uuid.uuid4().hex
+                + "?mode=memory&cache=shared"
+            )
+
+            self._memory_anchor = sqlite3.connect(
+                self._memory_uri,
+                uri=True,
+                timeout=10,
+                isolation_level=None
+            )
+
+        else:
+
             Path(self.database_path).parent.mkdir(
                 parents=True,
                 exist_ok=True
@@ -41,13 +83,30 @@ class VOINStorageEngine:
 
         self._initialize_database()
 
+    # --------------------------------------------------
+    # CONNECTION MANAGEMENT
+    # --------------------------------------------------
+
     def _connect(self):
 
-        connection = sqlite3.connect(
-            self.database_path,
-            timeout=10,
-            isolation_level=None
-        )
+        if self._memory_uri is not None:
+
+            connection = sqlite3.connect(
+                self._memory_uri,
+                uri=True,
+                timeout=10,
+                isolation_level=None,
+                factory=_ClosingConnection
+            )
+
+        else:
+
+            connection = sqlite3.connect(
+                self.database_path,
+                timeout=10,
+                isolation_level=None,
+                factory=_ClosingConnection
+            )
 
         connection.row_factory = sqlite3.Row
 
@@ -55,6 +114,18 @@ class VOINStorageEngine:
         connection.execute("PRAGMA busy_timeout = 10000")
 
         return connection
+
+    def close(self):
+        """
+        Release the persistent in-memory database anchor.
+        File-based database connections are already closed
+        automatically by their context managers.
+        """
+
+        if self._memory_anchor is not None:
+
+            self._memory_anchor.close()
+            self._memory_anchor = None
 
     def _initialize_database(self):
 
@@ -117,6 +188,10 @@ class VOINStorageEngine:
                 )
             """)
 
+    # --------------------------------------------------
+    # INTERNAL HELPERS
+    # --------------------------------------------------
+
     @staticmethod
     def _hash_nonce(nonce):
 
@@ -140,6 +215,78 @@ class VOINStorageEngine:
 
         return wallet.lower()
 
+    @staticmethod
+    def _validate_limit(limit):
+
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or limit <= 0
+        ):
+            raise ValueError("Invalid event limit")
+
+    @staticmethod
+    def _serialize_details(details):
+
+        if details is None:
+            return None
+
+        return json.dumps(
+            details,
+            sort_keys=True
+        )
+
+    @staticmethod
+    def _insert_security_event(
+        connection,
+        event_type,
+        wallet_address=None,
+        reference_id=None,
+        details=None,
+        timestamp=None
+    ):
+
+        connection.execute("""
+            INSERT INTO security_events (
+                event_type,
+                wallet_address,
+                reference_id,
+                created_at,
+                details
+            )
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            event_type,
+            wallet_address,
+            reference_id,
+            timestamp if timestamp is not None else int(time.time()),
+            details
+        ))
+
+    @staticmethod
+    def _insert_network_event(
+        connection,
+        event_type,
+        peer_id=None,
+        details=None,
+        timestamp=None
+    ):
+
+        connection.execute("""
+            INSERT INTO network_security_events (
+                event_type,
+                peer_id,
+                created_at,
+                details
+            )
+            VALUES (?, ?, ?, ?)
+        """, (
+            event_type,
+            peer_id,
+            timestamp if timestamp is not None else int(time.time()),
+            details
+        ))
+
     # --------------------------------------------------
     # NONCE STORAGE
     # --------------------------------------------------
@@ -150,22 +297,36 @@ class VOINStorageEngine:
         nonce_hash = self._hash_nonce(nonce)
         timestamp = int(time.time())
 
-        with self._connect() as connection:
+        try:
 
-            connection.execute("""
-                INSERT INTO nonces (
-                    wallet_address,
+            with self._connect() as connection:
+
+                connection.execute("BEGIN IMMEDIATE")
+
+                connection.execute("""
+                    INSERT INTO nonces (
+                        wallet_address,
+                        nonce_hash,
+                        created_at
+                    )
+                    VALUES (?, ?, ?)
+                """, (
+                    wallet,
                     nonce_hash,
-                    created_at
-                )
-                VALUES (?, ?, ?)
-            """, (wallet, nonce_hash, timestamp))
+                    timestamp
+                ))
 
-        self.log_event(
-            "NONCE_CREATED",
-            wallet,
-            None
-        )
+                self._insert_security_event(
+                    connection,
+                    "NONCE_CREATED",
+                    wallet,
+                    timestamp=timestamp
+                )
+
+                connection.commit()
+
+        except Exception:
+            raise
 
         return True
 
@@ -173,39 +334,44 @@ class VOINStorageEngine:
 
         wallet = self._normalize_wallet(wallet_address)
         nonce_hash = self._hash_nonce(nonce)
+        timestamp = int(time.time())
 
         with self._connect() as connection:
 
-            connection.execute("BEGIN IMMEDIATE")
+            try:
 
-            cursor = connection.execute("""
-                UPDATE nonces
-                SET used = 1
-                WHERE wallet_address = ?
-                AND nonce_hash = ?
-                AND used = 0
-            """, (wallet, nonce_hash))
+                connection.execute("BEGIN IMMEDIATE")
 
-            success = cursor.rowcount == 1
-
-            if success:
-
-                connection.execute("""
-                    INSERT INTO security_events (
-                        event_type,
-                        wallet_address,
-                        created_at
-                    )
-                    VALUES (?, ?, ?)
+                cursor = connection.execute("""
+                    UPDATE nonces
+                    SET used = 1
+                    WHERE wallet_address = ?
+                    AND nonce_hash = ?
+                    AND used = 0
                 """, (
-                    "NONCE_CONSUMED",
                     wallet,
-                    int(time.time())
+                    nonce_hash
                 ))
 
-            connection.commit()
+                success = cursor.rowcount == 1
 
-            return success
+                if success:
+
+                    self._insert_security_event(
+                        connection,
+                        "NONCE_CONSUMED",
+                        wallet,
+                        timestamp=timestamp
+                    )
+
+                connection.commit()
+
+                return success
+
+            except Exception:
+
+                connection.rollback()
+                raise
 
     # --------------------------------------------------
     # CHALLENGE STORAGE
@@ -228,7 +394,10 @@ class VOINStorageEngine:
         if not isinstance(message, str) or not message:
             raise ValueError("Invalid challenge message")
 
-        if not isinstance(expires_at, int):
+        if (
+            isinstance(expires_at, bool)
+            or not isinstance(expires_at, int)
+        ):
             raise ValueError("Invalid expiration")
 
         nonce_hash = self._hash_nonce(nonce)
@@ -239,30 +408,43 @@ class VOINStorageEngine:
 
         with self._connect() as connection:
 
-            connection.execute("""
-                INSERT INTO challenges (
+            try:
+
+                connection.execute("BEGIN IMMEDIATE")
+
+                connection.execute("""
+                    INSERT INTO challenges (
+                        challenge_id,
+                        wallet_address,
+                        nonce_hash,
+                        message,
+                        created_at,
+                        expires_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (
                     challenge_id,
-                    wallet_address,
+                    wallet,
                     nonce_hash,
                     message,
-                    created_at,
+                    timestamp,
                     expires_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                challenge_id,
-                wallet,
-                nonce_hash,
-                message,
-                timestamp,
-                expires_at
-            ))
+                ))
 
-        self.log_event(
-            "CHALLENGE_CREATED",
-            wallet,
-            challenge_id
-        )
+                self._insert_security_event(
+                    connection,
+                    "CHALLENGE_CREATED",
+                    wallet,
+                    challenge_id,
+                    timestamp=timestamp
+                )
+
+                connection.commit()
+
+            except Exception:
+
+                connection.rollback()
+                raise
 
         return True
 
@@ -288,43 +470,43 @@ class VOINStorageEngine:
 
         with self._connect() as connection:
 
-            connection.execute("BEGIN IMMEDIATE")
+            try:
 
-            cursor = connection.execute("""
-                UPDATE challenges
-                SET used = 1
-                WHERE challenge_id = ?
-                AND wallet_address = ?
-                AND used = 0
-                AND expires_at > ?
-            """, (
-                challenge_id,
-                wallet,
-                timestamp
-            ))
+                connection.execute("BEGIN IMMEDIATE")
 
-            success = cursor.rowcount == 1
-
-            if success:
-
-                connection.execute("""
-                    INSERT INTO security_events (
-                        event_type,
-                        wallet_address,
-                        reference_id,
-                        created_at
-                    )
-                    VALUES (?, ?, ?, ?)
+                cursor = connection.execute("""
+                    UPDATE challenges
+                    SET used = 1
+                    WHERE challenge_id = ?
+                    AND wallet_address = ?
+                    AND used = 0
+                    AND expires_at > ?
                 """, (
-                    "CHALLENGE_CONSUMED",
-                    wallet,
                     challenge_id,
+                    wallet,
                     timestamp
                 ))
 
-            connection.commit()
+                success = cursor.rowcount == 1
 
-            return success
+                if success:
+
+                    self._insert_security_event(
+                        connection,
+                        "CHALLENGE_CONSUMED",
+                        wallet,
+                        challenge_id,
+                        timestamp=timestamp
+                    )
+
+                connection.commit()
+
+                return success
+
+            except Exception:
+
+                connection.rollback()
+                raise
 
     # --------------------------------------------------
     # ATOMIC AUTHENTICATION
@@ -363,6 +545,7 @@ class VOINStorageEngine:
                 ))
 
                 if challenge_cursor.rowcount != 1:
+
                     connection.rollback()
                     return False
 
@@ -378,28 +561,21 @@ class VOINStorageEngine:
                 ))
 
                 if nonce_cursor.rowcount != 1:
+
                     connection.rollback()
                     return False
 
-                connection.execute("""
-                    INSERT INTO security_events (
-                        event_type,
-                        wallet_address,
-                        reference_id,
-                        created_at,
-                        details
-                    )
-                    VALUES (?, ?, ?, ?, ?)
-                """, (
+                self._insert_security_event(
+                    connection,
                     "AUTHENTICATION_CONSUMED",
                     wallet,
                     challenge_id,
-                    timestamp,
                     json.dumps({
                         "challenge_consumed": True,
                         "nonce_consumed": True
-                    })
-                ))
+                    }),
+                    timestamp
+                )
 
                 connection.commit()
 
@@ -430,37 +606,23 @@ class VOINStorageEngine:
         if wallet_address is not None:
             wallet = self._normalize_wallet(wallet_address)
 
-        if details is not None:
-            details = json.dumps(
-                details,
-                sort_keys=True
-            )
+        serialized_details = self._serialize_details(details)
 
         with self._connect() as connection:
 
-            connection.execute("""
-                INSERT INTO security_events (
-                    event_type,
-                    wallet_address,
-                    reference_id,
-                    created_at,
-                    details
-                )
-                VALUES (?, ?, ?, ?, ?)
-            """, (
+            self._insert_security_event(
+                connection,
                 event_type,
                 wallet,
                 reference_id,
-                int(time.time()),
-                details
-            ))
+                serialized_details
+            )
 
         return True
 
     def get_security_events(self, limit=100):
 
-        if not isinstance(limit, int) or limit <= 0:
-            raise ValueError("Invalid event limit")
+        self._validate_limit(limit)
 
         with self._connect() as connection:
 
@@ -470,6 +632,30 @@ class VOINStorageEngine:
                 ORDER BY id DESC
                 LIMIT ?
             """, (limit,)).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def get_wallet_security_events(
+        self,
+        wallet_address,
+        limit=100
+    ):
+
+        wallet = self._normalize_wallet(wallet_address)
+        self._validate_limit(limit)
+
+        with self._connect() as connection:
+
+            rows = connection.execute("""
+                SELECT *
+                FROM security_events
+                WHERE wallet_address = ?
+                ORDER BY id DESC
+                LIMIT ?
+            """, (
+                wallet,
+                limit
+            )).fetchall()
 
         return [dict(row) for row in rows]
 
@@ -489,34 +675,39 @@ class VOINStorageEngine:
 
         with self._connect() as connection:
 
-            connection.execute("""
-                INSERT INTO network_peers (
+            try:
+
+                connection.execute("BEGIN IMMEDIATE")
+
+                connection.execute("""
+                    INSERT INTO network_peers (
+                        peer_id,
+                        endpoint,
+                        status,
+                        registered_at,
+                        updated_at
+                    )
+                    VALUES (?, ?, 'TRUSTED', ?, ?)
+                """, (
                     peer_id,
                     endpoint,
-                    status,
-                    registered_at,
-                    updated_at
-                )
-                VALUES (?, ?, 'TRUSTED', ?, ?)
-            """, (
-                peer_id,
-                endpoint,
-                timestamp,
-                timestamp
-            ))
+                    timestamp,
+                    timestamp
+                ))
 
-            connection.execute("""
-                INSERT INTO network_security_events (
-                    event_type,
+                self._insert_network_event(
+                    connection,
+                    "PEER_REGISTERED",
                     peer_id,
-                    created_at
+                    timestamp=timestamp
                 )
-                VALUES (?, ?, ?)
-            """, (
-                "PEER_REGISTERED",
-                peer_id,
-                timestamp
-            ))
+
+                connection.commit()
+
+            except Exception:
+
+                connection.rollback()
+                raise
 
         return True
 
@@ -567,39 +758,40 @@ class VOINStorageEngine:
 
         with self._connect() as connection:
 
-            connection.execute("BEGIN IMMEDIATE")
+            try:
 
-            cursor = connection.execute("""
-                UPDATE network_peers
-                SET status = 'REVOKED',
-                    updated_at = ?
-                WHERE peer_id = ?
-                AND status = 'TRUSTED'
-            """, (
-                timestamp,
-                peer_id
-            ))
+                connection.execute("BEGIN IMMEDIATE")
 
-            success = cursor.rowcount == 1
-
-            if success:
-
-                connection.execute("""
-                    INSERT INTO network_security_events (
-                        event_type,
-                        peer_id,
-                        created_at
-                    )
-                    VALUES (?, ?, ?)
+                cursor = connection.execute("""
+                    UPDATE network_peers
+                    SET status = 'REVOKED',
+                        updated_at = ?
+                    WHERE peer_id = ?
+                    AND status = 'TRUSTED'
                 """, (
-                    "PEER_REVOKED",
-                    peer_id,
-                    timestamp
+                    timestamp,
+                    peer_id
                 ))
 
-            connection.commit()
+                success = cursor.rowcount == 1
 
-            return success
+                if success:
+
+                    self._insert_network_event(
+                        connection,
+                        "PEER_REVOKED",
+                        peer_id,
+                        timestamp=timestamp
+                    )
+
+                connection.commit()
+
+                return success
+
+            except Exception:
+
+                connection.rollback()
+                raise
 
     def log_network_event(
         self,
@@ -612,42 +804,26 @@ class VOINStorageEngine:
             raise ValueError("Invalid network event type")
 
         if peer_id is not None:
+
             if not isinstance(peer_id, str) or not peer_id:
                 raise ValueError("Invalid peer ID")
 
-        if details is not None:
-            details = json.dumps(
-                details,
-                sort_keys=True
-            )
+        serialized_details = self._serialize_details(details)
 
         with self._connect() as connection:
 
-            connection.execute("""
-                INSERT INTO network_security_events (
-                    event_type,
-                    peer_id,
-                    created_at,
-                    details
-                )
-                VALUES (?, ?, ?, ?)
-            """, (
+            self._insert_network_event(
+                connection,
                 event_type,
                 peer_id,
-                int(time.time()),
-                details
-            ))
+                serialized_details
+            )
 
         return True
 
     def get_network_security_events(self, limit=100):
 
-        if (
-            isinstance(limit, bool)
-            or not isinstance(limit, int)
-            or limit <= 0
-        ):
-            raise ValueError("Invalid event limit")
+        self._validate_limit(limit)
 
         with self._connect() as connection:
 
@@ -678,7 +854,8 @@ class VOINStorageEngine:
             "persistent_nonces": True,
             "atomic_consumption": True,
             "atomic_authentication": True,
-            "security_audit_logging": True,
+            "atomic_event_persistence": True,
+            "wallet_event_retrieval": True,
             "persistent_network_peers": True,
             "persistent_network_events": True,
             "private_key_storage": False,
