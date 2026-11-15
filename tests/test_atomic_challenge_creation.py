@@ -1,5 +1,5 @@
 """
-VOIN ATOMIC CHALLENGE CREATION TEST SUITE V1.0
+VOIN ATOMIC CHALLENGE CREATION TEST SUITE V1.0.1
 
 Tests:
 - Atomic nonce and challenge creation
@@ -30,7 +30,9 @@ def storage(tmp_path):
 def challenge_data():
     return {
         "challenge_id": "a" * 64,
-        "wallet_address": "0x1234567890abcdef1234567890abcdef12345678",
+        "wallet_address": (
+            "0x1234567890abcdef1234567890abcdef12345678"
+        ),
         "nonce": "b" * 64,
         "message": "VOIN WALLET AUTHENTICATION TEST",
         "expires_at": int(time.time()) + 300
@@ -77,7 +79,7 @@ def test_atomic_challenge_creation_success(
     challenge_data
 ):
 
-    result = create_atomic_challenge(
+    create_atomic_challenge(
         storage,
         challenge_data
     )
@@ -227,7 +229,10 @@ def test_atomic_challenge_can_be_retrieved(
     )
 
     assert challenge is not None
-    assert challenge["used"] is False
+
+    # SQLite stores boolean values as INTEGER.
+    assert challenge["used"] == 0
+    assert bool(challenge["used"]) is False
 
 
 # ==================================================
