@@ -1,5 +1,5 @@
 """
-VOIN CHALLENGE ENGINE V1.3.0
+VOIN CHALLENGE ENGINE V1.3.1
 
 Features:
 - Secure nonce generation
@@ -23,7 +23,7 @@ from security.storage import VOINStorageEngine
 
 class VOINChallengeEngine:
 
-    VERSION = "1.3.0"
+    VERSION = "1.3.1"
 
     NONCE_PATTERN = re.compile(r"^[a-fA-F0-9]{64}$")
 
@@ -68,7 +68,6 @@ class VOINChallengeEngine:
 
         wallet_address = wallet_address.strip()
 
-        # Generate secure nonce.
         if nonce is None:
             nonce = secrets.token_hex(32)
 
@@ -78,19 +77,16 @@ class VOINChallengeEngine:
         ):
             raise ValueError("Invalid nonce format")
 
-        # Generate timestamp.
         timestamp = int(time.time())
 
         expires_at = (
             timestamp + self.expiry_seconds
         )
 
-        # Generate unique challenge ID.
         challenge_id = hashlib.sha256(
             secrets.token_bytes(32)
         ).hexdigest()
 
-        # EIP-191 compatible message.
         message = (
             "VOIN WALLET AUTHENTICATION\n"
             f"Wallet: {wallet_address}\n"
@@ -100,12 +96,14 @@ class VOINChallengeEngine:
             "Purpose: Wallet ownership verification"
         )
 
-        # ATOMIC STORAGE:
-        # Nonce, challenge and security events
-        # must be committed in one transaction.
+        # IMPORTANT:
+        # Parameter order must match Storage V1.4.0:
+        # challenge_id, wallet_address, nonce,
+        # message, expires_at.
+
         self.storage.create_challenge_atomic(
-            wallet_address,
             challenge_id,
+            wallet_address,
             nonce,
             message,
             expires_at
@@ -150,13 +148,15 @@ class VOINChallengeEngine:
             if challenge.get("used"):
                 return False
 
-            stored_wallet = challenge.get("wallet")
+            stored_wallet = challenge.get(
+                "wallet_address"
+            )
 
             if not isinstance(stored_wallet, str):
                 return False
 
             if (
-                stored_wallet.strip().lower()
+                stored_wallet.lower()
                 != wallet_address.strip().lower()
             ):
                 return False
@@ -190,12 +190,23 @@ class VOINChallengeEngine:
         if not isinstance(challenge_id, str):
             return False
 
-        if wallet_address is not None:
+        try:
+
+            if wallet_address is None:
+
+                challenge = self.storage.get_challenge(
+                    challenge_id
+                )
+
+                if not challenge:
+                    return False
+
+                wallet_address = challenge.get(
+                    "wallet_address"
+                )
 
             if not isinstance(wallet_address, str):
                 return False
-
-        try:
 
             return self.storage.consume_challenge(
                 challenge_id,
