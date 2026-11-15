@@ -58,7 +58,7 @@ def test_engine_uses_persistent_storage(engine):
 
 def test_engine_version(engine):
 
-    assert engine.VERSION == "1.1.0"
+    assert engine.VERSION == "1.1.1"
 
 
 # --------------------------------------------------
