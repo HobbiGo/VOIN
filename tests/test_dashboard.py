@@ -12,12 +12,13 @@ Tests:
 - Wallet security status
 - Dashboard summary
 - Input validation
+- Optional component handling
 """
 
 import pytest
 
 from security.storage import VOINStorageEngine
-from security.dashboard import VOINDashboardEngine
+from security.dashboard import VOINSecurityDashboard
 
 
 class FakeAlertEngine:
@@ -51,8 +52,10 @@ class FakeMonitorEngine:
     def get_security_status(self):
         return {
             "status": "ACTIVE",
-            "total_events": 10,
-            "suspicious_activity": False,
+            "monitoring": {
+                "enabled": True,
+            },
+            "version": "1.1.0",
         }
 
     def engine_info(self):
@@ -101,7 +104,7 @@ def storage(tmp_path):
 @pytest.fixture
 def dashboard(storage):
 
-    return VOINDashboardEngine(
+    return VOINSecurityDashboard(
         storage=storage,
         audit_engine=FakeAuditEngine(),
         monitor_engine=FakeMonitorEngine(),
@@ -136,62 +139,79 @@ def security_events(storage):
 
 def test_dashboard_engine_creation(dashboard):
 
-    assert isinstance(dashboard, VOINDashboardEngine)
+    assert isinstance(
+        dashboard,
+        VOINSecurityDashboard
+    )
 
 
 def test_dashboard_engine_info(dashboard):
 
     info = dashboard.engine_info()
 
-    assert isinstance(info, dict)
-
-    assert info["engine"] == "VOIN Security Dashboard Engine"
+    assert info["engine"] == "VOIN Security Dashboard"
 
     assert info["version"] == "1.1.0"
+
+    assert info["security_statistics"] is True
+
+    assert info["alert_monitoring"] is True
+
+    assert info["security_monitoring"] is True
+
+    assert info["status"] == "READY_FOR_TESTING"
 
 
 def test_event_statistics(dashboard, security_events):
 
     statistics = dashboard.get_event_statistics()
 
-    assert isinstance(statistics, dict)
+    assert statistics["total_events"] == 3
 
-    assert "event_breakdown" in statistics
+    assert statistics["authentication_success"] == 1
+
+    assert statistics["authentication_failed"] == 1
+
+    assert statistics["replay_attempts"] == 1
 
     breakdown = statistics["event_breakdown"]
 
-    assert breakdown["AUTHENTICATION_SUCCESS"] >= 1
+    assert breakdown["AUTHENTICATION_SUCCESS"] == 1
 
-    assert breakdown["AUTHENTICATION_FAILED"] >= 1
+    assert breakdown["AUTHENTICATION_FAILED"] == 1
 
-    assert breakdown["REPLAY_ATTEMPT"] >= 1
+    assert breakdown["REPLAY_ATTEMPT"] == 1
 
 
 def test_alert_statistics(dashboard):
 
     statistics = dashboard.get_alert_statistics()
 
-    assert statistics["total"] == 2
+    assert statistics["available"] is True
 
-    assert statistics["by_risk"]["HIGH"] == 1
+    assert statistics["alerts"]["total"] == 2
 
-    assert statistics["by_risk"]["CRITICAL"] == 1
+    assert statistics["alerts"]["by_risk"]["HIGH"] == 1
+
+    assert statistics["alerts"]["by_risk"]["CRITICAL"] == 1
 
 
 def test_monitoring_status(dashboard):
 
     status = dashboard.get_monitoring_status()
 
-    assert isinstance(status, dict)
+    assert status["available"] is True
 
-    assert status
+    assert status["status"] == "ACTIVE"
+
+    assert status["monitoring"]["enabled"] is True
+
+    assert status["version"] == "1.1.0"
 
 
 def test_engine_status(dashboard):
 
     status = dashboard.get_engine_status()
-
-    assert isinstance(status, dict)
 
     assert "storage" in status
 
@@ -201,18 +221,33 @@ def test_engine_status(dashboard):
 
     assert "alert" in status
 
-    assert "rate_limit" in status
+    assert "rate_limiting" in status
+
+    assert status["audit"]["available"] is True
+
+    assert status["monitor"]["available"] is True
+
+    assert status["alert"]["available"] is True
+
+    assert status["rate_limiting"]["available"] is True
 
 
 def test_recent_security_events(dashboard, security_events):
 
-    events = dashboard.get_recent_events(limit=10)
+    result = dashboard.get_recent_events(limit=10)
 
-    assert isinstance(events, list)
+    assert isinstance(result, dict)
 
-    assert len(events) == 3
+    assert result["total"] == 3
 
-    assert all(isinstance(event, dict) for event in events)
+    assert isinstance(result["events"], list)
+
+    assert len(result["events"]) == 3
+
+    assert all(
+        isinstance(event, dict)
+        for event in result["events"]
+    )
 
 
 def test_wallet_security_status(dashboard):
@@ -221,34 +256,81 @@ def test_wallet_security_status(dashboard):
         "0x1111111111111111111111111111111111111111"
     )
 
-    status = dashboard.get_wallet_security_status(
+    result = dashboard.get_wallet_security_status(
         wallet_address
     )
 
-    assert isinstance(status, dict)
+    assert result["available"] is True
 
-    assert status["wallet_address"] == wallet_address
+    assert result["rate_limit"]["wallet_address"] == wallet_address
 
-    assert status["blocked"] is False
+    assert result["rate_limit"]["blocked"] is False
 
 
 def test_dashboard_summary(dashboard, security_events):
 
     result = dashboard.get_dashboard()
 
-    assert isinstance(result, dict)
+    assert result["dashboard"] == "VOIN Security Dashboard"
+
+    assert result["version"] == "1.1.0"
 
     assert result["status"] == "READY_FOR_TESTING"
 
-    assert "event_statistics" in result
+    assert "generated_at" in result
+
+    assert "security_statistics" in result
 
     assert "alert_statistics" in result
 
-    assert "monitoring" in result
+    assert "monitoring_status" in result
 
     assert "engine_status" in result
 
     assert "recent_events" in result
+
+    assert result["security_statistics"]["total_events"] == 3
+
+
+def test_alert_engine_not_configured(storage):
+
+    dashboard = VOINSecurityDashboard(
+        storage=storage
+    )
+
+    result = dashboard.get_alert_statistics()
+
+    assert result["available"] is False
+
+    assert result["alerts"] == {}
+
+
+def test_monitor_engine_not_configured(storage):
+
+    dashboard = VOINSecurityDashboard(
+        storage=storage
+    )
+
+    result = dashboard.get_monitoring_status()
+
+    assert result["available"] is False
+
+    assert result["status"] == "NOT_CONFIGURED"
+
+
+def test_rate_limit_engine_not_configured(storage):
+
+    dashboard = VOINSecurityDashboard(
+        storage=storage
+    )
+
+    result = dashboard.get_wallet_security_status(
+        "0x1111111111111111111111111111111111111111"
+    )
+
+    assert result["available"] is False
+
+    assert result["status"] == "RATE_LIMITING_NOT_CONFIGURED"
 
 
 def test_invalid_event_limit(dashboard):
@@ -265,13 +347,6 @@ def test_negative_event_limit(dashboard):
         dashboard.get_recent_events(limit=-1)
 
 
-def test_invalid_statistics_limit(dashboard):
-
-    with pytest.raises(ValueError):
-
-        dashboard.get_event_statistics(limit=0)
-
-
 def test_boolean_event_limit_rejected(dashboard):
 
     with pytest.raises(ValueError):
@@ -279,8 +354,29 @@ def test_boolean_event_limit_rejected(dashboard):
         dashboard.get_recent_events(limit=True)
 
 
+def test_invalid_statistics_limit(dashboard):
+
+    with pytest.raises(ValueError):
+
+        dashboard.get_event_statistics(limit=0)
+
+
 def test_boolean_statistics_limit_rejected(dashboard):
 
     with pytest.raises(ValueError):
 
         dashboard.get_event_statistics(limit=True)
+
+
+def test_string_event_limit_rejected(dashboard):
+
+    with pytest.raises(ValueError):
+
+        dashboard.get_recent_events(limit="10")
+
+
+def test_string_statistics_limit_rejected(dashboard):
+
+    with pytest.raises(ValueError):
+
+        dashboard.get_event_statistics(limit="100")
