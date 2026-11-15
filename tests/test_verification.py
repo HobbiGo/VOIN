@@ -12,8 +12,7 @@ yield engine
 engine.close()
 @pytest.fixture
 def wallet():
-account = Account.create()
-return account
+return Account.create()
 @pytest.fixture
 def verification(storage):
 return VOINVerificationEngine(
@@ -242,8 +241,6 @@ result = verification.verify_wallet(
 
 assert result["success"] is True
 
-# A successfully verified authentication must also consume
-# its associated nonce.
 nonce_consumed = verification.challenge_engine.storage.consume_nonce(
     wallet.address,
     nonce
