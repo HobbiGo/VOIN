@@ -49,7 +49,7 @@ def peer():
 # ==================================================
 
 def test_storage_engine_version():
-    assert VOINStorageEngine.VERSION == "1.3.0"
+    assert VOINStorageEngine.VERSION == "1.4.0"
 
 
 # ==================================================
