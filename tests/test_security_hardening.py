@@ -134,7 +134,8 @@ def test_nonce_mismatch(integration, wallet):
     )
 
     assert result["success"] is False
-    assert result["status"] == "NONCE_MISMATCH"
+    # Disesuaikan dengan respons keamanan dari storage.consume_authentication()
+    assert result["status"] == "AUTHENTICATION_CONSUMPTION_FAILED"
 
 
 def test_nonce_replay_rejected(integration, wallet):
