@@ -35,6 +35,7 @@ EVENT_TYPES = {
 }
 
 def __init__(self, storage=None):
+
     self.storage = (
         storage
         if storage is not None
@@ -217,10 +218,7 @@ def record_expired_challenge(
 # NONCE EVENTS
 # --------------------------------------------------
 
-def record_nonce_created(
-    self,
-    wallet_address
-):
+def record_nonce_created(self, wallet_address):
 
     return self.record_event(
         event_type="NONCE_CREATED",
@@ -230,10 +228,7 @@ def record_nonce_created(
         }
     )
 
-def record_nonce_consumed(
-    self,
-    wallet_address
-):
+def record_nonce_consumed(self, wallet_address):
 
     return self.record_event(
         event_type="NONCE_CONSUMED",
@@ -292,6 +287,7 @@ def record_rate_limit_exceeded(
     }
 
     if details is not None:
+
         if not isinstance(details, dict):
             raise ValueError(
                 "Rate limit details must be a dictionary"
