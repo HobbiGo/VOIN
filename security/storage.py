@@ -18,6 +18,8 @@ Features:
 - Explicit SQLite connection lifecycle management
 - Shared in-memory database support
 - Backward-compatible storage APIs
+- Safe connection initialization cleanup
+- Safe memory anchor initialization cleanup
 
 Security note:
 This module stores security metadata, not private keys.
@@ -41,6 +43,7 @@ class _ClosingConnection(sqlite3.Connection):
     def __exit__(self, exc_type, exc_value, traceback):
 
         try:
+
             return super().__exit__(
                 exc_type,
                 exc_value,
@@ -48,6 +51,7 @@ class _ClosingConnection(sqlite3.Connection):
             )
 
         finally:
+
             self.close()
 
 
@@ -84,43 +88,84 @@ class VOINStorageEngine:
                 exist_ok=True
             )
 
-        self._initialize_database()
+        # Initialize database safely.
+        # Release memory anchor if initialization fails.
+
+        try:
+
+            self._initialize_database()
+
+        except Exception:
+
+            if self._memory_anchor is not None:
+
+                self._memory_anchor.close()
+                self._memory_anchor = None
+
+            raise
 
     # --------------------------------------------------
     # CONNECTION MANAGEMENT
     # --------------------------------------------------
 
     def _connect(self):
+        """
+        Create SQLite connection.
 
-        if self._memory_uri is not None:
+        Guarantees:
+        - Foreign keys enabled.
+        - Busy timeout configured.
+        - Connection automatically closes.
+        - Partial initialization failures close connection.
+        """
 
-            connection = sqlite3.connect(
-                self._memory_uri,
-                uri=True,
-                timeout=10,
-                isolation_level=None,
-                factory=_ClosingConnection
+        connection = None
+
+        try:
+
+            if self._memory_uri is not None:
+
+                connection = sqlite3.connect(
+                    self._memory_uri,
+                    uri=True,
+                    timeout=10,
+                    isolation_level=None,
+                    factory=_ClosingConnection
+                )
+
+            else:
+
+                connection = sqlite3.connect(
+                    self.database_path,
+                    timeout=10,
+                    isolation_level=None,
+                    factory=_ClosingConnection
+                )
+
+            connection.row_factory = sqlite3.Row
+
+            connection.execute(
+                "PRAGMA foreign_keys = ON"
             )
 
-        else:
-
-            connection = sqlite3.connect(
-                self.database_path,
-                timeout=10,
-                isolation_level=None,
-                factory=_ClosingConnection
+            connection.execute(
+                "PRAGMA busy_timeout = 10000"
             )
 
-        connection.row_factory = sqlite3.Row
+            return connection
 
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute("PRAGMA busy_timeout = 10000")
+        except Exception:
 
-        return connection
+            if connection is not None:
+
+                connection.close()
+
+            raise
 
     def close(self):
         """
         Release the persistent in-memory database anchor.
+
         File-based database connections are closed automatically.
         """
 
@@ -134,7 +179,10 @@ class VOINStorageEngine:
         with self._connect() as connection:
 
             if self.database_path != ":memory:":
-                connection.execute("PRAGMA journal_mode = WAL")
+
+                connection.execute(
+                    "PRAGMA journal_mode = WAL"
+                )
 
             connection.execute("""
                 CREATE TABLE IF NOT EXISTS challenges (
@@ -198,6 +246,7 @@ class VOINStorageEngine:
     def _hash_nonce(nonce):
 
         if not isinstance(nonce, str) or not nonce:
+
             raise ValueError("Invalid nonce")
 
         return hashlib.sha256(
@@ -208,11 +257,13 @@ class VOINStorageEngine:
     def _normalize_wallet(wallet_address):
 
         if not isinstance(wallet_address, str):
+
             raise ValueError("Invalid wallet address")
 
         wallet = wallet_address.strip()
 
         if not wallet:
+
             raise ValueError("Empty wallet address")
 
         return wallet.lower()
@@ -225,12 +276,14 @@ class VOINStorageEngine:
             or not isinstance(limit, int)
             or limit <= 0
         ):
+
             raise ValueError("Invalid event limit")
 
     @staticmethod
     def _serialize_details(details):
 
         if details is None:
+
             return None
 
         return json.dumps(
@@ -389,36 +442,29 @@ class VOINStorageEngine:
         message,
         expires_at
     ):
-        """
-        Atomically create nonce, challenge and security events.
-
-        All operations are committed together.
-
-        If any operation fails, the complete transaction
-        is rolled back.
-
-        Returns:
-            True when all operations succeed.
-        """
 
         wallet = self._normalize_wallet(wallet_address)
 
         if not isinstance(challenge_id, str) or not challenge_id:
+
             raise ValueError("Invalid challenge ID")
 
         if not isinstance(message, str) or not message:
+
             raise ValueError("Invalid challenge message")
 
         if (
             isinstance(expires_at, bool)
             or not isinstance(expires_at, int)
         ):
+
             raise ValueError("Invalid expiration")
 
         nonce_hash = self._hash_nonce(nonce)
         timestamp = int(time.time())
 
         if expires_at <= timestamp:
+
             raise ValueError("Challenge already expired")
 
         with self._connect() as connection:
@@ -426,8 +472,6 @@ class VOINStorageEngine:
             try:
 
                 connection.execute("BEGIN IMMEDIATE")
-
-                # STEP 1: CREATE NONCE
 
                 connection.execute("""
                     INSERT INTO nonces (
@@ -442,8 +486,6 @@ class VOINStorageEngine:
                     nonce_hash,
                     timestamp
                 ))
-
-                # STEP 2: CREATE CHALLENGE
 
                 connection.execute("""
                     INSERT INTO challenges (
@@ -465,16 +507,12 @@ class VOINStorageEngine:
                     expires_at
                 ))
 
-                # STEP 3: RECORD NONCE EVENT
-
                 self._insert_security_event(
                     connection,
                     "NONCE_CREATED",
                     wallet,
                     timestamp=timestamp
                 )
-
-                # STEP 4: RECORD CHALLENGE EVENT
 
                 self._insert_security_event(
                     connection,
@@ -483,8 +521,6 @@ class VOINStorageEngine:
                     challenge_id,
                     timestamp=timestamp
                 )
-
-                # STEP 5: RECORD ATOMIC CREATION EVENT
 
                 self._insert_security_event(
                     connection,
@@ -498,8 +534,6 @@ class VOINStorageEngine:
                     }),
                     timestamp
                 )
-
-                # STEP 6: COMMIT
 
                 connection.commit()
 
@@ -526,21 +560,25 @@ class VOINStorageEngine:
         wallet = self._normalize_wallet(wallet_address)
 
         if not isinstance(challenge_id, str) or not challenge_id:
+
             raise ValueError("Invalid challenge ID")
 
         if not isinstance(message, str) or not message:
+
             raise ValueError("Invalid challenge message")
 
         if (
             isinstance(expires_at, bool)
             or not isinstance(expires_at, int)
         ):
+
             raise ValueError("Invalid expiration")
 
         nonce_hash = self._hash_nonce(nonce)
         timestamp = int(time.time())
 
         if expires_at <= timestamp:
+
             raise ValueError("Challenge already expired")
 
         with self._connect() as connection:
@@ -596,6 +634,7 @@ class VOINStorageEngine:
             """, (challenge_id,)).fetchone()
 
         if row is None:
+
             return None
 
         return dict(row)
@@ -666,8 +705,6 @@ class VOINStorageEngine:
 
                 connection.execute("BEGIN IMMEDIATE")
 
-                # CONSUME CHALLENGE
-
                 challenge_cursor = connection.execute("""
                     UPDATE challenges
                     SET used = 1
@@ -688,8 +725,6 @@ class VOINStorageEngine:
                     connection.rollback()
                     return False
 
-                # CONSUME REGISTERED NONCE
-
                 nonce_cursor = connection.execute("""
                     UPDATE nonces
                     SET used = 1
@@ -705,8 +740,6 @@ class VOINStorageEngine:
 
                     connection.rollback()
                     return False
-
-                # RECORD AUTHENTICATION CONSUMPTION
 
                 self._insert_security_event(
                     connection,
@@ -742,11 +775,13 @@ class VOINStorageEngine:
     ):
 
         if not isinstance(event_type, str) or not event_type:
+
             raise ValueError("Invalid event type")
 
         wallet = None
 
         if wallet_address is not None:
+
             wallet = self._normalize_wallet(wallet_address)
 
         serialized_details = self._serialize_details(details)
@@ -809,9 +844,11 @@ class VOINStorageEngine:
     def save_network_peer(self, peer_id, endpoint):
 
         if not isinstance(peer_id, str) or not peer_id:
+
             raise ValueError("Invalid peer ID")
 
         if not isinstance(endpoint, str) or not endpoint:
+
             raise ValueError("Invalid peer endpoint")
 
         timestamp = int(time.time())
@@ -865,6 +902,7 @@ class VOINStorageEngine:
             """, (peer_id,)).fetchone()
 
         if row is None:
+
             return None
 
         return dict(row)
@@ -884,6 +922,7 @@ class VOINStorageEngine:
             else:
 
                 if status not in {"TRUSTED", "REVOKED"}:
+
                     raise ValueError("Invalid peer status")
 
                 rows = connection.execute("""
@@ -944,11 +983,13 @@ class VOINStorageEngine:
     ):
 
         if not isinstance(event_type, str) or not event_type:
+
             raise ValueError("Invalid network event type")
 
         if peer_id is not None:
 
             if not isinstance(peer_id, str) or not peer_id:
+
                 raise ValueError("Invalid peer ID")
 
         serialized_details = self._serialize_details(details)
