@@ -8,6 +8,7 @@ Features:
 - Temporary cooldown
 - SQLite persistence
 - Atomic request processing
+- SQLite connection lifecycle management
 - Security event logging
 """
 
@@ -15,6 +16,8 @@ import sqlite3
 import time
 import math
 import re
+
+from contextlib import closing
 
 
 class VOINRateLimitEngine:
@@ -54,10 +57,14 @@ class VOINRateLimitEngine:
     def _validate_positive_int(value, name):
 
         if isinstance(value, bool) or not isinstance(value, int):
-            raise ValueError(f"{name} must be a positive integer")
+            raise ValueError(
+                f"{name} must be a positive integer"
+            )
 
         if value <= 0:
-            raise ValueError(f"{name} must be greater than zero")
+            raise ValueError(
+                f"{name} must be greater than zero"
+            )
 
         return value
 
@@ -77,6 +84,10 @@ class VOINRateLimitEngine:
 
         return wallet_address
 
+    # ==========================================
+    # SQLITE CONNECTION MANAGEMENT
+    # ==========================================
+
     def _connect(self):
 
         connection = sqlite3.connect(
@@ -87,13 +98,17 @@ class VOINRateLimitEngine:
 
         connection.row_factory = sqlite3.Row
 
-        connection.execute("PRAGMA busy_timeout = 10000")
+        connection.execute(
+            "PRAGMA busy_timeout = 10000"
+        )
 
         return connection
 
     def _initialize_database(self):
 
-        with self._connect() as connection:
+        # Automatically close SQLite connection.
+
+        with closing(self._connect()) as connection:
 
             connection.execute("""
                 CREATE TABLE IF NOT EXISTS wallet_rate_limits (
@@ -111,7 +126,16 @@ class VOINRateLimitEngine:
                 )
             """)
 
-    def _log_violation(self, connection, wallet_address, details):
+    # ==========================================
+    # SECURITY EVENT LOGGING
+    # ==========================================
+
+    def _log_violation(
+        self,
+        connection,
+        wallet_address,
+        details
+    ):
 
         connection.execute(
             """
@@ -133,6 +157,10 @@ class VOINRateLimitEngine:
             )
         )
 
+    # ==========================================
+    # CONSUME AUTHENTICATION ATTEMPT
+    # ==========================================
+
     def consume_attempt(self, wallet_address):
 
         wallet = self._normalize_wallet(wallet_address)
@@ -142,6 +170,8 @@ class VOINRateLimitEngine:
         connection = self._connect()
 
         try:
+
+            # Atomic transaction locking.
 
             connection.execute("BEGIN IMMEDIATE")
 
@@ -184,7 +214,9 @@ class VOINRateLimitEngine:
 
             if blocked_until > now:
 
-                retry_after = math.ceil(blocked_until - now)
+                retry_after = math.ceil(
+                    blocked_until - now
+                )
 
                 self._log_violation(
                     connection,
@@ -215,7 +247,9 @@ class VOINRateLimitEngine:
 
             if attempts >= self.max_attempts:
 
-                blocked_until = now + self.cooldown_seconds
+                blocked_until = (
+                    now + self.cooldown_seconds
+                )
 
                 connection.execute(
                     """
@@ -224,7 +258,11 @@ class VOINRateLimitEngine:
                         updated_at = ?
                     WHERE wallet_address = ?
                     """,
-                    (blocked_until, now, wallet)
+                    (
+                        blocked_until,
+                        now,
+                        wallet
+                    )
                 )
 
                 self._log_violation(
@@ -244,7 +282,7 @@ class VOINRateLimitEngine:
                     "status": "BLOCKED"
                 }
 
-            # Register the permitted attempt.
+            # Register permitted attempt.
 
             attempts += 1
 
@@ -281,12 +319,20 @@ class VOINRateLimitEngine:
 
         except Exception:
 
-            connection.rollback()
+            if connection.in_transaction:
+                connection.rollback()
+
             raise
 
         finally:
 
+            # Always close connection.
+
             connection.close()
+
+    # ==========================================
+    # GET WALLET RATE LIMIT STATUS
+    # ==========================================
 
     def get_status(self, wallet_address):
 
@@ -294,7 +340,9 @@ class VOINRateLimitEngine:
 
         now = time.time()
 
-        with self._connect() as connection:
+        # Automatically close SQLite connection.
+
+        with closing(self._connect()) as connection:
 
             row = connection.execute(
                 """
@@ -317,6 +365,7 @@ class VOINRateLimitEngine:
             }
 
         attempts = row["attempt_count"]
+
         blocked_until = row["blocked_until"]
 
         if blocked_until > now:
@@ -326,7 +375,9 @@ class VOINRateLimitEngine:
                 "attempts": attempts,
                 "remaining": 0,
                 "blocked": True,
-                "retry_after": math.ceil(blocked_until - now),
+                "retry_after": math.ceil(
+                    blocked_until - now
+                ),
                 "status": "BLOCKED"
             }
 
@@ -351,11 +402,17 @@ class VOINRateLimitEngine:
             "status": "NORMAL"
         }
 
+    # ==========================================
+    # RESET WALLET RATE LIMIT
+    # ==========================================
+
     def reset_wallet(self, wallet_address):
 
         wallet = self._normalize_wallet(wallet_address)
 
-        with self._connect() as connection:
+        # Automatically close SQLite connection.
+
+        with closing(self._connect()) as connection:
 
             connection.execute(
                 """
@@ -366,6 +423,10 @@ class VOINRateLimitEngine:
             )
 
         return True
+
+    # ==========================================
+    # ENGINE INFORMATION
+    # ==========================================
 
     def engine_info(self):
 
