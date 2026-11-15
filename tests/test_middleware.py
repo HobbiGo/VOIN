@@ -50,7 +50,7 @@ def valid_environ():
 
 def test_middleware_creation(middleware):
     assert callable(middleware)
-    assert middleware.VERSION == "1.0.4"
+    assert middleware.VERSION == "1.0.5"
 
 
 def test_valid_request(middleware):
@@ -121,7 +121,7 @@ def test_engine_info():
     info = VOINSecurityMiddleware.engine_info()
 
     assert info["engine"] == "VOIN Security Middleware"
-    assert info["version"] == "1.0.4"
+    assert info["version"] == "1.0.5"
     assert info["wsgi_support"] is True
     assert info["request_validation"] is True
     assert info["request_id"] is True
