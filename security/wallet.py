@@ -1,5 +1,5 @@
 """
-VOIN WALLET ENGINE V1.0.0
+VOIN WALLET ENGINE V1.0.1
 
 Secure wallet generation, address validation,
 private key validation and encrypted keystore management.
@@ -18,7 +18,6 @@ import re
 
 from eth_account import Account
 from eth_utils import (
-    is_address,
     is_checksum_address,
     to_checksum_address,
 )
@@ -26,7 +25,7 @@ from eth_utils import (
 
 class VOINWalletEngine:
 
-    VERSION = "1.0.0"
+    VERSION = "1.0.1"
 
     ENGINE_NAME = "VOIN Wallet Engine"
 
@@ -64,18 +63,18 @@ class VOINWalletEngine:
 
         address = address.strip()
 
-        if not is_address(address):
+        if not re.fullmatch(r"0x[0-9a-fA-F]{40}", address):
             return False
 
-        # Accept valid mixed-case addresses only
-        # when their checksum is correct.
-        if (
-            address != address.lower()
-            and address != address.upper()
-        ):
-            return is_checksum_address(address)
+        body = address[2:]
 
-        return True
+        # Uniform lowercase or uppercase hexadecimal
+        # addresses are valid Ethereum address formats.
+        if body == body.lower() or body == body.upper():
+            return True
+
+        # Mixed-case addresses must pass EIP-55 checksum.
+        return is_checksum_address(address)
 
     # --------------------------------------------------
     # CHECKSUM ADDRESS
@@ -87,7 +86,7 @@ class VOINWalletEngine:
         if not isinstance(address, str):
             raise ValueError("Invalid wallet address")
 
-        if not is_address(address):
+        if not re.fullmatch(r"0x[0-9a-fA-F]{40}", address):
             raise ValueError("Invalid wallet address")
 
         return to_checksum_address(address)
@@ -151,26 +150,47 @@ class VOINWalletEngine:
             raise ValueError("Invalid private key")
 
         if not isinstance(password, str) or len(password) < 12:
-            raise ValueError("Password must contain at least 12 characters")
+            raise ValueError(
+                "Password must contain at least 12 characters"
+            )
 
         account = Account.from_key(private_key)
 
-        keystore = Account.encrypt(
+        encrypted = Account.encrypt(
             account.key,
             password
         )
 
-        if isinstance(keystore, bytes):
-            keystore = keystore.decode("utf-8")
+        # eth-account may return a dictionary,
+        # bytes, or JSON string depending on version.
 
-        parsed = json.loads(keystore)
+        if isinstance(encrypted, bytes):
 
-        if parsed.get("version") != 3:
+            encrypted = encrypted.decode("utf-8")
+
+        if isinstance(encrypted, str):
+
+            keystore_data = json.loads(encrypted)
+
+        elif isinstance(encrypted, dict):
+
+            keystore_data = encrypted
+
+        else:
+
+            raise ValueError("Unsupported keystore format")
+
+        if keystore_data.get("version") != 3:
             raise ValueError("Unsupported keystore version")
+
+        keystore_json = json.dumps(
+            keystore_data,
+            separators=(",", ":")
+        )
 
         return {
             "address": account.address,
-            "keystore": keystore,
+            "keystore": keystore_json,
             "keystore_version": 3,
             "encrypted": True,
         }
@@ -191,9 +211,15 @@ class VOINWalletEngine:
         try:
 
             if isinstance(keystore, str):
+
                 keystore_data = json.loads(keystore)
+
             else:
+
                 keystore_data = keystore
+
+            if not isinstance(keystore_data, dict):
+                raise ValueError("Invalid keystore format")
 
             if keystore_data.get("version") != 3:
                 raise ValueError("Unsupported keystore version")
@@ -206,10 +232,14 @@ class VOINWalletEngine:
             return private_key.hex()
 
         except ValueError:
+
             raise
 
         except Exception:
-            raise ValueError("Keystore decryption failed") from None
+
+            raise ValueError(
+                "Keystore decryption failed"
+            ) from None
 
     # --------------------------------------------------
     # WALLET ENGINE INFORMATION
