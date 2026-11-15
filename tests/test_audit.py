@@ -8,11 +8,15 @@ WALLET = "0x1234567890abcdef1234567890abcdef12345678"
 OTHER_WALLET = (
 "0xabcdef1234567890abcdef1234567890abcdef12"
 )
+--------------------------------------------------
+FIXTURES
+--------------------------------------------------
 @pytest.fixture
 def storage(tmp_path):
 engine = VOINStorageEngine(
-str(tmp_path / "audit_test.db")
+    str(tmp_path / "audit_test.db")
 )
+
 yield engine
 
 engine.close()
@@ -20,6 +24,7 @@ engine.close()
 @pytest.fixture
 def audit(storage):
 return VOINAuditEngine(storage=storage)
+
 --------------------------------------------------
 ENGINE INFORMATION
 --------------------------------------------------
