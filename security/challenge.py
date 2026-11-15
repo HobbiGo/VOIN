@@ -1,15 +1,16 @@
 """
-VOIN CHALLENGE ENGINE V1.2
-
-SQLite persistent challenge generation and validation.
+VOIN CHALLENGE ENGINE V1.3.0
 
 Features:
-- Persistent challenge storage
-- Persistent nonce registration
-- Challenge expiration protection
-- Atomic challenge consumption
+- Secure nonce generation
+- Challenge ID generation
+- Wallet validation
+- Nonce format validation
+- Atomic nonce and challenge persistence
+- Challenge expiration
+- Wallet ownership validation
 - Replay protection
-- Security audit integration
+- Persistent challenge storage
 """
 
 import secrets
@@ -22,7 +23,9 @@ from security.storage import VOINStorageEngine
 
 class VOINChallengeEngine:
 
-    VERSION = "1.2.0"
+    VERSION = "1.3.0"
+
+    NONCE_PATTERN = re.compile(r"^[a-fA-F0-9]{64}$")
 
     def __init__(
         self,
@@ -31,43 +34,63 @@ class VOINChallengeEngine:
     ):
 
         if (
-            not isinstance(expiry_seconds, int)
-            or isinstance(expiry_seconds, bool)
+            isinstance(expiry_seconds, bool)
+            or not isinstance(expiry_seconds, int)
             or expiry_seconds <= 0
         ):
-            raise ValueError("Invalid expiry duration")
+            raise ValueError(
+                "expiry_seconds must be a positive integer"
+            )
 
         self.expiry_seconds = expiry_seconds
 
-        self.storage = storage or VOINStorageEngine()
+        self.storage = (
+            storage
+            if storage is not None
+            else VOINStorageEngine()
+        )
 
-    def create_challenge(self, wallet_address, nonce=None):
+    # ==================================================
+    # CREATE CHALLENGE
+    # ==================================================
 
-        if not isinstance(wallet_address, str):
+    def create_challenge(
+        self,
+        wallet_address,
+        nonce=None
+    ):
+
+        if (
+            not isinstance(wallet_address, str)
+            or not wallet_address.strip()
+        ):
             raise ValueError("Invalid wallet address")
 
         wallet_address = wallet_address.strip()
 
-        if not wallet_address:
-            raise ValueError("Empty wallet address")
-
+        # Generate secure nonce.
         if nonce is None:
             nonce = secrets.token_hex(32)
 
-        if not isinstance(nonce, str):
-            raise ValueError("Invalid nonce")
+        if (
+            not isinstance(nonce, str)
+            or not self.NONCE_PATTERN.fullmatch(nonce)
+        ):
+            raise ValueError("Invalid nonce format")
 
-        if not re.fullmatch(r"[a-fA-F0-9]{64}", nonce):
-            raise ValueError(
-                "Nonce must contain 64 hexadecimal characters"
-            )
-
+        # Generate timestamp.
         timestamp = int(time.time())
 
+        expires_at = (
+            timestamp + self.expiry_seconds
+        )
+
+        # Generate unique challenge ID.
         challenge_id = hashlib.sha256(
             secrets.token_bytes(32)
         ).hexdigest()
 
+        # EIP-191 compatible message.
         message = (
             "VOIN WALLET AUTHENTICATION\n"
             f"Wallet: {wallet_address}\n"
@@ -77,18 +100,12 @@ class VOINChallengeEngine:
             "Purpose: Wallet ownership verification"
         )
 
-        expires_at = timestamp + self.expiry_seconds
-
-        # Register nonce permanently.
-        self.storage.save_nonce(
+        # ATOMIC STORAGE:
+        # Nonce, challenge and security events
+        # must be committed in one transaction.
+        self.storage.create_challenge_atomic(
             wallet_address,
-            nonce
-        )
-
-        # Persist challenge in SQLite.
-        self.storage.save_challenge(
             challenge_id,
-            wallet_address,
             nonce,
             message,
             expires_at
@@ -102,16 +119,23 @@ class VOINChallengeEngine:
             "expires_at": expires_at
         }
 
+    # ==================================================
+    # VALIDATE CHALLENGE
+    # ==================================================
+
     def validate_challenge(
         self,
         challenge_id,
         wallet_address
     ):
 
-        if not isinstance(challenge_id, str):
+        if (
+            not isinstance(challenge_id, str)
+            or not isinstance(wallet_address, str)
+        ):
             return False
 
-        if not isinstance(wallet_address, str):
+        if not challenge_id or not wallet_address.strip():
             return False
 
         try:
@@ -123,22 +147,39 @@ class VOINChallengeEngine:
             if not challenge:
                 return False
 
-            if challenge["used"]:
+            if challenge.get("used"):
+                return False
+
+            stored_wallet = challenge.get("wallet")
+
+            if not isinstance(stored_wallet, str):
                 return False
 
             if (
-                challenge["wallet_address"].lower()
+                stored_wallet.strip().lower()
                 != wallet_address.strip().lower()
             ):
                 return False
 
-            if int(time.time()) >= challenge["expires_at"]:
+            expires_at = challenge.get("expires_at")
+
+            if (
+                isinstance(expires_at, bool)
+                or not isinstance(expires_at, int)
+            ):
+                return False
+
+            if int(time.time()) >= expires_at:
                 return False
 
             return True
 
         except (ValueError, TypeError):
             return False
+
+    # ==================================================
+    # CONSUME CHALLENGE
+    # ==================================================
 
     def consume_challenge(
         self,
@@ -149,8 +190,10 @@ class VOINChallengeEngine:
         if not isinstance(challenge_id, str):
             return False
 
-        if not isinstance(wallet_address, str):
-            return False
+        if wallet_address is not None:
+
+            if not isinstance(wallet_address, str):
+                return False
 
         try:
 
@@ -162,6 +205,10 @@ class VOINChallengeEngine:
         except (ValueError, TypeError):
             return False
 
+    # ==================================================
+    # ENGINE INFORMATION
+    # ==================================================
+
     @classmethod
     def engine_info(cls):
 
@@ -171,7 +218,11 @@ class VOINChallengeEngine:
             "storage": "SQLite",
             "persistent_challenges": True,
             "persistent_nonces": True,
-            "expiration_protection": True,
+            "secure_nonce_generation": True,
+            "nonce_validation": True,
+            "atomic_challenge_creation": True,
+            "challenge_expiration": True,
+            "wallet_ownership_validation": True,
             "atomic_consumption": True,
             "replay_protection": True,
             "status": "READY_FOR_TESTING"
