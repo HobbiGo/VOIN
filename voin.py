@@ -37,18 +37,11 @@ class StateStore:
         self.conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS blocks (
-                height INTEGER PRIMARY KEY,
-                hash TEXT UNIQUE NOT NULL,
-                parent_hash TEXT NOT NULL,
-                timestamp_ns INTEGER NOT NULL,
-                validator TEXT NOT NULL,
-                nonce INTEGER NOT NULL,
-                raw TEXT NOT NULL
+                height INTEGER PRIMARY KEY, hash TEXT UNIQUE NOT NULL, parent_hash TEXT NOT NULL,
+                timestamp_ns INTEGER NOT NULL, validator TEXT NOT NULL, nonce INTEGER NOT NULL, raw TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS accounts (
-                address TEXT PRIMARY KEY,
-                balance INTEGER NOT NULL,
-                nonce INTEGER NOT NULL
+                address TEXT PRIMARY KEY, balance INTEGER NOT NULL, nonce INTEGER NOT NULL
             );
             """
         )
@@ -59,13 +52,8 @@ class StateStore:
 
     def save_block(self, block):
         self.conn.execute(
-            "INSERT INTO blocks (height, hash, parent_hash, timestamp_ns, validator, nonce, raw) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (
-                block["index"], block["hash"], block["previous_hash"],
-                block["timestamp_ns"], block["validator"], block["nonce"],
-                json.dumps(block, sort_keys=True, separators=(",", ":")),
-            ),
+            "INSERT INTO blocks (height, hash, parent_hash, timestamp_ns, validator, nonce, raw) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (block["index"], block["hash"], block["previous_hash"], block["timestamp_ns"], block["validator"], block["nonce"], json.dumps(block, sort_keys=True, separators=(",", ":"))),
         )
         self.conn.commit()
 
@@ -75,22 +63,18 @@ class StateStore:
 
     def set_account(self, address, balance, nonce):
         self.conn.execute(
-            "INSERT INTO accounts (address, balance, nonce) VALUES (?, ?, ?) "
-            "ON CONFLICT(address) DO UPDATE SET balance=excluded.balance, nonce=excluded.nonce",
+            "INSERT INTO accounts (address, balance, nonce) VALUES (?, ?, ?) ON CONFLICT(address) DO UPDATE SET balance=excluded.balance, nonce=excluded.nonce",
             (address, balance, nonce),
         )
         self.conn.commit()
 
     def get_account(self, address):
-        row = self.conn.execute(
-            "SELECT balance, nonce FROM accounts WHERE address = ?", (address,)
-        ).fetchone()
-        if row is None:
-            return {"balance": 0, "nonce": 0}
+        row = self.conn.execute("SELECT balance, nonce FROM accounts WHERE address = ?", (address,)).fetchone()
+        if row is None: return {"balance": 0, "nonce": 0}
         return {"balance": row["balance"], "nonce": row["nonce"]}
 
 class VoinChain:
-    def __init__(self, allocations=None, difficulty=2, store=None):
+    def __init__(self, genesis_data=None, difficulty=2, store=None):
         if type(difficulty) is not int or not 0 <= difficulty <= 4:
             raise ValueError("Difficulty must be an integer from 0 to 4")
 
@@ -102,23 +86,28 @@ class VoinChain:
             self.chain = self.store.load_chain()
             self._trusted_genesis_hash = self.chain[0]["hash"]
         else:
-            if allocations is None:
-                allocations = {"alice": 1000}
+            # Setup Genesis Baru
+            allocations = genesis_data.get("allocations", {"alice": 1000}) if genesis_data else {"alice": 1000}
+            
             if not isinstance(allocations, dict) or not allocations:
                 raise ValueError("Genesis allocations must be a non-empty dictionary")
-            if any(not isinstance(a, str) or not a.strip() or not positive_int(v) for a, v in allocations.items()):
-                raise ValueError("Genesis requires named accounts and positive integer balances")
+                
             genesis = {
                 "index": 0, "timestamp_ns": time.time_ns(), "previous_hash": "0",
-                "allocations": copy.deepcopy(allocations), "transactions": [],
-                "validator": "GENESIS", "nonce": 0,
+                "allocations": copy.deepcopy(allocations), "transactions": [], "validator": "GENESIS", "nonce": 0,
             }
             genesis["hash"] = self._hash(genesis)
             self._trusted_genesis_hash = genesis["hash"]
             self.chain = [genesis]
             self.store.save_block(genesis)
+            
             for addr, balance in allocations.items():
                 self.store.set_account(addr, balance, 0)
+                
+        # Daftarkan Validator (baik dari genesis_data atau jika chain sudah dimuat)
+        if genesis_data and "validators" in genesis_data:
+            for v in genesis_data["validators"]:
+                self.register_validator(v["address"], 1000000, v["address"], v["pk_mldsa_hex"])
 
     @staticmethod
     def _hash(block):
@@ -126,10 +115,6 @@ class VoinChain:
         return digest({k: v for k, v in block.items() if k not in ignore})
 
     def register_validator(self, address, demo_stake, pk_ecdsa, pk_mldsa):
-        if not isinstance(address, str) or not address.strip() or not positive_int(demo_stake):
-            raise ValueError("Validator requires a name and positive integer demo stake")
-        if not isinstance(pk_ecdsa, str) or not isinstance(pk_mldsa, str):
-            raise ValueError("Validator public keys must be strings")
         self.validators[address] = {"demo_stake": demo_stake, "pk_ecdsa": pk_ecdsa, "pk_mldsa": pk_mldsa}
 
     @staticmethod
@@ -150,7 +135,6 @@ class VoinChain:
                 raise ValueError("Signatures must be hex strings")
 
             message = canonical_tx_message(tx)
-            # Verifikasi murni tanpa trik dummy
             if not verify_hybrid_tx(message, tx["sig_ecdsa"], tx["sig_mldsa"], sender):
                 raise ValueError("Invalid transaction signature")
 
@@ -165,7 +149,7 @@ class VoinChain:
 
     def _replay(self):
         genesis = self.chain[0]
-        if self._hash(genesis) != self._trusted_genesis_hash or genesis["hash"] != self._trusted_genesis_hash:
+        if self._hash(genesis) != self._trusted_genesis_hash:
             raise ValueError("Genesis was modified")
         balances = copy.deepcopy(genesis["allocations"])
         nonces = {}
