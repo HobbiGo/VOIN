@@ -10,7 +10,7 @@ from voin import VoinChain, StateStore, canonical_tx_message, canonical_block_me
 from wallet.verification import register_account_keys
 from eth_account import Account
 from eth_account.messages import encode_defunct
-from security.pqc_signer import sign as pqc_sign
+from security.pqc_signer import generate_keypair, sign as pqc_sign
 
 def get_port():
     if len(sys.argv) > 1:
@@ -30,66 +30,43 @@ store = StateStore(DB_FILE)
 chain = VoinChain(allocations={"alice": 1000}, difficulty=1, store=store)
 peers = set()
 
-# === MEMPOOL & VALIDATOR SETUP ===
-mempool = [] # Menyimpan transaksi yang belum masuk blok
-# Node ini bertindak sebagai Validator
+mempool = []
 validator_acct = Account.create()
-validator_pk_pqc, validator_sk_pqc = generate_keypair = (None, None) # Akan di-generate di bawah
-from security.pqc_signer import generate_keypair
 validator_pk_pqc, validator_sk_pqc = generate_keypair()
-
-# Daftarkan validator ini ke chain
 chain.register_validator(validator_acct.address, 50, validator_acct.address, validator_pk_pqc.hex())
 
 def mine_block():
-    """Background thread untuk membuat blok setiap 5 detik jika ada transaksi."""
     while True:
         time.sleep(5)
         if mempool:
-            print(f"[{NODE_ID}] ⛏️  Mempool berisi {len(mempool)} transaksi. Membuat blok...")
-            # Ambil semua transaksi di mempool
+            print(f"[{NODE_ID}] ⛏️ Mempool berisi {len(mempool)} transaksi. Membuat blok...")
             txs_to_mine = list(mempool)
             mempool.clear()
-            
             try:
-                # 1. Siapkan blok
                 block = chain.prepare_block(txs_to_mine, validator_acct.address)
-                
-                # 2. Tanda tangani blok dengan validator
                 block_msg = canonical_block_message(block)
                 v_sig_e = validator_acct.sign_message(encode_defunct(primitive=block_msg)).signature.hex()
                 v_sig_p = pqc_sign(block_msg, validator_sk_pqc).hex()
                 
-                # 3. Tambahkan ke chain lokal
                 chain.add_block(block, v_sig_e, v_sig_p)
                 print(f"[{NODE_ID}] ✅ Blok #{block['index']} berhasil ditambang.")
-                
-                # 4. Broadcast ke peer
                 broadcast_block(block, v_sig_e, v_sig_p)
             except Exception as e:
                 print(f"[{NODE_ID}] ❌ Gagal menambang blok: {e}")
 
-# Jalankan thread penambangan di background
 if __name__ == '__main__':
     threading.Thread(target=mine_block, daemon=True).start()
-
-# ==========================================
-# ENDPOINT API
-# ==========================================
 
 @app.route('/info', methods=['GET'])
 def get_info():
     return jsonify({
-        "node_id": NODE_ID,
-        "height": len(chain.chain) - 1,
-        "peers": list(peers),
-        "mempool_size": len(mempool),
+        "node_id": NODE_ID, "height": len(chain.chain) - 1,
+        "peers": list(peers), "mempool_size": len(mempool),
         "validator_address": validator_acct.address
     }), 200
 
 @app.route('/register_key', methods=['POST'])
 def register_key():
-    """Wallet mendaftarkan Public Key ML-DSA-nya agar Node bisa memverifikasi transaksinya."""
     data = request.json
     address = data.get("address")
     pk_ecdsa = data.get("pk_ecdsa")
@@ -101,7 +78,6 @@ def register_key():
 
 @app.route('/transaction', methods=['POST'])
 def receive_transaction():
-    """Menerima transaksi dan memasukkannya ke Mempool."""
     tx = request.json.get("tx")
     sig_ecdsa = request.json.get("sig_ecdsa")
     sig_mldsa = request.json.get("sig_mldsa")
@@ -109,16 +85,19 @@ def receive_transaction():
     if not tx or not sig_ecdsa or not sig_mldsa:
         return jsonify({"error": "Missing data"}), 400
 
-    # Sisipkan signature ke dalam objek tx
     tx["sig_ecdsa"] = sig_ecdsa
     tx["sig_mldsa"] = sig_mldsa
 
-    # Validasi awal format (verifikasi penuh terjadi saat block ditambang)
     try:
-        # Kita hanya cek nonce & saldo sekilas di sini (opsional, idealnya pakai fungsi validasi)
+        # Hanya validasi signature (tanpa mengeksekusi saldo dulu)
+        msg = canonical_tx_message(tx)
+        from wallet.verification import verify_hybrid_tx
+        if not verify_hybrid_tx(msg, sig_ecdsa, sig_mldsa, tx["sender"]):
+            return jsonify({"error": "Invalid signature"}), 400
+            
         mempool.append(tx)
         print(f"[{NODE_ID}] 📩 Transaksi masuk ke Mempool.")
-        return jsonify({"message": "Transaction added to Mempool", "tx_hash": "pending"}), 200
+        return jsonify({"message": "Transaction added to Mempool"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
