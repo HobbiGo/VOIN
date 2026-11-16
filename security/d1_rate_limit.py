@@ -1,8 +1,6 @@
 """
 VOIN D1 Rate Limit Engine
-Version: 1.0.0
-
-Asynchronous wallet rate limiter using Cloudflare D1.
+Version: 1.0.1
 """
 
 import re
@@ -11,7 +9,7 @@ import json
 
 
 class VOIND1RateLimitEngine:
-    VERSION = "1.0.0"
+    VERSION = "1.0.1"
 
     def __init__(
         self,
@@ -49,83 +47,78 @@ class VOIND1RateLimitEngine:
         return wallet
 
     async def consume_attempt(self, wallet_address):
-        """
-        Record one authentication attempt.
-
-        Uses a single atomic UPSERT to avoid the race condition
-        caused by separate SELECT and UPDATE operations.
-        """
-
         wallet = self._normalize_wallet(wallet_address)
         now = int(time.time())
 
         reset_condition = """
-            (
-                wallet_rate_limits.cooldown_until IS NOT NULL
-                OR (? - wallet_rate_limits.window_started_at) >= ?
-            )
+        (
+            (wallet_rate_limits.cooldown_until IS NOT NULL
+             AND wallet_rate_limits.cooldown_until <= ?)
+            OR
+            (wallet_rate_limits.cooldown_until IS NULL
+             AND (? - wallet_rate_limits.window_started_at) >= ?)
+        )
         """
 
         sql = f"""
-            INSERT INTO wallet_rate_limits (
-                wallet_address,
-                window_started_at,
-                attempts,
-                cooldown_until,
-                updated_at
-            )
-            VALUES (?, ?, 1, NULL, ?)
+        INSERT INTO wallet_rate_limits (
+            wallet_address,
+            window_started_at,
+            attempts,
+            cooldown_until,
+            updated_at
+        )
+        VALUES (?, ?, 1, NULL, ?)
 
-            ON CONFLICT(wallet_address) DO UPDATE SET
+        ON CONFLICT(wallet_address) DO UPDATE SET
 
-                window_started_at = CASE
-                    WHEN {reset_condition} THEN ?
-                    ELSE wallet_rate_limits.window_started_at
-                END,
+            window_started_at = CASE
+                WHEN {reset_condition} THEN ?
+                ELSE wallet_rate_limits.window_started_at
+            END,
 
-                attempts = CASE
-                    WHEN {reset_condition} THEN 1
-                    ELSE wallet_rate_limits.attempts + 1
-                END,
+            attempts = CASE
+                WHEN {reset_condition} THEN 1
+                ELSE wallet_rate_limits.attempts + 1
+            END,
 
-                cooldown_until = CASE
-                    WHEN {reset_condition} THEN NULL
-                    WHEN wallet_rate_limits.attempts + 1 >= ? 
-                        THEN ? + ?
-                    ELSE NULL
-                END,
+            cooldown_until = CASE
+                WHEN wallet_rate_limits.cooldown_until > ?
+                    THEN wallet_rate_limits.cooldown_until
+                WHEN {reset_condition}
+                    THEN NULL
+                WHEN wallet_rate_limits.attempts + 1 >= ?
+                    THEN ? + ?
+                ELSE NULL
+            END,
 
-                updated_at = ?
+            updated_at = ?
 
-            RETURNING
-                wallet_address,
-                window_started_at,
-                attempts,
-                cooldown_until,
-                updated_at
+        RETURNING
+            wallet_address,
+            window_started_at,
+            attempts,
+            cooldown_until,
+            updated_at
         """
 
-        statement = self.database.prepare(sql).bind(
-            wallet,
+        params = [
+            wallet, now, now,
+
+            now, now, self.window_seconds,
             now,
+
+            now, now, self.window_seconds,
             now,
 
             now,
-            self.window_seconds,
+            now, now, self.window_seconds,
+            self.max_attempts, now, self.cooldown_seconds,
 
             now,
+        ]
 
-            now,
-            self.window_seconds,
-
-            self.max_attempts,
-            now,
-            self.cooldown_seconds,
-
-            now,
-        )
-
-        row = await statement.first()
+        row = await self.database.prepare(sql).bind(*params).first()
 
         if row is None:
             raise RuntimeError("D1 rate limit operation failed")
@@ -148,8 +141,7 @@ class VOIND1RateLimitEngine:
             "attempts": attempts,
             "max_attempts": self.max_attempts,
             "remaining_attempts": max(
-                0,
-                self.max_attempts - attempts,
+                0, self.max_attempts - attempts
             ),
             "cooldown_until": cooldown_until,
             "retry_after": (
@@ -166,7 +158,7 @@ class VOIND1RateLimitEngine:
             "source": "VOIND1RateLimitEngine",
         }
 
-        sql = """
+        await self.database.prepare("""
             INSERT INTO security_events (
                 event_type,
                 wallet_address,
@@ -175,9 +167,7 @@ class VOIND1RateLimitEngine:
                 details
             )
             VALUES (?, ?, NULL, ?, ?)
-        """
-
-        await self.database.prepare(sql).bind(
+        """).bind(
             "RATE_LIMIT_EXCEEDED",
             wallet,
             now,
@@ -212,7 +202,6 @@ class VOIND1RateLimitEngine:
             }
 
         cooldown_until = row["cooldown_until"]
-
         blocked = (
             cooldown_until is not None
             and int(cooldown_until) > now
@@ -226,8 +215,7 @@ class VOIND1RateLimitEngine:
             "attempts": attempts,
             "max_attempts": self.max_attempts,
             "remaining_attempts": max(
-                0,
-                self.max_attempts - attempts,
+                0, self.max_attempts - attempts
             ),
             "blocked": blocked,
             "cooldown_until": cooldown_until,
