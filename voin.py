@@ -8,7 +8,6 @@ import time
 
 from security.pqc_signer import verify as pqc_verify
 from wallet.verification import verify_hybrid_tx
-from presale_contract import VOINPresaleContract
 
 def digest(value):
     raw = json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
@@ -44,6 +43,9 @@ class StateStore:
             CREATE TABLE IF NOT EXISTS accounts (
                 address TEXT PRIMARY KEY, balance INTEGER NOT NULL, nonce INTEGER NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS contracts (
+                address TEXT PRIMARY KEY, code TEXT NOT NULL, storage TEXT NOT NULL
+            );
             """
         )
 
@@ -71,6 +73,17 @@ class StateStore:
         row = self.conn.execute("SELECT balance, nonce FROM accounts WHERE address = ?", (address,)).fetchone()
         return {"balance": 0, "nonce": 0} if row is None else {"balance": row["balance"], "nonce": row["nonce"]}
 
+    def save_contract(self, address, code, storage_data):
+        self.conn.execute(
+            "INSERT OR REPLACE INTO contracts (address, code, storage) VALUES (?, ?, ?)",
+            (address, code, json.dumps(storage_data))
+        )
+        self.conn.commit()
+
+    def get_contract(self, address):
+        row = self.conn.execute("SELECT code, storage FROM contracts WHERE address = ?", (address,)).fetchone()
+        return json.loads(row["storage"]) if row else None
+
 class VoinChain:
     def __init__(self, genesis_data=None, difficulty=2, store=None):
         if type(difficulty) is not int or not 0 <= difficulty <= 4:
@@ -78,9 +91,6 @@ class VoinChain:
         self.difficulty = difficulty
         self.store = store if store is not None else StateStore(":memory:")
         self.validators = {}
-        
-        # Inisialisasi Smart Contract Presale (Treasury address bebas)
-        self.presale = VOINPresaleContract(treasury_address="0xTREASURY_WALLET_ADDRESS")
 
         if self.store.has_genesis():
             self.chain = self.store.load_chain()
@@ -123,17 +133,27 @@ class VoinChain:
             if balances.get(sender, 0) < tx["amount"]:
                 raise ValueError("Insufficient balance")
 
-            # --- LOGIKA EKSEKUSI PRESALE SMART CONTRACT ---
-            if recipient == "0xVOIN_PRESALE_CONTRACT_2026":
-                # Panggil kontrak presale
-                result = self.presale.execute(sender, tx["data"].get("usd_amount", 0))
-                tokens_bought = result["tokens_bought"]
-                
-                # Berikan saldo VOIN ke pembeli
-                balances[sender] = balances.get(sender, 0) + int(tokens_bought)
-                print(f"[VM] Presale: {sender} membeli {tokens_bought} VOIN")
+            # --- LOGIKA SMART CONTRACT ---
+            data = tx.get("data", {})
+            action = data.get("action")
 
-            # Transfer saldo (untuk transaksi biasa)
+            if action == "deploy":
+                contract_code = data.get("code")
+                self.store.save_contract(recipient, contract_code, {})
+                print(f"[VM] Contract Deployed at {recipient}")
+                
+            elif action == "call":
+                contract = self.store.get_contract(recipient)
+                if not contract:
+                    raise ValueError("Contract not found")
+                
+                payload = data.get("payload")
+                if payload and "message" in payload:
+                    contract["last_message"] = payload["message"]
+                    contract["last_sender"] = sender
+                    self.store.save_contract(recipient, "MessengerContract", contract)
+                    print(f"[VM] Contract {recipient} executed. Message: {payload['message']}")
+
             if tx["amount"] > 0:
                 balances[sender] -= tx["amount"]
                 balances[recipient] = balances.get(recipient, 0) + tx["amount"]
