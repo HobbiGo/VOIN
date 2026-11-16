@@ -1,6 +1,6 @@
 """
 VOIN D1 Rate Limit Tests
-Version: 1.0.2
+Version: 1.0.3
 
 Tests for asynchronous D1 rate limit engine.
 """
@@ -137,7 +137,7 @@ def test_engine_creation(database):
     info = engine.engine_info()
 
     assert info["engine"] == "VOIN D1 Rate Limit Engine"
-    assert info["version"] == "1.0.1"
+    assert info["version"] == "1.0.2"
     assert info["storage"] == "Cloudflare D1"
     assert info["async"] is True
 
@@ -177,6 +177,30 @@ async def test_first_attempt_allowed(engine):
     assert result["allowed"] is True
     assert result["attempts"] == 1
     assert result["remaining_attempts"] == 2
+
+
+@pytest.mark.asyncio
+async def test_max_attempts_one_blocks_first_attempt(database):
+    engine = VOIND1RateLimitEngine(
+        database,
+        max_attempts=1,
+        window_seconds=300,
+        cooldown_seconds=60,
+    )
+
+    result = await engine.consume_attempt(WALLET_A)
+
+    assert result["success"] is True
+    assert result["allowed"] is False
+    assert result["attempts"] == 1
+    assert result["remaining_attempts"] == 0
+    assert result["cooldown_until"] is not None
+    assert result["retry_after"] > 0
+
+    status = await engine.get_status(WALLET_A)
+
+    assert status["blocked"] is True
+    assert status["attempts"] == 1
 
 
 @pytest.mark.asyncio
@@ -266,6 +290,7 @@ async def test_rate_limit_violation_logged(database, engine):
 
     assert details["attempts"] == 3
     assert details["max_attempts"] == 3
+    assert details["version"] == "1.0.2"
 
 
 @pytest.mark.asyncio
@@ -327,7 +352,7 @@ async def test_cooldown_expiration_resets_attempts(engine, monkeypatch):
     assert result["cooldown_until"] is None
 
 
-# V1.0.2 additional tests
+# Additional V1.0.2 tests
 
 
 @pytest.mark.asyncio
