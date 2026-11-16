@@ -22,7 +22,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center font-bold text-black text-xl">V</div>
+                    <a href="index.html" class="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center font-bold text-black text-xl hover:bg-teal-400 transition">V</a>
                     <span class="text-2xl font-bold tracking-wider">VOIN <span class="text-gray-500 text-sm font-normal">PROTOCOL</span></span>
                 </div>
                 <div class="flex items-center gap-4">
@@ -48,7 +48,7 @@
             <div class="glass-panel rounded-xl p-6">
                 <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Network Status</h3>
                 <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse" id="nodeStatusDot"></div>
+                    <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse" id="nodeStatusDot"></div>
                     <span class="text-xl font-bold" id="nodeStatus">Connecting...</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-2" id="nodeHeight">Block Height: -</p>
@@ -113,21 +113,16 @@
     </main>
 
     <script>
-        // Konfigurasi Node VOIN L1
+        // Konfigurasi Node VOIN L1 (Ganti dengan IP VPS Anda nanti)
         const NODE_URL = "http://127.0.0.1:5000";
         
         // State
         let isConnected = false;
         let currentBatch = 1;
         let currentPrice = 0.001;
+        let userAddress = null;
 
-        // Mock Batch Prices (Sesuai presale_contract.py)
-        const batchPrices = {
-            1: 0.001, 2: 0.002, 3: 0.004, 4: 0.008, 5: 0.015,
-            6: 0.025, 7: 0.040, 8: 0.060, 9: 0.080, 10: 0.100
-        };
-
-        // 1. Cek Status Node
+        // Cek Status Node
         async function checkNode() {
             try {
                 const res = await fetch(`${NODE_URL}/info`);
@@ -144,33 +139,47 @@
             }
         }
 
-        // 2. Simulasi Connect Wallet
-        document.getElementById('connectBtn').addEventListener('click', () => {
-            isConnected = true;
-            // Generate random address untuk simulasi
-            const mockAddress = "0x" + Math.random().toString(16).substr(2, 40);
-            document.getElementById('walletAddress').innerText = mockAddress.substring(0, 6) + "..." + mockAddress.slice(-4);
-            document.getElementById('connectBtn').innerText = "Connected";
-            document.getElementById('connectBtn').className = "px-5 py-2 rounded-md border border-green-500 text-green-400 bg-green-500 bg-opacity-10 font-medium";
-            
-            const buyBtn = document.getElementById('buyBtn');
-            buyBtn.disabled = false;
-            buyBtn.className = "w-full neon-button font-bold py-4 rounded-lg text-lg";
-            buyBtn.innerText = "Buy $VOIN Now";
-            
-            updateEstimation();
+        // INTEGRASI METAMASK: Fungsi Connect Wallet Asli
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    // Meminta akses ke MetaMask
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    userAddress = accounts[0];
+                    
+                    // Update UI
+                    isConnected = true;
+                    document.getElementById('walletAddress').innerText = userAddress.substring(0, 6) + "..." + userAddress.slice(-4);
+                    document.getElementById('connectBtn').innerText = "Connected";
+                    document.getElementById('connectBtn').className = "px-5 py-2 rounded-md border border-green-500 text-green-400 bg-green-500 bg-opacity-10 font-medium";
+                    
+                    const buyBtn = document.getElementById('buyBtn');
+                    buyBtn.disabled = false;
+                    buyBtn.className = "w-full neon-button font-bold py-4 rounded-lg text-lg";
+                    buyBtn.innerText = "Buy $VOIN Now";
+                    
+                    // Deteksi jika user mengganti akun di MetaMask
+                    window.ethereum.on('accountsChanged', (newAccounts) => {
+                        userAddress = newAccounts[0];
+                        document.getElementById('walletAddress').innerText = userAddress.substring(0, 6) + "..." + userAddress.slice(-4);
+                    });
+
+                } catch (error) {
+                    alert("Koneksi ke MetaMask ditolak.");
+                }
+            } else {
+                alert("MetaMask tidak terdeteksi! Silakan install ekstensi MetaMask di browser Anda.");
+            }
         });
 
-        // 3. Kalkulasi Estimasi
-        document.getElementById('buyAmount').addEventListener('input', updateEstimation);
-
-        function updateEstimation() {
+        // Kalkulasi Estimasi
+        document.getElementById('buyAmount').addEventListener('input', () => {
             const usd = parseFloat(document.getElementById('buyAmount').value) || 0;
             const tokens = usd / currentPrice;
             document.getElementById('estimatedTokens').innerText = `${tokens.toLocaleString()} VOIN`;
-        }
+        });
 
-        // 4. Logika Beli
+        // Logika Beli (Kirim ke Node Voin)
         document.getElementById('buyBtn').addEventListener('click', async () => {
             const amount = parseFloat(document.getElementById('buyAmount').value);
             if (!amount || amount <= 0) return alert("Masukkan jumlah yang valid");
@@ -179,22 +188,22 @@
             buyBtn.innerText = "Processing...";
             buyBtn.disabled = true;
 
-            // Simulasi kirim ke Mempool Node
-            // Dalam produksi, ini harusnya memanggil Smart Contract
             try {
+                // Di produksi nyata, di sini kita akan meminta MetaMask untuk menandatangani transaksi
+                // Untuk saat ini, kita mengirim payload simulasi ke Node
                 const res = await fetch(`${NODE_URL}/transaction`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         tx: {
-                            sender: document.getElementById('walletAddress').innerText, 
+                            sender: userAddress, 
                             recipient: "0xVOIN_PRESALE_CONTRACT_2026",
                             amount: amount, 
                             nonce: Math.floor(Date.now() / 1000),
                             data: {action: "call", payload: {usd_amount: amount}}
                         },
-                        sig_ecdsa: "dummy_sig", // Di produksi, ini ditandatangani oleh Wallet
-                        sig_mldsa: "dummy_sig"  // Di produksi, ini ditandatangani oleh Wallet
+                        sig_ecdsa: "dummy_sig", 
+                        sig_mldsa: "dummy_sig"
                     })
                 });
 
@@ -206,9 +215,9 @@
                 newTx.innerHTML = `
                     <div>
                         <div class="text-sm font-bold text-white">Bought ${tokens.toLocaleString()} VOIN</div>
-                        <div class="text-xs text-gray-500">Cost: $${amount} (Batch ${currentBatch})</div>
+                        <div class="text-xs text-gray-500">Cost: $${amount}</div>
                     </div>
-                    <span class="text-xs px-2 py-1 bg-green-900 text-green-400 rounded">Pending</span>
+                    <span class="text-xs px-2 py-1 bg-green-900 text-green-400 rounded">Success</span>
                 `;
                 
                 if (historyDiv.children[0].innerText.includes("No transactions")) {
@@ -216,12 +225,9 @@
                 }
                 historyDiv.prepend(newTx);
 
-                // Reset button
-                setTimeout(() => {
-                    buyBtn.innerText = "Buy $VOIN Now";
-                    buyBtn.disabled = false;
-                    document.getElementById('userBalance').innerText = (parseInt(document.getElementById('userBalance').innerText.replace(/,/g, '')) + tokens).toLocaleString();
-                }, 2000);
+                buyBtn.innerText = "Buy $VOIN Now";
+                buyBtn.disabled = false;
+                document.getElementById('userBalance').innerText = (parseInt(document.getElementById('userBalance').innerText.replace(/,/g, '')) + tokens).toLocaleString();
 
             } catch (e) {
                 alert("Gagal terhubung ke Node. Pastikan node.py berjalan.");
