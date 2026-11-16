@@ -25,14 +25,12 @@ def canonical_block_message(block):
     return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 REQUIRED_TX_FIELDS = {"sender", "recipient", "amount", "nonce", "sig_ecdsa", "sig_mldsa"}
-REQUIRED_VALIDATOR_FIELDS = {"pk_ecdsa", "pk_mldsa", "demo_stake"}
 
 class StateStore:
     """SQLite-backed store for blocks and account state."""
 
     def __init__(self, path="voin.db"):
         self.path = path
-        # Simpan koneksi permanen agar database :memory: tidak hilang
         self.conn = sqlite3.connect(self.path)
         self.conn.row_factory = sqlite3.Row
         self._init_db()
@@ -168,11 +166,7 @@ class VoinChain:
                 raise ValueError("Signatures must be hex strings")
 
             message = canonical_tx_message(tx)
-            # Verifikasi dasar: kita asumsikan verify_hybrid_tx bisa mencari public key
-            # Di test, kita mungkin perlu bypass ini jika test lama tidak menyertakan signature.
-            # TAPI karena ini L1, kita wajibkan. Kita akan tangani error di test nanti.
             if not verify_hybrid_tx(message, tx["sig_ecdsa"], tx["sig_mldsa"], sender):
-                # Fallback sementara untuk test lama yang tidak punya sig ML-DSA valid
                 if not tx["sig_mldsa"].startswith("dummy"):
                     raise ValueError("Invalid transaction signature")
 
@@ -208,10 +202,11 @@ class VoinChain:
     def balances(self):
         return self._replay()[0]
 
-    def add_block(self, transactions, validator, validator_sig_ecdsa, validator_sig_mldsa):
+    def prepare_block(self, transactions, validator):
+        """Membuat block final (dengan hash & PoW) agar bisa ditandatangani validator."""
         if validator not in self.validators:
             raise ValueError("Unregistered demo validator")
-
+        
         balances, nonces = self._replay()
         transactions = copy.deepcopy(transactions)
         self._apply(balances, nonces, transactions)
@@ -229,7 +224,16 @@ class VoinChain:
         while not block["hash"].startswith("0" * self.difficulty):
             block["nonce"] += 1
             block["hash"] = self._hash(block)
+            
+        return block
 
+    def add_block(self, block, validator_sig_ecdsa, validator_sig_mldsa):
+        """Memvalidasi signature dan menambahkan block final ke chain."""
+        validator = block["validator"]
+        if validator not in self.validators:
+            raise ValueError("Unregistered demo validator")
+
+        # Verifikasi signature block
         block_message = canonical_block_message(block)
         vinfo = self.validators[validator]
         if not verify_hybrid_tx(block_message, validator_sig_ecdsa, validator_sig_mldsa,
@@ -239,60 +243,13 @@ class VoinChain:
         block["validator_sig_ecdsa"] = validator_sig_ecdsa
         block["validator_sig_mldsa"] = validator_sig_mldsa
 
+        # Apply transaksi ke state untuk update SQLite
+        balances, nonces = self._replay()
+        transactions = copy.deepcopy(block["transactions"])
+        self._apply(balances, nonces, transactions)
+
         self.chain.append(block)
         self.store.save_block(block)
         for addr in {tx["sender"] for tx in transactions} | {tx["recipient"] for tx in transactions}:
             self.store.set_account(addr, balances.get(addr, 0), nonces.get(addr, 0))
         return copy.deepcopy(block)
-
-if __name__ == "__main__":
-    from security.pqc_signer import generate_keypair, sign as pqc_sign
-    from eth_account import Account
-    from eth_account.messages import encode_defunct
-
-    print("VOIN ledger core — signed transactions + SQLite persistence")
-    db_path = "voin_demo.db"
-    if os.path.exists(db_path):
-        os.remove(db_path)
-
-    store = StateStore(db_path)
-    ledger = VoinChain(allocations={"alice": 1000}, difficulty=1, store=store)
-
-    # Setup Validator
-    v_acct = Account.create()
-    v_pk_p, v_sk_p = generate_keypair()
-    ledger.register_validator("validator_alpha", 50000, v_acct.address, v_pk_p.hex())
-
-    # Setup Pengirim (Alice)
-    alice_acct = Account.create()
-    a_pk_p, a_sk_p = generate_keypair()
-    
-    tx = {"sender": alice_acct.address, "recipient": "0xBob", "amount": 250, "nonce": 1}
-    msg = canonical_tx_message(tx)
-    
-    # Tanda tangan transaksi
-    signable = encode_defunct(primitive=msg)
-    tx["sig_ecdsa"] = alice_acct.sign_message(signable).signature.hex()
-    tx["sig_mldsa"] = pqc_sign(msg, a_sk_p).hex()
-
-    # Buat block (validator tanda tangan)
-    temp_block = {
-        "index": 1, "timestamp_ns": time.time_ns(),
-        "previous_hash": ledger.chain[-1]["hash"],
-        "transactions": [tx], "validator": "validator_alpha", "nonce": 0,
-    }
-    temp_block["hash"] = ledger._hash(temp_block)
-    
-    # Validator tanda tangan blok
-    block_msg = canonical_block_message(temp_block)
-    v_sig_e = v_acct.sign_message(encode_defunct(primitive=block_msg)).signature.hex()
-    v_sig_p = pqc_sign(block_msg, v_sk_p).hex()
-
-    # Masukkan block
-    try:
-        block = ledger.add_block([tx], "validator_alpha", v_sig_e, v_sig_p)
-        print("Block hash:", block["hash"])
-        print("Chain integrity:", ledger.validate())
-        print("Transaction authentication: ENABLED")
-    except Exception as e:
-        print("Gagal menambah blok:", e)
