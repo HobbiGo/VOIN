@@ -12,7 +12,7 @@ from solders.pubkey import Pubkey
 from solders.system_program import transfer, TransferParams
 from solders.transaction import Transaction
 
-# Import ML-DSA untuk L1 VOIN
+# Import ML-DSA
 from security.pqc_signer import verify as pqc_verify, sign as pqc_sign, generate_keypair as pqc_keygen
 
 class VOINWalletVerification:
@@ -72,19 +72,11 @@ class VOINWalletVerification:
         except (ValueError, TypeError):
             return False
 
-    def clear_expired_challenges(self):
-        current_time = time.time()
-        expired = [addr for addr, ch in self.challenges.items() if current_time - ch["created_at"] > self.CHALLENGE_EXPIRY]
-        for addr in expired:
-            del self.challenges[addr]
-        return len(expired)
-
 
 class VOINMultiChainWallet:
     """
-    Fitur Baru: Menangani pengiriman ETH/BNB/SOL dan penandatanganan transaksi L1 VOIN.
+    Menangani pengiriman ETH/BNB/SOL dan penandatanganan transaksi L1 VOIN.
     """
-    
     EVM_CONFIG = {
         "ethereum": {"rpc": "https://cloudflare-eth.com", "chain_id": 1}, 
         "bnb": {"rpc": "https://bsc-dataseed.binance.org", "chain_id": 56}
@@ -132,9 +124,7 @@ class VOINMultiChainWallet:
     def sign_voin_transaction(tx_data, evm_private_key, pqc_private_key):
         """
         Menandatangani transaksi untuk ledger L1 VOIN (Hybrid Signature).
-        Digunakan oleh voin.py
         """
-        # Buat pesan kanonik (sama persis dengan yang ada di voin.py)
         payload = {k: tx_data[k] for k in ("sender", "recipient", "amount", "nonce")}
         message = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
@@ -149,3 +139,22 @@ class VOINMultiChainWallet:
         sig_mldsa_hex = sig_mldsa_bytes.hex()
 
         return sig_ecdsa, sig_mldsa_hex
+
+# Fungsi Helper untuk voin.py
+def verify_hybrid_tx(message: bytes, sig_ecdsa: str, sig_mldsa_hex: str, expected_address: str, pk_mldsa_hex: str = None) -> bool:
+    """Fungsi verifikasi gabungan untuk ledger."""
+    # Verifikasi ECDSA
+    try:
+        signable = encode_defunct(primitive=message)
+        recovered = Account.recover_message(signable, signature=sig_ecdsa)
+        if recovered.lower() != expected_address.lower():
+            return False
+    except Exception:
+        return False
+
+    # Verifikasi ML-DSA
+    if pk_mldsa_hex:
+        if not pqc_verify(message, bytes.fromhex(sig_mldsa_hex), bytes.fromhex(pk_mldsa_hex)):
+            return False
+            
+    return True
