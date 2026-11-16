@@ -9,3 +9,4 @@ solders>=0.18.0
 
 # Testing & CI
 pytest>=7.0.0
+flask-cors>=4.0.0
