@@ -1,6 +1,6 @@
 """
 VOIN D1 STORAGE TEST SUITE
-Version: 1.0.0
+Version: 1.0.1
 
 Tests D1 storage behavior using a SQLite-backed D1 mock.
 These tests do not replace real Cloudflare D1 integration tests.
@@ -8,6 +8,7 @@ These tests do not replace real Cloudflare D1 integration tests.
 
 import asyncio
 import sqlite3
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -36,7 +37,6 @@ class FakeStatement:
             self.sql,
             self.params
         )
-        self.database.connection.commit()
 
         return SimpleNamespace(
             meta=SimpleNamespace(changes=cursor.rowcount)
@@ -47,6 +47,7 @@ class FakeStatement:
             self.sql,
             self.params
         )
+
         row = cursor.fetchone()
 
         if row is None:
@@ -61,17 +62,22 @@ class FakeStatement:
         )
 
         return SimpleNamespace(
-            results=[dict(row) for row in cursor.fetchall()]
+            results=[
+                dict(row)
+                for row in cursor.fetchall()
+            ]
         )
 
 
 class FakeD1Database:
 
     def __init__(self):
+
         self.connection = sqlite3.connect(
             ":memory:",
             isolation_level=None
         )
+
         self.connection.row_factory = sqlite3.Row
 
         migration = (
@@ -93,12 +99,15 @@ class FakeD1Database:
         return FakeStatement(self, sql)
 
     async def batch(self, statements):
+
         results = []
 
         self.connection.execute("BEGIN")
 
         try:
+
             for statement in statements:
+
                 cursor = self.connection.execute(
                     statement.sql,
                     statement.params
@@ -115,6 +124,7 @@ class FakeD1Database:
             self.connection.commit()
 
         except Exception:
+
             self.connection.rollback()
             raise
 
@@ -132,6 +142,7 @@ class FakeD1Database:
 def storage():
 
     database = FakeD1Database()
+
     engine = VOIND1StorageEngine(database)
 
     yield engine
@@ -144,8 +155,11 @@ def execute(coroutine):
 
 
 WALLET = "0x1234567890abcdef1234567890abcdef12345678"
+
 NONCE = "a" * 64
+
 CHALLENGE_ID = "challenge-test-001"
+
 MESSAGE = "VOIN authentication test"
 
 
@@ -209,8 +223,6 @@ def test_consume_nonce(storage):
 
 def test_create_challenge_atomic(storage):
 
-    import time
-
     expires_at = time.time() + 300
 
     result = execute(
@@ -235,8 +247,6 @@ def test_create_challenge_atomic(storage):
 
 
 def test_challenge_creation_audit(storage):
-
-    import time
 
     execute(
         storage.create_challenge_atomic(
@@ -267,8 +277,6 @@ def test_challenge_creation_audit(storage):
 # =========================================================
 
 def test_consume_authentication(storage):
-
-    import time
 
     execute(
         storage.create_challenge_atomic(
@@ -315,8 +323,6 @@ def test_consume_authentication(storage):
 
 def test_prevent_authentication_replay(storage):
 
-    import time
-
     execute(
         storage.create_challenge_atomic(
             CHALLENGE_ID,
@@ -349,8 +355,6 @@ def test_prevent_authentication_replay(storage):
 
 def test_wrong_nonce_does_not_consume_challenge(storage):
 
-    import time
-
     execute(
         storage.create_challenge_atomic(
             CHALLENGE_ID,
@@ -380,15 +384,49 @@ def test_wrong_nonce_does_not_consume_challenge(storage):
 
 def test_expired_challenge_rejected(storage):
 
-    import time
+    nonce_hash = storage._hash_nonce(NONCE)
 
-    execute(
-        storage.create_challenge_atomic(
+    expired_time = time.time() - 10
+
+    # Insert expired nonce directly into test database.
+    storage.database.connection.execute(
+        """
+        INSERT INTO nonces (
+            wallet_address,
+            nonce_hash,
+            created_at,
+            used
+        )
+        VALUES (?, ?, ?, 0)
+        """,
+        (
+            WALLET,
+            nonce_hash,
+            expired_time
+        )
+    )
+
+    # Insert expired challenge directly into test database.
+    storage.database.connection.execute(
+        """
+        INSERT INTO challenges (
+            challenge_id,
+            wallet_address,
+            nonce_hash,
+            message,
+            created_at,
+            expires_at,
+            used
+        )
+        VALUES (?, ?, ?, ?, ?, ?, 0)
+        """,
+        (
             CHALLENGE_ID,
             WALLET,
-            NONCE,
+            nonce_hash,
             MESSAGE,
-            time.time() - 10
+            expired_time,
+            expired_time
         )
     )
 
@@ -414,8 +452,6 @@ def test_expired_challenge_rejected(storage):
 # =========================================================
 
 def test_challenge_batch_rollback(storage):
-
-    import time
 
     execute(
         storage.create_challenge_atomic(
@@ -443,9 +479,9 @@ def test_challenge_batch_rollback(storage):
         storage.get_security_events()
     )
 
-    # Failed batch must not add another challenge audit.
     challenge_events = [
-        event for event in events
+        event
+        for event in events
         if event["event_type"] == "CHALLENGE_CREATED"
     ]
 
@@ -482,11 +518,13 @@ def test_log_security_event(storage):
 def test_invalid_event_limit(storage):
 
     with pytest.raises(ValueError):
+
         execute(
             storage.get_security_events(limit=0)
         )
 
     with pytest.raises(ValueError):
+
         execute(
             storage.get_security_events(limit=1001)
         )
@@ -499,6 +537,7 @@ def test_invalid_event_limit(storage):
 def test_invalid_wallet_rejected(storage):
 
     with pytest.raises(ValueError):
+
         execute(
             storage.save_nonce(
                 "invalid-wallet",
@@ -510,6 +549,7 @@ def test_invalid_wallet_rejected(storage):
 def test_invalid_nonce_rejected(storage):
 
     with pytest.raises(ValueError):
+
         execute(
             storage.save_nonce(
                 WALLET,
