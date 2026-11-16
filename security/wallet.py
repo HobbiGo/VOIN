@@ -1,5 +1,5 @@
 """
-VOIN WALLET ENGINE V1.0.1
+VOIN WALLET ENGINE V1.0.2
 
 Secure wallet generation, address validation,
 private key validation and encrypted keystore management.
@@ -8,7 +8,9 @@ Security:
 - Cryptographically secure wallet generation
 - Ethereum-compatible addresses
 - EIP-55 checksum validation
-- Encrypted Ethereum V3 keystore
+- Ethereum V3 keystore validation
+- Bounded KDF parameters
+- Encrypted private key management
 - No plaintext private key persistence
 - No private key or password logging
 """
@@ -25,11 +27,21 @@ from eth_utils import (
 
 class VOINWalletEngine:
 
-    VERSION = "1.0.1"
+    VERSION = "1.0.2"
 
     ENGINE_NAME = "VOIN Wallet Engine"
 
     KEYSTORE_VERSION = 3
+
+    MAX_KEYSTORE_SIZE = 65536
+
+    MIN_PASSWORD_LENGTH = 12
+
+    MAX_PASSWORD_LENGTH = 1024
+
+    # --------------------------------------------------
+    # INITIALIZATION
+    # --------------------------------------------------
 
     def __init__(self):
 
@@ -41,6 +53,13 @@ class VOINWalletEngine:
 
     @staticmethod
     def generate_wallet():
+        """
+        Generate a new Ethereum wallet.
+
+        IMPORTANT:
+        The private key is returned in plaintext.
+        The caller must protect it immediately.
+        """
 
         account = Account.create()
 
@@ -68,12 +87,9 @@ class VOINWalletEngine:
 
         body = address[2:]
 
-        # Uniform lowercase or uppercase hexadecimal
-        # addresses are valid Ethereum address formats.
         if body == body.lower() or body == body.upper():
             return True
 
-        # Mixed-case addresses must pass EIP-55 checksum.
         return is_checksum_address(address)
 
     # --------------------------------------------------
@@ -140,6 +156,192 @@ class VOINWalletEngine:
         }
 
     # --------------------------------------------------
+    # PASSWORD VALIDATION
+    # --------------------------------------------------
+
+    @staticmethod
+    def _validate_password(password):
+
+        if not isinstance(password, str):
+            raise ValueError("Invalid password")
+
+        if not (
+            VOINWalletEngine.MIN_PASSWORD_LENGTH
+            <= len(password)
+            <= VOINWalletEngine.MAX_PASSWORD_LENGTH
+        ):
+            raise ValueError("Invalid password length")
+
+        return True
+
+    # --------------------------------------------------
+    # HEX VALIDATION
+    # --------------------------------------------------
+
+    @staticmethod
+    def _valid_hex(value, expected_bytes=None):
+
+        if not isinstance(value, str):
+            return False
+
+        if not re.fullmatch(r"[0-9a-fA-F]+", value):
+            return False
+
+        if len(value) % 2 != 0:
+            return False
+
+        if expected_bytes is not None:
+            return len(value) == expected_bytes * 2
+
+        return True
+
+    # --------------------------------------------------
+    # KEYSTORE VALIDATION
+    # --------------------------------------------------
+
+    @staticmethod
+    def _validate_keystore(keystore_data):
+
+        if not isinstance(keystore_data, dict):
+            raise ValueError("Invalid keystore")
+
+        if keystore_data.get("version") != 3:
+            raise ValueError("Invalid keystore")
+
+        crypto = keystore_data.get("crypto")
+
+        if crypto is None:
+            crypto = keystore_data.get("Crypto")
+
+        if not isinstance(crypto, dict):
+            raise ValueError("Invalid keystore")
+
+        # Cipher validation
+
+        if crypto.get("cipher") != "aes-128-ctr":
+            raise ValueError("Invalid keystore")
+
+        cipherparams = crypto.get("cipherparams")
+
+        if not isinstance(cipherparams, dict):
+            raise ValueError("Invalid keystore")
+
+        if not VOINWalletEngine._valid_hex(
+            cipherparams.get("iv"),
+            expected_bytes=16
+        ):
+            raise ValueError("Invalid keystore")
+
+        # MAC validation
+
+        if not VOINWalletEngine._valid_hex(
+            crypto.get("mac"),
+            expected_bytes=32
+        ):
+            raise ValueError("Invalid keystore")
+
+        # Ciphertext validation
+
+        ciphertext = crypto.get("ciphertext")
+
+        if not VOINWalletEngine._valid_hex(ciphertext):
+            raise ValueError("Invalid keystore")
+
+        # KDF validation
+
+        kdf = crypto.get("kdf")
+
+        kdfparams = crypto.get("kdfparams")
+
+        if not isinstance(kdfparams, dict):
+            raise ValueError("Invalid keystore")
+
+        if kdfparams.get("dklen") != 32:
+            raise ValueError("Invalid keystore")
+
+        salt = kdfparams.get("salt")
+
+        if not VOINWalletEngine._valid_hex(salt):
+            raise ValueError("Invalid keystore")
+
+        if len(salt) < 32 or len(salt) > 128:
+            raise ValueError("Invalid keystore")
+
+        # Scrypt validation
+
+        if kdf == "scrypt":
+
+            n = kdfparams.get("n")
+            r = kdfparams.get("r")
+            p = kdfparams.get("p")
+
+            if not all(
+                isinstance(value, int) and not isinstance(value, bool)
+                for value in (n, r, p)
+            ):
+                raise ValueError("Invalid keystore")
+
+            if n < 2**12 or n > 2**20:
+                raise ValueError("Invalid keystore")
+
+            if n & (n - 1):
+                raise ValueError("Invalid keystore")
+
+            if r < 1 or r > 16:
+                raise ValueError("Invalid keystore")
+
+            if p < 1 or p > 4:
+                raise ValueError("Invalid keystore")
+
+            estimated_memory = 128 * n * r
+
+            if estimated_memory > 512 * 1024 * 1024:
+                raise ValueError("Invalid keystore")
+
+            estimated_work = n * r * p
+
+            if estimated_work > 8_388_608:
+                raise ValueError("Invalid keystore")
+
+        # PBKDF2 validation
+
+        elif kdf == "pbkdf2":
+
+            iterations = kdfparams.get("c")
+
+            prf = kdfparams.get("prf")
+
+            if (
+                not isinstance(iterations, int)
+                or isinstance(iterations, bool)
+            ):
+                raise ValueError("Invalid keystore")
+
+            if iterations < 10000 or iterations > 2000000:
+                raise ValueError("Invalid keystore")
+
+            if prf != "hmac-sha256":
+                raise ValueError("Invalid keystore")
+
+        else:
+
+            raise ValueError("Invalid keystore")
+
+        # Optional address validation
+
+        address = keystore_data.get("address")
+
+        if address is not None:
+
+            if not isinstance(address, str):
+                raise ValueError("Invalid keystore")
+
+            if not re.fullmatch(r"[0-9a-fA-F]{40}", address):
+                raise ValueError("Invalid keystore")
+
+        return True
+
+    # --------------------------------------------------
     # PRIVATE KEY ENCRYPTION
     # --------------------------------------------------
 
@@ -149,10 +351,7 @@ class VOINWalletEngine:
         if not VOINWalletEngine.validate_private_key(private_key):
             raise ValueError("Invalid private key")
 
-        if not isinstance(password, str) or len(password) < 12:
-            raise ValueError(
-                "Password must contain at least 12 characters"
-            )
+        VOINWalletEngine._validate_password(password)
 
         account = Account.from_key(private_key)
 
@@ -160,9 +359,6 @@ class VOINWalletEngine:
             account.key,
             password
         )
-
-        # eth-account may return a dictionary,
-        # bytes, or JSON string depending on version.
 
         if isinstance(encrypted, bytes):
 
@@ -180,18 +376,29 @@ class VOINWalletEngine:
 
             raise ValueError("Unsupported keystore format")
 
-        if keystore_data.get("version") != 3:
-            raise ValueError("Unsupported keystore version")
+        VOINWalletEngine._validate_keystore(keystore_data)
+
+        keystore_address = keystore_data.get("address")
+
+        if keystore_address is not None:
+
+            if keystore_address.lower() != account.address[2:].lower():
+                raise ValueError("Keystore address mismatch")
 
         keystore_json = json.dumps(
             keystore_data,
             separators=(",", ":")
         )
 
+        if len(keystore_json.encode("utf-8")) > (
+            VOINWalletEngine.MAX_KEYSTORE_SIZE
+        ):
+            raise ValueError("Keystore too large")
+
         return {
             "address": account.address,
             "keystore": keystore_json,
-            "keystore_version": 3,
+            "keystore_version": VOINWalletEngine.KEYSTORE_VERSION,
             "encrypted": True,
         }
 
@@ -202,38 +409,51 @@ class VOINWalletEngine:
     @staticmethod
     def decrypt_private_key(keystore, password):
 
-        if not isinstance(keystore, (str, dict)):
-            raise ValueError("Invalid keystore")
-
-        if not isinstance(password, str) or not password:
-            raise ValueError("Invalid password")
-
         try:
+
+            VOINWalletEngine._validate_password(password)
 
             if isinstance(keystore, str):
 
+                if len(keystore.encode("utf-8")) > (
+                    VOINWalletEngine.MAX_KEYSTORE_SIZE
+                ):
+                    raise ValueError("Invalid keystore")
+
                 keystore_data = json.loads(keystore)
 
-            else:
+            elif isinstance(keystore, dict):
 
                 keystore_data = keystore
 
-            if not isinstance(keystore_data, dict):
-                raise ValueError("Invalid keystore format")
+                encoded_size = len(
+                    json.dumps(keystore_data).encode("utf-8")
+                )
 
-            if keystore_data.get("version") != 3:
-                raise ValueError("Unsupported keystore version")
+                if encoded_size > VOINWalletEngine.MAX_KEYSTORE_SIZE:
+                    raise ValueError("Invalid keystore")
+
+            else:
+
+                raise ValueError("Invalid keystore")
+
+            VOINWalletEngine._validate_keystore(keystore_data)
 
             private_key = Account.decrypt(
                 keystore_data,
                 password
             )
 
+            account = Account.from_key(private_key)
+
+            stored_address = keystore_data.get("address")
+
+            if stored_address is not None:
+
+                if stored_address.lower() != account.address[2:].lower():
+                    raise ValueError("Keystore address mismatch")
+
             return private_key.hex()
-
-        except ValueError:
-
-            raise
 
         except Exception:
 
