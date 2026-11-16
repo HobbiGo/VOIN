@@ -9,7 +9,7 @@ from security.pqc_signer import generate_keypair, sign as pqc_sign
 class VoinTests(unittest.TestCase):
 
     def setUp(self):
-        # 1. Buat akun Pengirim (Alice) TERLEBIH DAHULU
+        # 1. Buat akun Pengirim (Alice)
         self.alice_acct = Account.create()
         self.alice_pk_pqc, self.alice_sk_pqc = generate_keypair()
 
@@ -21,12 +21,13 @@ class VoinTests(unittest.TestCase):
         self.v_acct = Account.create()
         self.v_pk_pqc, self.v_sk_pqc = generate_keypair()
         
-        # 4. Daftarkan Validator dengan Public Key
+        # 4. Daftarkan Validator menggunakan ALAMAT EVM (bukan string sembarang)
+        self.validator_id = self.v_acct.address
         self.chain.register_validator(
-            "validator", 
+            self.validator_id, 
             50, 
-            self.v_acct.address, 
-            self.v_pk_pqc.hex()
+            self.v_acct.address, # Public Key ECDSA adalah alamat itu sendiri
+            self.v_pk_pqc.hex()  # Public Key ML-DSA
         )
 
     def create_signed_tx(self, sender_acct, sender_sk_pqc, recipient, amount, nonce):
@@ -51,8 +52,8 @@ class VoinTests(unittest.TestCase):
     def test_transfer(self):
         tx = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 250, 1)
         
-        # Siapkan block (hash & PoW dibuat oleh ledger)
-        block = self.chain.prepare_block([tx], "validator")
+        # Siapkan block
+        block = self.chain.prepare_block([tx], self.validator_id)
         v_sig_e, v_sig_p = self.sign_prepared_block(block, self.v_acct, self.v_sk_pqc)
         
         # Tambahkan ke chain
@@ -65,13 +66,12 @@ class VoinTests(unittest.TestCase):
     def test_insufficient_balance(self):
         tx = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 2000, 1)
         
-        # _apply akan error di sini karena saldo kurang
         with self.assertRaises(ValueError):
-            self.chain.prepare_block([tx], "validator")
+            self.chain.prepare_block([tx], self.validator_id)
 
     def test_repeated_transaction(self):
         tx1 = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 100, 1)
-        block1 = self.chain.prepare_block([tx1], "validator")
+        block1 = self.chain.prepare_block([tx1], self.validator_id)
         v_sig_e1, v_sig_p1 = self.sign_prepared_block(block1, self.v_acct, self.v_sk_pqc)
         self.chain.add_block(block1, v_sig_e1, v_sig_p1)
 
@@ -79,11 +79,11 @@ class VoinTests(unittest.TestCase):
         tx2 = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 100, 1)
         
         with self.assertRaises(ValueError):
-            self.chain.prepare_block([tx2], "validator")
+            self.chain.prepare_block([tx2], self.validator_id)
 
     def test_tampered_block(self):
         tx = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 250, 1)
-        block = self.chain.prepare_block([tx], "validator")
+        block = self.chain.prepare_block([tx], self.validator_id)
         v_sig_e, v_sig_p = self.sign_prepared_block(block, self.v_acct, self.v_sk_pqc)
         
         final_block = self.chain.add_block(block, v_sig_e, v_sig_p)
