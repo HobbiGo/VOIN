@@ -1,0 +1,11 @@
+# Core Ledger & Cryptography
+dilithium-py>=1.1.0
+eth-account>=0.10.0
+web3>=6.0.0
+
+# Solana Support
+solana>=0.30.0
+solders>=0.18.0
+
+# Testing & CI
+pytest>=7.0.0
