@@ -1,6 +1,6 @@
 """
 VOIN D1 Rate Limit Engine
-Version: 1.0.1
+Version: 1.0.2
 
 Asynchronous wallet rate limiter using Cloudflare D1.
 """
@@ -11,7 +11,7 @@ import json
 
 
 class VOIND1RateLimitEngine:
-    VERSION = "1.0.1"
+    VERSION = "1.0.2"
 
     def __init__(
         self,
@@ -87,7 +87,16 @@ class VOIND1RateLimitEngine:
             cooldown_until,
             updated_at
         )
-        VALUES (?, ?, 1, NULL, ?)
+        VALUES (
+            ?,
+            ?,
+            1,
+            CASE
+                WHEN ? <= 1 THEN ? + ?
+                ELSE NULL
+            END,
+            ?
+        )
 
         ON CONFLICT(wallet_address) DO UPDATE SET
 
@@ -124,10 +133,13 @@ class VOIND1RateLimitEngine:
             updated_at
         """
 
-        # Exactly 18 parameters for 18 SQL placeholders.
+        # Exactly 21 parameters for 21 SQL placeholders.
         params = [
             wallet,
             now,
+            self.max_attempts,
+            now,
+            self.cooldown_seconds,
             now,
 
             now,
@@ -207,6 +219,7 @@ class VOIND1RateLimitEngine:
             "max_attempts": self.max_attempts,
             "cooldown_seconds": self.cooldown_seconds,
             "source": "VOIND1RateLimitEngine",
+            "version": self.VERSION,
         }
 
         sql = """
