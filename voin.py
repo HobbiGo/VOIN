@@ -27,8 +27,6 @@ def canonical_block_message(block):
 REQUIRED_TX_FIELDS = {"sender", "recipient", "amount", "nonce", "sig_ecdsa", "sig_mldsa"}
 
 class StateStore:
-    """SQLite-backed store for blocks and account state."""
-
     def __init__(self, path="voin.db"):
         self.path = path
         self.conn = sqlite3.connect(self.path)
@@ -64,12 +62,8 @@ class StateStore:
             "INSERT INTO blocks (height, hash, parent_hash, timestamp_ns, validator, nonce, raw) "
             "VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
-                block["index"],
-                block["hash"],
-                block["previous_hash"],
-                block["timestamp_ns"],
-                block["validator"],
-                block["nonce"],
+                block["index"], block["hash"], block["previous_hash"],
+                block["timestamp_ns"], block["validator"], block["nonce"],
                 json.dumps(block, sort_keys=True, separators=(",", ":")),
             ),
         )
@@ -112,19 +106,12 @@ class VoinChain:
                 allocations = {"alice": 1000}
             if not isinstance(allocations, dict) or not allocations:
                 raise ValueError("Genesis allocations must be a non-empty dictionary")
-            if any(
-                not isinstance(a, str) or not a.strip() or not positive_int(v)
-                for a, v in allocations.items()
-            ):
+            if any(not isinstance(a, str) or not a.strip() or not positive_int(v) for a, v in allocations.items()):
                 raise ValueError("Genesis requires named accounts and positive integer balances")
             genesis = {
-                "index": 0,
-                "timestamp_ns": time.time_ns(),
-                "previous_hash": "0",
-                "allocations": copy.deepcopy(allocations),
-                "transactions": [],
-                "validator": "GENESIS",
-                "nonce": 0,
+                "index": 0, "timestamp_ns": time.time_ns(), "previous_hash": "0",
+                "allocations": copy.deepcopy(allocations), "transactions": [],
+                "validator": "GENESIS", "nonce": 0,
             }
             genesis["hash"] = self._hash(genesis)
             self._trusted_genesis_hash = genesis["hash"]
@@ -135,7 +122,6 @@ class VoinChain:
 
     @staticmethod
     def _hash(block):
-        # PENTING: Abaikan field hash dan signature validator agar hash konsisten
         ignore = {"hash", "validator_sig_ecdsa", "validator_sig_mldsa"}
         return digest({k: v for k, v in block.items() if k not in ignore})
 
@@ -144,11 +130,7 @@ class VoinChain:
             raise ValueError("Validator requires a name and positive integer demo stake")
         if not isinstance(pk_ecdsa, str) or not isinstance(pk_mldsa, str):
             raise ValueError("Validator public keys must be strings")
-        self.validators[address] = {
-            "demo_stake": demo_stake,
-            "pk_ecdsa": pk_ecdsa,
-            "pk_mldsa": pk_mldsa,
-        }
+        self.validators[address] = {"demo_stake": demo_stake, "pk_ecdsa": pk_ecdsa, "pk_mldsa": pk_mldsa}
 
     @staticmethod
     def _apply(balances, nonces, transactions):
@@ -168,9 +150,9 @@ class VoinChain:
                 raise ValueError("Signatures must be hex strings")
 
             message = canonical_tx_message(tx)
+            # Verifikasi murni tanpa trik dummy
             if not verify_hybrid_tx(message, tx["sig_ecdsa"], tx["sig_mldsa"], sender):
-                if not tx["sig_mldsa"].startswith("dummy"):
-                    raise ValueError("Invalid transaction signature")
+                raise ValueError("Invalid transaction signature")
 
             if tx["nonce"] != nonces.get(sender, 0) + 1:
                 raise ValueError("Invalid nonce: duplicate or out-of-order transaction")
@@ -205,7 +187,6 @@ class VoinChain:
         return self._replay()[0]
 
     def prepare_block(self, transactions, validator):
-        """Membuat block final (dengan hash & PoW) agar bisa ditandatangani validator."""
         if validator not in self.validators:
             raise ValueError("Unregistered demo validator")
         
@@ -214,12 +195,9 @@ class VoinChain:
         self._apply(balances, nonces, transactions)
 
         block = {
-            "index": len(self.chain),
-            "timestamp_ns": time.time_ns(),
-            "previous_hash": self.chain[-1]["hash"],
-            "transactions": transactions,
-            "validator": validator,
-            "nonce": 0,
+            "index": len(self.chain), "timestamp_ns": time.time_ns(),
+            "previous_hash": self.chain[-1]["hash"], "transactions": transactions,
+            "validator": validator, "nonce": 0,
         }
         block["hash"] = self._hash(block)
 
@@ -230,12 +208,10 @@ class VoinChain:
         return block
 
     def add_block(self, block, validator_sig_ecdsa, validator_sig_mldsa):
-        """Memvalidasi signature dan menambahkan block final ke chain."""
         validator = block["validator"]
         if validator not in self.validators:
             raise ValueError("Unregistered demo validator")
 
-        # Verifikasi signature block
         block_message = canonical_block_message(block)
         vinfo = self.validators[validator]
         
@@ -246,7 +222,6 @@ class VoinChain:
         block["validator_sig_ecdsa"] = validator_sig_ecdsa
         block["validator_sig_mldsa"] = validator_sig_mldsa
 
-        # Apply transaksi ke state untuk update SQLite
         balances, nonces = self._replay()
         transactions = copy.deepcopy(block["transactions"])
         self._apply(balances, nonces, transactions)
