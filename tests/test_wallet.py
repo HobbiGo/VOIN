@@ -412,7 +412,7 @@ def test_engine_info():
 
     assert info["engine"] == "VOIN Wallet Engine"
 
-    assert info["version"] == "1.0.1"
+    assert info["version"] == "1.0.2"
 
     assert info["wallet_type"] == "ETHEREUM"
 
