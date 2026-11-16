@@ -1,15 +1,15 @@
 """
 VOIN D1 STORAGE ENGINE TESTS
-Version: 1.0.0
+Version: 1.0.1
 
-Tests for VOIND1StorageEngine.
-Uses SQLite to simulate Cloudflare D1 behavior.
+Tests for VOIND1StorageEngine V1.0.3.
+Uses SQLite to simulate Cloudflare D1 behavior
+with the schema and trigger behavior from migration 0003.
 """
 
 import asyncio
 import hashlib
 import json
-import math
 import sqlite3
 import time
 
@@ -142,7 +142,14 @@ class FakeD1Database:
                 created_at REAL NOT NULL,
                 expires_at REAL NOT NULL,
                 used INTEGER NOT NULL DEFAULT 0,
-                CHECK(used IN (0, 1))
+                consumption_type TEXT NOT NULL DEFAULT 'CHALLENGE',
+                CHECK(used IN (0, 1)),
+                CHECK(
+                    consumption_type IN (
+                        'CHALLENGE',
+                        'AUTHENTICATION'
+                    )
+                )
             );
 
             CREATE TABLE security_events (
@@ -175,9 +182,17 @@ class FakeD1Database:
                 details TEXT
             );
 
+            CREATE INDEX idx_network_peers_status
+            ON network_peers(status);
+
+            -- Migration 0003 behavior:
+            -- Validate nonce only for authentication consumption.
+
             CREATE TRIGGER trg_validate_challenge_nonce
             BEFORE UPDATE OF used ON challenges
-            WHEN OLD.used = 0 AND NEW.used = 1
+            WHEN OLD.used = 0
+             AND NEW.used = 1
+             AND NEW.consumption_type = 'AUTHENTICATION'
             BEGIN
                 SELECT CASE
                     WHEN NOT EXISTS (
@@ -194,9 +209,14 @@ class FakeD1Database:
                 END;
             END;
 
+            -- Consume nonce and create authentication audit
+            -- only for authentication operations.
+
             CREATE TRIGGER trg_consume_challenge_nonce
             AFTER UPDATE OF used ON challenges
-            WHEN OLD.used = 0 AND NEW.used = 1
+            WHEN OLD.used = 0
+             AND NEW.used = 1
+             AND NEW.consumption_type = 'AUTHENTICATION'
             BEGIN
 
                 UPDATE nonces
@@ -216,7 +236,10 @@ class FakeD1Database:
                     'AUTHENTICATION_CONSUMED',
                     NEW.wallet_address,
                     NEW.challenge_id,
-                    NEW.created_at,
+                    CAST(
+                        (julianday('now') - 2440587.5) * 86400
+                        AS REAL
+                    ),
                     '{"status":"consumed"}'
                 );
 
@@ -270,9 +293,11 @@ def test_engine_creation(database):
     info = engine.engine_info()
 
     assert info["engine"] == "VOIND1StorageEngine"
-    assert info["version"] == "1.0.2"
+    assert info["version"] == "1.0.3"
     assert info["database"] == "Cloudflare D1"
     assert info["async"] is True
+    assert info["authentication_nonce_trigger"] is True
+    assert info["peer_revocation"] is True
 
 
 def test_database_required():
@@ -340,7 +365,6 @@ def test_save_nonce(engine, database):
     ).hexdigest()
 
     assert row["nonce_hash"] == expected_hash
-
     assert row["nonce_hash"] != NONCE
 
 
@@ -421,6 +445,7 @@ def test_create_challenge_atomic(engine, database):
     assert challenge is not None
     assert challenge["wallet_address"] == WALLET
     assert challenge["used"] == 0
+    assert challenge["consumption_type"] == "CHALLENGE"
 
     nonce = database.connection.execute(
         "SELECT * FROM nonces"
@@ -482,10 +507,7 @@ def test_challenge_expiration_rejected(engine):
         float("-inf"),
     ]
 )
-def test_invalid_expiration_rejected(
-    engine,
-    expiration
-):
+def test_invalid_expiration_rejected(engine, expiration):
 
     with pytest.raises(ValueError):
 
@@ -509,7 +531,7 @@ def test_get_unknown_challenge(engine):
     assert result is None
 
 
-def test_consume_challenge_once(engine):
+def test_consume_challenge_once(engine, database):
 
     execute(
         engine.create_challenge_atomic(
@@ -537,6 +559,41 @@ def test_consume_challenge_once(engine):
 
     assert first is True
     assert second is False
+
+    challenge = database.connection.execute(
+        """
+        SELECT used, consumption_type
+        FROM challenges
+        WHERE challenge_id = ?
+        """,
+        ("challenge-consume",)
+    ).fetchone()
+
+    nonce = database.connection.execute(
+        """
+        SELECT used
+        FROM nonces
+        WHERE wallet_address = ?
+        """,
+        (WALLET,)
+    ).fetchone()
+
+    assert challenge["used"] == 1
+    assert challenge["consumption_type"] == "CHALLENGE"
+
+    # Normal challenge consumption must not consume nonce.
+    assert nonce["used"] == 0
+
+    # Normal challenge consumption must not create auth audit.
+    audit = database.connection.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM security_events
+        WHERE event_type = 'AUTHENTICATION_CONSUMED'
+        """
+    ).fetchone()
+
+    assert audit["total"] == 0
 
 
 # =========================================================
@@ -567,7 +624,7 @@ def test_consume_authentication(engine, database):
 
     challenge = database.connection.execute(
         """
-        SELECT used
+        SELECT used, consumption_type
         FROM challenges
         WHERE challenge_id = ?
         """,
@@ -584,6 +641,7 @@ def test_consume_authentication(engine, database):
     ).fetchone()
 
     assert challenge["used"] == 1
+    assert challenge["consumption_type"] == "AUTHENTICATION"
     assert nonce["used"] == 1
 
 
@@ -619,7 +677,7 @@ def test_authentication_nonce_cannot_be_reused(engine):
     assert second is False
 
 
-def test_wrong_authentication_nonce_rejected(engine):
+def test_wrong_authentication_nonce_rejected(engine, database):
 
     execute(
         engine.create_challenge_atomic(
@@ -640,6 +698,27 @@ def test_wrong_authentication_nonce_rejected(engine):
     )
 
     assert result is False
+
+    challenge = database.connection.execute(
+        """
+        SELECT used
+        FROM challenges
+        WHERE challenge_id = ?
+        """,
+        ("auth-003",)
+    ).fetchone()
+
+    nonce = database.connection.execute(
+        """
+        SELECT used
+        FROM nonces
+        WHERE wallet_address = ?
+        """,
+        (WALLET,)
+    ).fetchone()
+
+    assert challenge["used"] == 0
+    assert nonce["used"] == 0
 
 
 def test_authentication_audit_created(engine, database):
@@ -672,6 +751,55 @@ def test_authentication_audit_created(engine, database):
 
     assert event is not None
     assert event["reference_id"] == "auth-audit"
+    assert event["wallet_address"] == WALLET
+
+
+def test_authentication_without_available_nonce_fails(
+    engine,
+    database
+):
+
+    execute(
+        engine.create_challenge_atomic(
+            "auth-no-nonce",
+            WALLET,
+            NONCE,
+            "VOIN authentication",
+            time.time() + 300
+        )
+    )
+
+    # Simulate nonce already consumed elsewhere.
+    database.connection.execute(
+        """
+        UPDATE nonces
+        SET used = 1
+        WHERE wallet_address = ?
+        """,
+        (WALLET,)
+    )
+
+    database.connection.commit()
+
+    with pytest.raises(sqlite3.IntegrityError):
+        execute(
+            engine.consume_authentication(
+                "auth-no-nonce",
+                WALLET,
+                NONCE
+            )
+        )
+
+    challenge = database.connection.execute(
+        """
+        SELECT used
+        FROM challenges
+        WHERE challenge_id = ?
+        """,
+        ("auth-no-nonce",)
+    ).fetchone()
+
+    assert challenge["used"] == 0
 
 
 # =========================================================
@@ -840,6 +968,23 @@ def test_list_network_peers(engine):
     assert len(peers) == 1
 
 
+def test_list_network_peers_by_status(engine):
+
+    execute(
+        engine.save_network_peer(
+            "peer-status",
+            "https://peer-status.example.com"
+        )
+    )
+
+    peers = execute(
+        engine.list_network_peers(status="PENDING")
+    )
+
+    assert len(peers) == 1
+    assert peers[0]["status"] == "PENDING"
+
+
 def test_invalid_peer_status_rejected(engine):
 
     with pytest.raises(ValueError):
@@ -851,38 +996,80 @@ def test_invalid_peer_status_rejected(engine):
         )
 
 
-def test_revoke_network_peer(engine, database):
+def test_revoke_pending_network_peer(engine):
 
     execute(
         engine.save_network_peer(
-            "peer-004",
-            "https://peer4.example.com"
+            "peer-pending",
+            "https://peer-pending.example.com"
         )
     )
 
-    # Simulate peer approval.
+    result = execute(
+        engine.revoke_network_peer("peer-pending")
+    )
+
+    assert result is True
+
+    peer = execute(
+        engine.get_network_peer("peer-pending")
+    )
+
+    assert peer["status"] == "REVOKED"
+
+
+def test_revoke_trusted_network_peer(engine, database):
+
+    execute(
+        engine.save_network_peer(
+            "peer-trusted",
+            "https://peer-trusted.example.com"
+        )
+    )
+
     database.connection.execute(
         """
         UPDATE network_peers
         SET status = 'TRUSTED'
         WHERE peer_id = ?
         """,
-        ("peer-004",)
+        ("peer-trusted",)
     )
 
     database.connection.commit()
 
     result = execute(
-        engine.revoke_network_peer("peer-004")
+        engine.revoke_network_peer("peer-trusted")
     )
 
     assert result is True
 
     peer = execute(
-        engine.get_network_peer("peer-004")
+        engine.get_network_peer("peer-trusted")
     )
 
     assert peer["status"] == "REVOKED"
+
+
+def test_revoke_already_revoked_peer_returns_false(engine):
+
+    execute(
+        engine.save_network_peer(
+            "peer-revoked",
+            "https://peer-revoked.example.com"
+        )
+    )
+
+    first = execute(
+        engine.revoke_network_peer("peer-revoked")
+    )
+
+    second = execute(
+        engine.revoke_network_peer("peer-revoked")
+    )
+
+    assert first is True
+    assert second is False
 
 
 # =========================================================
