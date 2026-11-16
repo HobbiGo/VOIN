@@ -1,7 +1,6 @@
 -- =========================================================
 -- VOIN SECURITY D1 SCHEMA
--- Version: 1.0.0
--- Compatible with VOIN SQLite Storage V1.4.0
+-- Version: 1.0.1
 -- =========================================================
 
 PRAGMA foreign_keys = ON;
@@ -16,7 +15,6 @@ CREATE TABLE IF NOT EXISTS nonces (
     created_at REAL NOT NULL,
     used INTEGER NOT NULL DEFAULT 0
         CHECK (used IN (0, 1)),
-
     PRIMARY KEY (wallet_address, nonce_hash)
 );
 
@@ -92,10 +90,11 @@ CREATE INDEX IF NOT EXISTS idx_network_events_peer
 ON network_security_events(peer_id);
 
 -- =========================================================
--- ATOMIC AUTHENTICATION TRIGGERS
+-- 6. ATOMIC AUTHENTICATION TRIGGERS
 -- =========================================================
 
--- Pastikan nonce tersedia sebelum challenge dikonsumsi.
+-- Validate nonce before challenge consumption.
+
 CREATE TRIGGER IF NOT EXISTS trg_validate_challenge_nonce
 BEFORE UPDATE OF used ON challenges
 WHEN OLD.used = 0 AND NEW.used = 1
@@ -112,14 +111,14 @@ BEGIN
     END;
 END;
 
--- Ketika challenge dikonsumsi:
--- 1. Konsumsi nonce yang sesuai.
--- 2. Catat event autentikasi.
--- Semua berjalan dalam transaksi SQL yang sama.
+-- Consume nonce and record audit event
+-- in the same database transaction.
+
 CREATE TRIGGER IF NOT EXISTS trg_consume_challenge_nonce
 AFTER UPDATE OF used ON challenges
 WHEN OLD.used = 0 AND NEW.used = 1
 BEGIN
+
     UPDATE nonces
     SET used = 1
     WHERE wallet_address = NEW.wallet_address
@@ -137,7 +136,12 @@ BEGIN
         'AUTHENTICATION_CONSUMED',
         NEW.wallet_address,
         NEW.challenge_id,
-        NEW.expires_at,
+        CAST(strftime('%s', 'now') AS REAL),
         '{"challenge_consumed":true,"nonce_consumed":true}'
     );
+
 END;
+
+-- =========================================================
+-- END VOIN SECURITY D1 SCHEMA
+-- =========================================================
