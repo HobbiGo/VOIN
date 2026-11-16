@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOIN Protocol - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; background-color: #0d1117; color: #c9d1d9; }
+        .glass-panel { background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(10px); border: 1px solid #30363d; }
+        .neon-text { color: #2dd4bf; text-shadow: 0 0 10px rgba(45, 212, 191, 0.5); }
+        .neon-button { background: #2dd4bf; color: #0d1117; transition: all 0.3s ease; }
+        .neon-button:hover { background: #14b8a6; box-shadow: 0 0 15px rgba(45, 212, 191, 0.7); }
+        .bg-grid { background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 30px 30px; }
+    </style>
+</head>
+<body class="bg-grid min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="border-b border-gray-800 bg-[#0d1117] bg-opacity-90 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center font-bold text-black text-xl">V</div>
+                    <span class="text-2xl font-bold tracking-wider">VOIN <span class="text-gray-500 text-sm font-normal">PROTOCOL</span></span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-xs px-3 py-1 rounded-full border border-yellow-500 text-yellow-500 bg-yellow-500 bg-opacity-10">L1 DEVNET</span>
+                    <button id="connectBtn" class="px-5 py-2 rounded-md border border-teal-500 text-teal-400 hover:bg-teal-500 hover:text-black transition font-medium">
+                        Connect Wallet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <div class="mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Dashboard <span class="neon-text">Presale</span></h1>
+            <p class="text-gray-400 max-w-2xl">Explore the VOIN Layer-1 Native experience. Test allocations and purchases are executed directly on the VOIN P2P Network.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <!-- Status Card -->
+            <div class="glass-panel rounded-xl p-6">
+                <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Network Status</h3>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse" id="nodeStatusDot"></div>
+                    <span class="text-xl font-bold" id="nodeStatus">Connecting...</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-2" id="nodeHeight">Block Height: -</p>
+            </div>
+
+            <!-- Batch Info Card -->
+            <div class="glass-panel rounded-xl p-6">
+                <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Current Batch</h3>
+                <div class="flex items-end gap-2">
+                    <span class="text-4xl font-bold text-teal-400" id="currentBatch">1</span>
+                    <span class="text-gray-500 mb-1">/ 10</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Price: $<span id="currentPrice">0.001</span> USD</p>
+            </div>
+
+            <!-- Allocation Card -->
+            <div class="glass-panel rounded-xl p-6">
+                <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Your Allocation</h3>
+                <div class="text-3xl font-bold text-white"><span id="userBalance">0</span> <span class="text-lg text-teal-500">VOIN</span></div>
+                <p class="text-xs text-gray-500 mt-2">Wallet: <span id="walletAddress" class="font-mono">Not connected</span></p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Buy Form -->
+            <div class="glass-panel rounded-xl p-8 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -mr-10 -mt-10"></div>
+                <h2 class="text-2xl font-bold mb-6">Buy <span class="text-teal-400">$VOIN</span></h2>
+                
+                <div class="mb-6">
+                    <label class="block text-sm text-gray-400 mb-2">Amount to Pay (USD Simulation)</label>
+                    <div class="relative">
+                        <input type="number" id="buyAmount" value="10" min="1" class="w-full bg-[#0d1117] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-teal-500 transition" placeholder="e.g. 100">
+                        <span class="absolute right-4 top-3 text-gray-500 font-bold">USD</span>
+                    </div>
+                </div>
+
+                <div class="bg-[#161b22] rounded-lg p-4 mb-6 border border-gray-800">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-400">You will receive</span>
+                        <span class="font-bold text-teal-400" id="estimatedTokens">0 VOIN</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Exchange Rate</span>
+                        <span class="text-gray-300">1 VOIN = $<span id="rateDisplay">0.001</span></span>
+                    </div>
+                </div>
+
+                <button id="buyBtn" class="w-full neon-button font-bold py-4 rounded-lg text-lg opacity-50 cursor-not-allowed" disabled>
+                    Connect Wallet to Buy
+                </button>
+            </div>
+
+            <!-- Log/History Panel -->
+            <div class="glass-panel rounded-xl p-8">
+                <h2 class="text-2xl font-bold mb-6">Recent <span class="text-teal-400">Transactions</span></h2>
+                <div class="space-y-4" id="txHistory">
+                    <div class="text-center text-gray-500 py-8">No transactions yet. Connect wallet and buy $VOIN.</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Konfigurasi Node VOIN L1
+        const NODE_URL = "http://127.0.0.1:5000";
+        
+        // State
+        let isConnected = false;
+        let currentBatch = 1;
+        let currentPrice = 0.001;
+
+        // Mock Batch Prices (Sesuai presale_contract.py)
+        const batchPrices = {
+            1: 0.001, 2: 0.002, 3: 0.004, 4: 0.008, 5: 0.015,
+            6: 0.025, 7: 0.040, 8: 0.060, 9: 0.080, 10: 0.100
+        };
+
+        // 1. Cek Status Node
+        async function checkNode() {
+            try {
+                const res = await fetch(`${NODE_URL}/info`);
+                const data = await res.json();
+                document.getElementById('nodeStatus').innerText = "Connected (Devnet)";
+                document.getElementById('nodeStatusDot').className = "w-3 h-3 rounded-full bg-green-500";
+                document.getElementById('nodeHeight').innerText = `Block Height: ${data.height}`;
+                return true;
+            } catch (e) {
+                document.getElementById('nodeStatus').innerText = "Node Offline";
+                document.getElementById('nodeStatusDot').className = "w-3 h-3 rounded-full bg-red-500";
+                document.getElementById('nodeHeight').innerText = "Block Height: -";
+                return false;
+            }
+        }
+
+        // 2. Simulasi Connect Wallet
+        document.getElementById('connectBtn').addEventListener('click', () => {
+            isConnected = true;
+            // Generate random address untuk simulasi
+            const mockAddress = "0x" + Math.random().toString(16).substr(2, 40);
+            document.getElementById('walletAddress').innerText = mockAddress.substring(0, 6) + "..." + mockAddress.slice(-4);
+            document.getElementById('connectBtn').innerText = "Connected";
+            document.getElementById('connectBtn').className = "px-5 py-2 rounded-md border border-green-500 text-green-400 bg-green-500 bg-opacity-10 font-medium";
+            
+            const buyBtn = document.getElementById('buyBtn');
+            buyBtn.disabled = false;
+            buyBtn.className = "w-full neon-button font-bold py-4 rounded-lg text-lg";
+            buyBtn.innerText = "Buy $VOIN Now";
+            
+            updateEstimation();
+        });
+
+        // 3. Kalkulasi Estimasi
+        document.getElementById('buyAmount').addEventListener('input', updateEstimation);
+
+        function updateEstimation() {
+            const usd = parseFloat(document.getElementById('buyAmount').value) || 0;
+            const tokens = usd / currentPrice;
+            document.getElementById('estimatedTokens').innerText = `${tokens.toLocaleString()} VOIN`;
+        }
+
+        // 4. Logika Beli
+        document.getElementById('buyBtn').addEventListener('click', async () => {
+            const amount = parseFloat(document.getElementById('buyAmount').value);
+            if (!amount || amount <= 0) return alert("Masukkan jumlah yang valid");
+
+            const buyBtn = document.getElementById('buyBtn');
+            buyBtn.innerText = "Processing...";
+            buyBtn.disabled = true;
+
+            // Simulasi kirim ke Mempool Node
+            // Dalam produksi, ini harusnya memanggil Smart Contract
+            try {
+                const res = await fetch(`${NODE_URL}/transaction`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        tx: {
+                            sender: document.getElementById('walletAddress').innerText, 
+                            recipient: "0xVOIN_PRESALE_CONTRACT_2026",
+                            amount: amount, 
+                            nonce: Math.floor(Date.now() / 1000),
+                            data: {action: "call", payload: {usd_amount: amount}}
+                        },
+                        sig_ecdsa: "dummy_sig", // Di produksi, ini ditandatangani oleh Wallet
+                        sig_mldsa: "dummy_sig"  // Di produksi, ini ditandatangani oleh Wallet
+                    })
+                });
+
+                // Tambahkan ke history UI
+                const historyDiv = document.getElementById('txHistory');
+                const tokens = amount / currentPrice;
+                const newTx = document.createElement('div');
+                newTx.className = "flex justify-between items-center p-3 border border-gray-700 rounded-lg bg-[#0d1117]";
+                newTx.innerHTML = `
+                    <div>
+                        <div class="text-sm font-bold text-white">Bought ${tokens.toLocaleString()} VOIN</div>
+                        <div class="text-xs text-gray-500">Cost: $${amount} (Batch ${currentBatch})</div>
+                    </div>
+                    <span class="text-xs px-2 py-1 bg-green-900 text-green-400 rounded">Pending</span>
+                `;
+                
+                if (historyDiv.children[0].innerText.includes("No transactions")) {
+                    historyDiv.innerHTML = "";
+                }
+                historyDiv.prepend(newTx);
+
+                // Reset button
+                setTimeout(() => {
+                    buyBtn.innerText = "Buy $VOIN Now";
+                    buyBtn.disabled = false;
+                    document.getElementById('userBalance').innerText = (parseInt(document.getElementById('userBalance').innerText.replace(/,/g, '')) + tokens).toLocaleString();
+                }, 2000);
+
+            } catch (e) {
+                alert("Gagal terhubung ke Node. Pastikan node.py berjalan.");
+                buyBtn.innerText = "Buy $VOIN Now";
+                buyBtn.disabled = false;
+            }
+        });
+
+        // Inisialisasi
+        setInterval(checkNode, 3000);
+        checkNode();
+    </script>
+</body>
+</html>
