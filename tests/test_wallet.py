@@ -1,5 +1,5 @@
 """
-VOIN WALLET ENGINE TEST SUITE V1.0.1
+VOIN WALLET ENGINE TEST SUITE V1.0.2
 
 Tests:
 - Engine initialization
@@ -57,7 +57,7 @@ def test_engine_initialization(engine):
 
 def test_engine_version():
 
-    assert VOINWalletEngine.VERSION == "1.0.1"
+    assert VOINWalletEngine.VERSION == "1.0.2"
 
 
 # --------------------------------------------------
@@ -74,7 +74,7 @@ def test_generate_wallet(wallet):
     assert "version" in wallet
 
     assert wallet["wallet_type"] == "ETHEREUM"
-    assert wallet["version"] == "1.0.1"
+    assert wallet["version"] == "1.0.2"
 
 
 def test_generated_wallet_address_is_valid(wallet):
