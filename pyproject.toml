@@ -9,6 +9,10 @@ description = "VOIN Security Gateway"
 requires-python = ">=3.13"
 dependencies = [
     "eth-account>=0.13,<1.0",
+    "dilithium-py>=1.1.0",
+    "web3>=6.0.0",
+    "solana>=0.30.0",
+    "solders>=0.18.0"
 ]
 
 [dependency-groups]
