@@ -6,6 +6,7 @@ import time
 import threading
 import requests
 from flask import Flask, jsonify, request
+from flask_cors import CORS  # <-- TAMBAHAN BARU
 from voin import VoinChain, StateStore, canonical_tx_message, canonical_block_message
 from wallet.verification import register_account_keys, verify_hybrid_tx
 from eth_account import Account
@@ -34,6 +35,8 @@ if os.path.exists(DB_FILE) and __name__ == '__main__':
     os.remove(DB_FILE)
 
 app = Flask(__name__)
+CORS(app)  # <-- TAMBAHAN BARU: Mengizinkan akses dari domain luar (Cloudflare)
+
 store = StateStore(DB_FILE)
 chain = VoinChain(genesis_data=genesis_data, difficulty=1, store=store)
 peers = set()
@@ -42,25 +45,21 @@ mempool = []
 # SETUP VALIDATOR DARI GENESIS
 validator_data = genesis_data["validators"][0]
 validator_address = validator_data["address"]
-validator_pk_pqc_hex = validator_data["pk_mldsa_hex"]
 
-# CATATAN: Di simulasi Devnet, kita buat private key palsu.
-# Di jaringan asli, private key Validator hanya diketahui oleh server validator tersebut.
 validator_acct = Account.create() 
-validator_sk_pqc, _ = generate_keypair() # Private key ML-DSA untuk tanda tangan
+validator_sk_pqc, _ = generate_keypair()
 
 def mine_block():
     while True:
         time.sleep(5)
         if mempool:
-            print(f"[{NODE_ID}] ⛏️ Mempool berisi {len(mempool)} transaksi. Membuat blok...")
+            print(f"[{NODE_ID}] ⛏️ Menambang {len(mempool)} transaksi...")
             txs_to_mine = list(mempool)
             mempool.clear()
             try:
                 block = chain.prepare_block(txs_to_mine, validator_address)
                 block_msg = canonical_block_message(block)
                 
-                # Tanda tangan blok dengan kunci Validator
                 v_sig_e = validator_acct.sign_message(encode_defunct(primitive=block_msg)).signature.hex()
                 v_sig_p = pqc_sign(block_msg, validator_sk_pqc).hex()
                 
@@ -68,7 +67,7 @@ def mine_block():
                 print(f"[{NODE_ID}] ✅ Blok #{block['index']} berhasil ditambang.")
                 broadcast_block(block, v_sig_e, v_sig_p)
             except Exception as e:
-                print(f"[{NODE_ID}] ❌ Gagal menambang blok: {e}")
+                print(f"[{NODE_ID}] ❌ Gagal: {e}")
 
 if __name__ == '__main__':
     threading.Thread(target=mine_block, daemon=True).start()
