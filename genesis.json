@@ -1,0 +1,20 @@
+{
+  "network_name": "VOIN Devnet",
+  "chain_id": 260,
+  "total_supply": 260000000,
+  "allocations": {
+    "0xPresaleWalletAddress000000000000000001": 130000000,
+    "0xTeamWalletAddress000000000000000000002": 26000000,
+    "0xReservesWalletAddress000000000000000003": 26000000,
+    "0xListingsWalletAddress000000000000000004": 28600000,
+    "0xRewardsWalletAddress0000000000000000005": 10400000,
+    "0xMarketingWalletAddress00000000000000006": 39000000
+  },
+  "validators": [
+    {
+      "name": "VOIN_Genesis_Validator",
+      "address": "0xPresaleWalletAddress000000000000000001",
+      "pk_mldsa_hex": "dummy_mldsa_key_for_genesis_validator"
+    }
+  ]
+}
