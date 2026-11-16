@@ -5,6 +5,7 @@ from eth_account import Account
 from eth_account.messages import encode_defunct
 from voin import VoinChain, canonical_tx_message, canonical_block_message
 from security.pqc_signer import generate_keypair, sign as pqc_sign
+from wallet.verification import register_account_keys
 
 class VoinTests(unittest.TestCase):
 
@@ -12,8 +13,11 @@ class VoinTests(unittest.TestCase):
         # 1. Buat akun Pengirim (Alice)
         self.alice_acct = Account.create()
         self.alice_pk_pqc, self.alice_sk_pqc = generate_keypair()
+        
+        # Daftarkan public key Alice ke sistem keamanan
+        register_account_keys(self.alice_acct.address, self.alice_acct.address, self.alice_pk_pqc.hex())
 
-        # 2. Inisialisasi Chain dengan saldo Alice dimasukkan ke Genesis
+        # 2. Inisialisasi Chain
         allocations = {self.alice_acct.address: 1000}
         self.chain = VoinChain(allocations=allocations, difficulty=0)
         
@@ -21,13 +25,10 @@ class VoinTests(unittest.TestCase):
         self.v_acct = Account.create()
         self.v_pk_pqc, self.v_sk_pqc = generate_keypair()
         
-        # 4. Daftarkan Validator menggunakan ALAMAT EVM (bukan string sembarang)
+        # 4. Daftarkan Validator
         self.validator_id = self.v_acct.address
         self.chain.register_validator(
-            self.validator_id, 
-            50, 
-            self.v_acct.address, # Public Key ECDSA adalah alamat itu sendiri
-            self.v_pk_pqc.hex()  # Public Key ML-DSA
+            self.validator_id, 50, self.v_acct.address, self.v_pk_pqc.hex()
         )
 
     def create_signed_tx(self, sender_acct, sender_sk_pqc, recipient, amount, nonce):
@@ -52,11 +53,9 @@ class VoinTests(unittest.TestCase):
     def test_transfer(self):
         tx = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 250, 1)
         
-        # Siapkan block
         block = self.chain.prepare_block([tx], self.validator_id)
         v_sig_e, v_sig_p = self.sign_prepared_block(block, self.v_acct, self.v_sk_pqc)
         
-        # Tambahkan ke chain
         self.chain.add_block(block, v_sig_e, v_sig_p)
         
         balances = self.chain.balances()
@@ -65,7 +64,6 @@ class VoinTests(unittest.TestCase):
 
     def test_insufficient_balance(self):
         tx = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 2000, 1)
-        
         with self.assertRaises(ValueError):
             self.chain.prepare_block([tx], self.validator_id)
 
@@ -75,9 +73,7 @@ class VoinTests(unittest.TestCase):
         v_sig_e1, v_sig_p1 = self.sign_prepared_block(block1, self.v_acct, self.v_sk_pqc)
         self.chain.add_block(block1, v_sig_e1, v_sig_p1)
 
-        # Coba kirim ulang (nonce 1)
         tx2 = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 100, 1)
-        
         with self.assertRaises(ValueError):
             self.chain.prepare_block([tx2], self.validator_id)
 
@@ -88,7 +84,6 @@ class VoinTests(unittest.TestCase):
         
         final_block = self.chain.add_block(block, v_sig_e, v_sig_p)
         
-        # Modifikasi block secara ilegal
         final_block["transactions"][0]["amount"] = 500
         self.chain.chain[-1] = final_block
         
