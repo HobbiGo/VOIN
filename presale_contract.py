@@ -3,7 +3,7 @@ import datetime
 class VOINPresaleContract:
     def __init__(self, treasury_address):
         self.contract_name = "VOIN_Presale_V1"
-        self.treasury_address = treasury_address # Dompet Developer/Tim
+        self.treasury_address = 0xAEb22359588A50e6F746004E66418Eb2c978dAA2
         self.total_presale_allocation = 130_000_000
         self.total_batches = 10
         self.tokens_per_batch = self.total_presale_allocation // self.total_batches
