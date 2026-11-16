@@ -135,7 +135,9 @@ class VoinChain:
 
     @staticmethod
     def _hash(block):
-        return digest({k: v for k, v in block.items() if k != "hash"})
+        # PENTING: Abaikan field hash dan signature validator agar hash konsisten
+        ignore = {"hash", "validator_sig_ecdsa", "validator_sig_mldsa"}
+        return digest({k: v for k, v in block.items() if k not in ignore})
 
     def register_validator(self, address, demo_stake, pk_ecdsa, pk_mldsa):
         if not isinstance(address, str) or not address.strip() or not positive_int(demo_stake):
@@ -237,7 +239,6 @@ class VoinChain:
         block_message = canonical_block_message(block)
         vinfo = self.validators[validator]
         
-        # Karena di L1 kita pakai alamat EVM sebagai identitas validator
         if not verify_hybrid_tx(block_message, validator_sig_ecdsa, validator_sig_mldsa,
                                 validator, pk_mldsa_hex=vinfo["pk_mldsa"]):
             raise ValueError("Invalid validator signature")
