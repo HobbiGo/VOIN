@@ -9,28 +9,25 @@ from security.pqc_signer import generate_keypair, sign as pqc_sign
 class VoinTests(unittest.TestCase):
 
     def setUp(self):
-        # Gunakan in-memory SQLite agar bersih setiap test
-        self.chain = VoinChain(allocations={"alice": 1000}, difficulty=0)
+        # 1. Buat akun Pengirim (Alice) TERLEBIH DAHULU
+        self.alice_acct = Account.create()
+        self.alice_pk_pqc, self.alice_sk_pqc = generate_keypair()
+
+        # 2. Inisialisasi Chain dengan saldo Alice dimasukkan ke Genesis
+        allocations = {self.alice_acct.address: 1000}
+        self.chain = VoinChain(allocations=allocations, difficulty=0)
         
-        # 1. Buat akun Validator
+        # 3. Buat akun Validator
         self.v_acct = Account.create()
         self.v_pk_pqc, self.v_sk_pqc = generate_keypair()
         
-        # 2. Daftarkan Validator dengan Public Key
+        # 4. Daftarkan Validator dengan Public Key
         self.chain.register_validator(
             "validator", 
             50, 
             self.v_acct.address, 
             self.v_pk_pqc.hex()
         )
-
-        # 3. Buat akun Pengirim (Alice)
-        self.alice_acct = Account.create()
-        self.alice_pk_pqc, self.alice_sk_pqc = generate_keypair()
-
-        # Daftarkan saldo Alice di state store (karena alice_acct.address berbeda dari string "alice")
-        # Kita timpa genesis untuk testing
-        self.chain.store.set_account(self.alice_acct.address, 1000, 0)
 
     def create_signed_tx(self, sender_acct, sender_sk_pqc, recipient, amount, nonce):
         """Helper untuk membuat transaksi yang sudah ditandatangani."""
@@ -75,9 +72,10 @@ class VoinTests(unittest.TestCase):
         # Tambahkan block
         self.chain.add_block([tx], "validator", v_sig_e, v_sig_p)
         
-        # Cek saldo
-        self.assertEqual(self.chain.store.get_account(self.alice_acct.address)["balance"], 750)
-        self.assertEqual(self.chain.store.get_account("bob")["balance"], 250)
+        # Cek saldo (gunakan _replay() untuk mendapatkan state terbaru dari memori)
+        balances = self.chain.balances()
+        self.assertEqual(balances.get(self.alice_acct.address), 750)
+        self.assertEqual(balances.get("bob"), 250)
 
     def test_insufficient_balance(self):
         tx = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 2000, 1)
