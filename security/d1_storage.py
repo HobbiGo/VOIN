@@ -1,6 +1,6 @@
 """
 VOIN CLOUDFLARE D1 STORAGE ENGINE
-Version: 1.0.1
+Version: 1.0.2
 
 Async storage engine for Cloudflare Python Workers.
 SQLite local storage remains unchanged.
@@ -9,16 +9,19 @@ SQLite local storage remains unchanged.
 import hashlib
 import json
 import time
+import math
 
 
 class VOIND1StorageEngine:
 
-    VERSION = "1.0.1"
+    VERSION = "1.0.2"
 
     def __init__(self, database):
 
         if database is None:
-            raise ValueError("Cloudflare D1 database binding is required")
+            raise ValueError(
+                "Cloudflare D1 database binding is required"
+            )
 
         self.database = database
 
@@ -64,7 +67,8 @@ class VOIND1StorageEngine:
             return json.dumps(
                 details,
                 separators=(",", ":"),
-                sort_keys=True
+                sort_keys=True,
+                allow_nan=False
             )
         except (TypeError, ValueError):
             raise ValueError("Invalid event details")
@@ -89,24 +93,33 @@ class VOIND1StorageEngine:
         if isinstance(row, dict):
             return row
 
-        # Pyodide / JavaScript proxy conversion
         try:
             converted = row.to_py()
+
             if isinstance(converted, dict):
                 return converted
+
         except (AttributeError, TypeError):
             pass
 
         try:
             return dict(row)
+
         except (TypeError, ValueError):
             pass
 
         try:
             keys = list(row.keys())
-            return {key: row[key] for key in keys}
+
+            return {
+                key: row[key]
+                for key in keys
+            }
+
         except (AttributeError, TypeError):
-            raise RuntimeError("Unable to convert D1 database row")
+            raise RuntimeError(
+                "Unable to convert D1 database row"
+            )
 
     async def _run(self, sql, params=()):
 
@@ -156,9 +169,11 @@ class VOIND1StorageEngine:
 
         wallet = self._normalize_wallet(wallet_address)
         nonce_hash = self._hash_nonce(nonce)
+
         now = time.time()
 
         statements = [
+
             self.database.prepare(
                 """
                 INSERT INTO nonces (
@@ -169,7 +184,11 @@ class VOIND1StorageEngine:
                 )
                 VALUES (?, ?, ?, 0)
                 """
-            ).bind(wallet, nonce_hash, now),
+            ).bind(
+                wallet,
+                nonce_hash,
+                now
+            ),
 
             self.database.prepare(
                 """
@@ -208,7 +227,10 @@ class VOIND1StorageEngine:
               AND nonce_hash = ?
               AND used = 0
             """,
-            (wallet, nonce_hash)
+            (
+                wallet,
+                nonce_hash
+            )
         )
 
         return self._changes(result) == 1
@@ -236,19 +258,35 @@ class VOIND1StorageEngine:
             raise ValueError("Invalid challenge message")
 
         if isinstance(expires_at, bool) or not isinstance(
-            expires_at, (int, float)
+            expires_at,
+            (int, float)
         ):
+            raise ValueError("Invalid challenge expiration")
+
+        try:
+            expiration = float(expires_at)
+
+        except (TypeError, ValueError, OverflowError):
+            raise ValueError("Invalid challenge expiration")
+
+        # Reject NaN and positive/negative infinity.
+        if not math.isfinite(expiration):
             raise ValueError("Invalid challenge expiration")
 
         now = time.time()
 
-        if expires_at <= now:
-            raise ValueError("Challenge expiration must be in the future")
+        if expiration <= now:
+            raise ValueError(
+                "Challenge expiration must be in the future"
+            )
 
-        details = json.dumps({
-            "challenge_id": challenge_id,
-            "status": "created"
-        }, separators=(",", ":"))
+        details = json.dumps(
+            {
+                "challenge_id": challenge_id,
+                "status": "created"
+            },
+            separators=(",", ":")
+        )
 
         statements = [
 
@@ -263,7 +301,11 @@ class VOIND1StorageEngine:
                 )
                 VALUES (?, ?, ?, 0)
                 """
-            ).bind(wallet, nonce_hash, now),
+            ).bind(
+                wallet,
+                nonce_hash,
+                now
+            ),
 
             # 2. Create challenge
             self.database.prepare(
@@ -285,7 +327,7 @@ class VOIND1StorageEngine:
                 nonce_hash,
                 message,
                 now,
-                float(expires_at)
+                expiration
             ),
 
             # 3. Nonce audit
@@ -383,6 +425,9 @@ class VOIND1StorageEngine:
 
         wallet = self._normalize_wallet(wallet_address)
 
+        if not isinstance(challenge_id, str) or not challenge_id:
+            raise ValueError("Invalid challenge ID")
+
         result = await self._run(
             """
             UPDATE challenges
@@ -392,7 +437,11 @@ class VOIND1StorageEngine:
               AND used = 0
               AND expires_at > ?
             """,
-            (challenge_id, wallet, time.time())
+            (
+                challenge_id,
+                wallet,
+                time.time()
+            )
         )
 
         return self._changes(result) == 1
@@ -416,13 +465,13 @@ class VOIND1StorageEngine:
 
         now = time.time()
 
-        # The database trigger performs:
-        #
+        # Database trigger performs:
         # 1. Check nonce availability.
         # 2. Consume nonce.
-        # 3. Record AUTHENTICATION_CONSUMED.
+        # 3. Record authentication audit.
         #
-        # All operations run in the same database transaction.
+        # The trigger and UPDATE must execute within
+        # the same database transaction.
 
         result = await self._run(
             """
@@ -498,7 +547,9 @@ class VOIND1StorageEngine:
             raise ValueError("Invalid event limit")
 
         if limit < 1 or limit > 1000:
-            raise ValueError("Event limit must be between 1 and 1000")
+            raise ValueError(
+                "Event limit must be between 1 and 1000"
+            )
 
         return await self._all(
             """
@@ -522,7 +573,9 @@ class VOIND1StorageEngine:
             raise ValueError("Invalid event limit")
 
         if limit < 1 or limit > 1000:
-            raise ValueError("Event limit must be between 1 and 1000")
+            raise ValueError(
+                "Event limit must be between 1 and 1000"
+            )
 
         return await self._all(
             """
@@ -532,7 +585,10 @@ class VOIND1StorageEngine:
             ORDER BY created_at DESC, id DESC
             LIMIT ?
             """,
-            (wallet, limit)
+            (
+                wallet,
+                limit
+            )
         )
 
     # =====================================================
@@ -549,6 +605,9 @@ class VOIND1StorageEngine:
 
         now = time.time()
 
+        # New peers must never be trusted automatically.
+        # Verification and approval are separate operations.
+
         await self._run(
             """
             INSERT INTO network_peers (
@@ -558,14 +617,22 @@ class VOIND1StorageEngine:
                 registered_at,
                 updated_at
             )
-            VALUES (?, ?, 'TRUSTED', ?, ?)
+            VALUES (?, ?, 'PENDING', ?, ?)
             """,
-            (peer_id, endpoint, now, now)
+            (
+                peer_id,
+                endpoint,
+                now,
+                now
+            )
         )
 
         return True
 
     async def get_network_peer(self, peer_id):
+
+        if not isinstance(peer_id, str) or not peer_id:
+            raise ValueError("Invalid peer ID")
 
         return await self._first(
             """
@@ -580,6 +647,7 @@ class VOIND1StorageEngine:
     async def list_network_peers(self, status=None):
 
         if status is None:
+
             return await self._all(
                 """
                 SELECT *
@@ -588,7 +656,11 @@ class VOIND1StorageEngine:
                 """
             )
 
-        if status not in ("TRUSTED", "REVOKED"):
+        if status not in (
+            "PENDING",
+            "TRUSTED",
+            "REVOKED"
+        ):
             raise ValueError("Invalid peer status")
 
         return await self._all(
@@ -603,6 +675,9 @@ class VOIND1StorageEngine:
 
     async def revoke_network_peer(self, peer_id):
 
+        if not isinstance(peer_id, str) or not peer_id:
+            raise ValueError("Invalid peer ID")
+
         result = await self._run(
             """
             UPDATE network_peers
@@ -611,10 +686,17 @@ class VOIND1StorageEngine:
             WHERE peer_id = ?
               AND status = 'TRUSTED'
             """,
-            (time.time(), peer_id)
+            (
+                time.time(),
+                peer_id
+            )
         )
 
         return self._changes(result) == 1
+
+    # =====================================================
+    # NETWORK AUDIT
+    # =====================================================
 
     async def log_network_event(
         self,
@@ -625,6 +707,10 @@ class VOIND1StorageEngine:
 
         if not isinstance(event_type, str) or not event_type:
             raise ValueError("Invalid network event type")
+
+        if peer_id is not None:
+            if not isinstance(peer_id, str) or not peer_id:
+                raise ValueError("Invalid peer ID")
 
         serialized = self._serialize_details(details)
 
@@ -654,7 +740,9 @@ class VOIND1StorageEngine:
             raise ValueError("Invalid event limit")
 
         if limit < 1 or limit > 1000:
-            raise ValueError("Event limit must be between 1 and 1000")
+            raise ValueError(
+                "Event limit must be between 1 and 1000"
+            )
 
         return await self._all(
             """
@@ -682,5 +770,12 @@ class VOIND1StorageEngine:
             "atomic_authentication": True,
             "audit_logging": True,
             "network_peer_storage": True,
+            "peer_initial_status": "PENDING",
+            "supported_peer_statuses": [
+                "PENDING",
+                "TRUSTED",
+                "REVOKED"
+            ],
+            "expiration_validation": True,
             "status": "READY_FOR_INTEGRATION"
         }
