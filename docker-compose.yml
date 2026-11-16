@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # Node 1 (Validator Utama)
+  voin-node-1:
+    build: .
+    container_name: voin_node_1
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./data/node1:/app/data
+    restart: unless-stopped
+
+  # Node 2
+  voin-node-2:
+    build: .
+    container_name: voin_node_2
+    ports:
+      - "5002:5000"
+    volumes:
+      - ./data/node2:/app/data
+    restart: unless-stopped
+    depends_on:
+      - voin-node-1
+
+  # Node 3
+  voin-node-3:
+    build: .
+    container_name: voin_node_3
+    ports:
+      - "5003:5000"
+    volumes:
+      - ./data/node3:/app/data
+    restart: unless-stopped
+    depends_on:
+      - voin-node-1
