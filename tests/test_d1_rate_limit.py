@@ -1,13 +1,13 @@
 """
 VOIN D1 Rate Limit Tests
-Version: 1.0.0
+Version: 1.0.2
 
 Tests for asynchronous D1 rate limit engine.
 """
 
+import asyncio
 import json
 import sqlite3
-import time
 
 import pytest
 
@@ -42,8 +42,8 @@ class FakeD1Statement:
             self.sql,
             self.params,
         )
-
         row = cursor.fetchone()
+        self.database.connection.commit()
 
         if row is None:
             return None
@@ -55,24 +55,19 @@ class FakeD1Statement:
             self.sql,
             self.params,
         )
-
         self.database.connection.commit()
 
-        return FakeD1Result(
-            changes=cursor.rowcount,
-        )
+        return FakeD1Result(changes=cursor.rowcount)
 
     async def all(self):
         cursor = self.database.connection.execute(
             self.sql,
             self.params,
         )
+        rows = [dict(row) for row in cursor.fetchall()]
+        self.database.connection.commit()
 
-        return {
-            "results": [
-                dict(row) for row in cursor.fetchall()
-            ]
-        }
+        return {"results": rows}
 
 
 class FakeD1Database:
@@ -81,9 +76,7 @@ class FakeD1Database:
             ":memory:",
             check_same_thread=False,
         )
-
         self.connection.row_factory = sqlite3.Row
-
         self.connection.executescript("""
         CREATE TABLE wallet_rate_limits (
             wallet_address TEXT PRIMARY KEY,
@@ -103,7 +96,6 @@ class FakeD1Database:
             details TEXT
         );
         """)
-
         self.connection.commit()
 
     def prepare(self, sql):
@@ -111,6 +103,13 @@ class FakeD1Database:
 
     def close(self):
         self.connection.close()
+
+
+class FailingAuditDatabase(FakeD1Database):
+    def prepare(self, sql):
+        if "INSERT INTO security_events" in sql:
+            raise RuntimeError("Simulated audit storage failure")
+        return super().prepare(sql)
 
 
 @pytest.fixture
@@ -132,7 +131,6 @@ def engine(database):
 
 def test_engine_creation(database):
     engine = VOIND1RateLimitEngine(database)
-
     info = engine.engine_info()
 
     assert info["engine"] == "VOIN D1 Rate Limit Engine"
@@ -160,10 +158,7 @@ def test_engine_rejects_missing_database():
 )
 def test_invalid_configuration(database, config):
     with pytest.raises(ValueError):
-        VOIND1RateLimitEngine(
-            database,
-            **config,
-        )
+        VOIND1RateLimitEngine(database, **config)
 
 
 def test_invalid_wallet_rejected(engine):
@@ -189,7 +184,6 @@ async def test_maximum_attempts_activates_cooldown(engine):
 
     assert first["allowed"] is True
     assert second["allowed"] is True
-
     assert third["allowed"] is False
     assert third["attempts"] == 3
     assert third["cooldown_until"] is not None
@@ -202,18 +196,14 @@ async def test_attempt_during_cooldown_does_not_reset_cooldown(engine):
         await engine.consume_attempt(WALLET_A)
 
     status_before = await engine.get_status(WALLET_A)
-
     result = await engine.consume_attempt(WALLET_A)
-
     status_after = await engine.get_status(WALLET_A)
 
     assert result["allowed"] is False
-
     assert (
         status_after["cooldown_until"]
         == status_before["cooldown_until"]
     )
-
     assert status_after["blocked"] is True
 
 
@@ -260,19 +250,16 @@ async def test_rate_limit_violation_logged(database, engine):
     for _ in range(3):
         await engine.consume_attempt(WALLET_A)
 
-    cursor = database.connection.execute("""
+    events = database.connection.execute("""
         SELECT event_type, wallet_address, details
         FROM security_events
-    """)
-
-    events = cursor.fetchall()
+    """).fetchall()
 
     assert len(events) == 1
     assert events[0]["event_type"] == "RATE_LIMIT_EXCEEDED"
     assert events[0]["wallet_address"] == WALLET_A
 
     details = json.loads(events[0]["details"])
-
     assert details["attempts"] == 3
     assert details["max_attempts"] == 3
 
@@ -324,7 +311,6 @@ async def test_cooldown_expiration_resets_attempts(engine, monkeypatch):
         await engine.consume_attempt(WALLET_A)
 
     blocked = await engine.get_status(WALLET_A)
-
     assert blocked["blocked"] is True
 
     fake_time[0] = blocked["cooldown_until"] + 1
@@ -334,3 +320,115 @@ async def test_cooldown_expiration_resets_attempts(engine, monkeypatch):
     assert result["allowed"] is True
     assert result["attempts"] == 1
     assert result["cooldown_until"] is None
+
+
+# V1.0.2 additional tests
+
+
+@pytest.mark.asyncio
+async def test_concurrent_attempts_preserve_attempt_count(engine):
+    results = await asyncio.gather(
+        *[
+            engine.consume_attempt(WALLET_A)
+            for _ in range(3)
+        ]
+    )
+
+    status = await engine.get_status(WALLET_A)
+
+    assert len(results) == 3
+    assert status["attempts"] == 3
+    assert status["blocked"] is True
+
+
+@pytest.mark.asyncio
+async def test_concurrent_wallets_remain_isolated(engine):
+    await asyncio.gather(
+        *[
+            engine.consume_attempt(WALLET_A)
+            for _ in range(3)
+        ],
+        *[
+            engine.consume_attempt(WALLET_B)
+            for _ in range(2)
+        ],
+    )
+
+    status_a = await engine.get_status(WALLET_A)
+    status_b = await engine.get_status(WALLET_B)
+
+    assert status_a["attempts"] == 3
+    assert status_a["blocked"] is True
+    assert status_b["attempts"] == 2
+    assert status_b["blocked"] is False
+
+
+@pytest.mark.asyncio
+async def test_insert_returning_persists_rate_limit_state(
+    database,
+    engine,
+):
+    result = await engine.consume_attempt(WALLET_A)
+
+    assert result["attempts"] == 1
+
+    row = database.connection.execute("""
+        SELECT attempts
+        FROM wallet_rate_limits
+        WHERE wallet_address = ?
+    """, (WALLET_A,)).fetchone()
+
+    assert row is not None
+    assert row["attempts"] == 1
+
+
+@pytest.mark.asyncio
+async def test_audit_failure_does_not_undo_rate_limit_state():
+    database = FailingAuditDatabase()
+
+    try:
+        engine = VOIND1RateLimitEngine(
+            database,
+            max_attempts=1,
+            window_seconds=300,
+            cooldown_seconds=60,
+        )
+
+        with pytest.raises(RuntimeError):
+            await engine.consume_attempt(WALLET_A)
+
+        row = database.connection.execute("""
+            SELECT attempts, cooldown_until
+            FROM wallet_rate_limits
+            WHERE wallet_address = ?
+        """, (WALLET_A,)).fetchone()
+
+        assert row is not None
+        assert row["attempts"] == 1
+        assert row["cooldown_until"] is not None
+    finally:
+        database.close()
+
+
+@pytest.mark.asyncio
+async def test_cooldown_remaining_attempts_stay_zero(engine):
+    for _ in range(3):
+        await engine.consume_attempt(WALLET_A)
+
+    result = await engine.consume_attempt(WALLET_A)
+
+    assert result["allowed"] is False
+    assert result["remaining_attempts"] == 0
+    assert result["retry_after"] > 0
+
+
+@pytest.mark.asyncio
+async def test_wallet_normalization_is_consistent(engine):
+    result = await engine.consume_attempt(
+        "  " + WALLET_A.upper() + "  "
+    )
+
+    assert result["wallet_address"] == WALLET_A
+
+    status = await engine.get_status(WALLET_A)
+    assert status["attempts"] == 1
