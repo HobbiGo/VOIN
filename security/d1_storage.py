@@ -1,6 +1,6 @@
 """
 VOIN CLOUDFLARE D1 STORAGE ENGINE
-Version: 1.0.2
+Version: 1.0.3
 
 Async storage engine for Cloudflare Python Workers.
 SQLite local storage remains unchanged.
@@ -14,7 +14,7 @@ import math
 
 class VOIND1StorageEngine:
 
-    VERSION = "1.0.2"
+    VERSION = "1.0.3"
 
     def __init__(self, database):
 
@@ -269,7 +269,6 @@ class VOIND1StorageEngine:
         except (TypeError, ValueError, OverflowError):
             raise ValueError("Invalid challenge expiration")
 
-        # Reject NaN and positive/negative infinity.
         if not math.isfinite(expiration):
             raise ValueError("Invalid challenge expiration")
 
@@ -308,6 +307,7 @@ class VOIND1StorageEngine:
             ),
 
             # 2. Create challenge
+            # Default consumption_type is CHALLENGE.
             self.database.prepare(
                 """
                 INSERT INTO challenges (
@@ -317,9 +317,10 @@ class VOIND1StorageEngine:
                     message,
                     created_at,
                     expires_at,
-                    used
+                    used,
+                    consumption_type
                 )
-                VALUES (?, ?, ?, ?, ?, ?, 0)
+                VALUES (?, ?, ?, ?, ?, ?, 0, 'CHALLENGE')
                 """
             ).bind(
                 challenge_id,
@@ -409,7 +410,8 @@ class VOIND1StorageEngine:
                 message,
                 created_at,
                 expires_at,
-                used
+                used,
+                consumption_type
             FROM challenges
             WHERE challenge_id = ?
             LIMIT 1
@@ -431,7 +433,8 @@ class VOIND1StorageEngine:
         result = await self._run(
             """
             UPDATE challenges
-            SET used = 1
+            SET used = 1,
+                consumption_type = 'CHALLENGE'
             WHERE challenge_id = ?
               AND wallet_address = ?
               AND used = 0
@@ -465,18 +468,19 @@ class VOIND1StorageEngine:
 
         now = time.time()
 
-        # Database trigger performs:
-        # 1. Check nonce availability.
+        # Migration 0003 trigger performs:
+        # 1. Validate matching unused nonce.
         # 2. Consume nonce.
-        # 3. Record authentication audit.
+        # 3. Record AUTHENTICATION_CONSUMED.
         #
-        # The trigger and UPDATE must execute within
-        # the same database transaction.
+        # The challenge UPDATE and trigger actions
+        # execute as one database statement.
 
         result = await self._run(
             """
             UPDATE challenges
-            SET used = 1
+            SET used = 1,
+                consumption_type = 'AUTHENTICATION'
             WHERE challenge_id = ?
               AND wallet_address = ?
               AND nonce_hash = ?
@@ -606,7 +610,6 @@ class VOIND1StorageEngine:
         now = time.time()
 
         # New peers must never be trusted automatically.
-        # Verification and approval are separate operations.
 
         await self._run(
             """
@@ -684,7 +687,7 @@ class VOIND1StorageEngine:
             SET status = 'REVOKED',
                 updated_at = ?
             WHERE peer_id = ?
-              AND status = 'TRUSTED'
+              AND status IN ('PENDING', 'TRUSTED')
             """,
             (
                 time.time(),
@@ -768,6 +771,7 @@ class VOIND1StorageEngine:
             "async": True,
             "atomic_challenge_creation": True,
             "atomic_authentication": True,
+            "authentication_nonce_trigger": True,
             "audit_logging": True,
             "network_peer_storage": True,
             "peer_initial_status": "PENDING",
@@ -776,6 +780,7 @@ class VOIND1StorageEngine:
                 "TRUSTED",
                 "REVOKED"
             ],
+            "peer_revocation": True,
             "expiration_validation": True,
             "status": "READY_FOR_INTEGRATION"
         }
