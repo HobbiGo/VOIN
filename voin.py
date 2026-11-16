@@ -236,6 +236,8 @@ class VoinChain:
         # Verifikasi signature block
         block_message = canonical_block_message(block)
         vinfo = self.validators[validator]
+        
+        # Karena di L1 kita pakai alamat EVM sebagai identitas validator
         if not verify_hybrid_tx(block_message, validator_sig_ecdsa, validator_sig_mldsa,
                                 validator, pk_mldsa_hex=vinfo["pk_mldsa"]):
             raise ValueError("Invalid validator signature")
