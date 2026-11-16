@@ -10,12 +10,21 @@ from voin import VoinChain, StateStore
 # ==========================================
 # KONFIGURASI NODE
 # ==========================================
-NODE_PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
+def get_port():
+    """Mengambil port dari argumen terminal, abaikan jika bukan angka (saat testing)."""
+    if len(sys.argv) > 1:
+        try:
+            return int(sys.argv[1])
+        except ValueError:
+            pass # Abaikan jika argumen bukan angka
+    return 5000
+
+NODE_PORT = get_port()
 NODE_ID = str(NODE_PORT)
 DB_FILE = f"voin_node_{NODE_PORT}.db"
 
 # Hapus DB lama jika ada (untuk testing bersih)
-if os.path.exists(DB_FILE):
+if os.path.exists(DB_FILE) and __name__ == '__main__':
     os.remove(DB_FILE)
 
 app = Flask(__name__)
@@ -120,8 +129,6 @@ def sync_with_peers():
             
     if len(longest_chain) > len(chain.chain):
         print(f"[{NODE_ID}] Sinkronisasi: Menemukan rantai lebih panjang dari peer.")
-        # Di produksi, kita harus memvalidasi ulang seluruh rantai di sini.
-        # Untuk simulasi, kita langsung ganti.
         chain.chain = longest_chain
 
 # ==========================================
