@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOIN Protocol - Native Layer 1 Blockchain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; background-color: #0d1117; color: #c9d1d9; }
+        .glass-panel { background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(10px); border: 1px solid #30363d; }
+        .neon-text { color: #2dd4bf; text-shadow: 0 0 10px rgba(45, 212, 191, 0.5); }
+        .neon-button { background: #2dd4bf; color: #0d1117; transition: all 0.3s ease; }
+        .neon-button:hover { background: #14b8a6; box-shadow: 0 0 15px rgba(45, 212, 191, 0.7); }
+        .bg-grid { background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 30px 30px; }
+    </style>
+</head>
+<body class="bg-grid min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="border-b border-gray-800 bg-[#0d1117] bg-opacity-90 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center font-bold text-black text-xl">V</div>
+                    <span class="text-2xl font-bold tracking-wider">VOIN <span class="text-gray-500 text-sm font-normal">PROTOCOL</span></span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#about" class="hover:text-teal-400 transition">About</a>
+                    <a href="#tokenomics" class="hover:text-teal-400 transition">Tokenomics</a>
+                    <a href="#roadmap" class="hover:text-teal-400 transition">Roadmap</a>
+                </div>
+                <div>
+                    <a href="dashboard.html" class="px-5 py-2 rounded-md neon-button font-bold text-sm">Launch Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 flex flex-col items-center text-center">
+        <div class="inline-block px-3 py-1 rounded-full border border-teal-500 text-teal-400 text-sm font-semibold mb-6">
+            ⚡ Quantum-Resistant Layer 1
+        </div>
+        <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            The Future of <br>
+            <span class="neon-text">Connected Ecosystems.</span>
+        </h1>
+        <p class="text-xl text-gray-400 max-w-3xl mb-10">
+            VOIN is a Native Layer 1 blockchain designed with ML-DSA (Post-Quantum) security, modular infrastructure, and a vision for Web4 applications.
+        </p>
+        <div class="flex gap-4">
+            <a href="dashboard.html" class="px-8 py-4 rounded-lg neon-button font-bold text-lg">Join Presale</a>
+            <a href="#about" class="px-8 py-4 rounded-lg border border-gray-600 hover:border-teal-500 hover:text-teal-400 transition font-bold text-lg">Read Whitepaper</a>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="bg-[#161b22] py-24 border-y border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-5xl font-bold mb-4">From Vision to Delivery</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">Building a connected ecosystem that combines blockchain infrastructure, AI intelligence, and secure payment connectivity.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="glass-panel p-8 rounded-xl">
+                    <div class="text-teal-400 text-4xl mb-4">⛓️</div>
+                    <h3 class="text-xl font-bold mb-2">Blockchain Infrastructure</h3>
+                    <p class="text-gray-400">A Native L1 network built for scalable, decentralized applications with transparent digital transactions.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="glass-panel p-8 rounded-xl">
+                    <div class="text-teal-400 text-4xl mb-4">🧠</div>
+                    <h3 class="text-xl font-bold mb-2">AI Intelligence</h3>
+                    <p class="text-gray-400">Developing AI-powered analytics, intelligent automation, and advanced ecosystem intelligence.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="glass-panel p-8 rounded-xl">
+                    <div class="text-teal-400 text-4xl mb-4">🛡️</div>
+                    <h3 class="text-xl font-bold mb-2">Post-Quantum Security</h3>
+                    <p class="text-gray-400">Primary signature scheme using ML-DSA (FIPS 204) to prepare for future quantum threats.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tokenomics Section -->
+    <section id="tokenomics" class="py-24">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-5xl font-bold mb-4">Designed for <span class="neon-text">Growth</span></h2>
+                <p class="text-gray-400">Total Planned Maximum Supply: <strong class="text-white">260,000,000 VOIN</strong></p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                <!-- Chart Placeholder -->
+                <div class="flex justify-center">
+                    <div class="w-64 h-64 rounded-full border-8 border-teal-500 flex items-center justify-center relative shadow-[0_0_30px_rgba(45,212,191,0.3)]">
+                        <div class="text-center">
+                            <div class="text-4xl font-bold">260M</div>
+                            <div class="text-sm text-gray-400">TOTAL SUPPLY</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Allocation List -->
+                <div class="glass-panel p-8 rounded-xl space-y-4">
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-teal-400"></div> Presale</span>
+                        <span class="font-bold">50% <span class="text-gray-500 text-sm">(130M)</span></span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-blue-400"></div> Team</span>
+                        <span class="font-bold">10% <span class="text-gray-500 text-sm">(26M)</span></span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-purple-400"></div> Reserves</span>
+                        <span class="font-bold">10% <span class="text-gray-500 text-sm">(26M)</span></span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-yellow-400"></div> Exchange Listings</span>
+                        <span class="font-bold">11% <span class="text-gray-500 text-sm">(28.6M)</span></span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-pink-400"></div> Rewards</span>
+                        <span class="font-bold">4% <span class="text-gray-500 text-sm">(10.4M)</span></span>
+                    </div>
+                    <div class="flex justify-between items-center pb-2">
+                        <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-green-400"></div> Marketing</span>
+                        <span class="font-bold">15% <span class="text-gray-500 text-sm">(39M)</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 bg-[#0d1117] py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="flex justify-center items-center gap-3 mb-4">
+                <div class="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center font-bold text-black text-sm">V</div>
+                <span class="text-xl font-bold tracking-wider">VOIN PROTOCOL</span>
+            </div>
+            <p class="text-gray-500 text-sm mb-4">Building the Foundation of an Independent Web4 Ecosystem.</p>
+            <p class="text-gray-600 text-xs">&copy; 2026 VOIN. All rights reserved. Testnet preview only. Not financial advice.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
