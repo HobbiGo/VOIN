@@ -1,6 +1,6 @@
 """
 VOIN D1 Rate Limit Tests
-Version: 1.0.3
+Version: 1.0.4
 
 Tests for asynchronous D1 rate limit engine.
 """
@@ -137,7 +137,7 @@ def test_engine_creation(database):
     info = engine.engine_info()
 
     assert info["engine"] == "VOIN D1 Rate Limit Engine"
-    assert info["version"] == "1.0.2"
+    assert info["version"] == "1.0.3"
     assert info["storage"] == "Cloudflare D1"
     assert info["async"] is True
 
@@ -196,6 +196,47 @@ async def test_max_attempts_one_blocks_first_attempt(database):
     assert result["remaining_attempts"] == 0
     assert result["cooldown_until"] is not None
     assert result["retry_after"] > 0
+
+    status = await engine.get_status(WALLET_A)
+
+    assert status["blocked"] is True
+    assert status["attempts"] == 1
+
+
+@pytest.mark.asyncio
+async def test_max_attempts_one_blocks_again_after_cooldown(
+    database,
+    monkeypatch,
+):
+    fake_time = [1000]
+
+    monkeypatch.setattr(
+        "security.d1_rate_limit.time.time",
+        lambda: fake_time[0],
+    )
+
+    engine = VOIND1RateLimitEngine(
+        database,
+        max_attempts=1,
+        window_seconds=300,
+        cooldown_seconds=60,
+    )
+
+    first = await engine.consume_attempt(WALLET_A)
+
+    assert first["allowed"] is False
+    assert first["attempts"] == 1
+    assert first["cooldown_until"] == 1060
+
+    fake_time[0] = 1061
+
+    second = await engine.consume_attempt(WALLET_A)
+
+    assert second["success"] is True
+    assert second["allowed"] is False
+    assert second["attempts"] == 1
+    assert second["cooldown_until"] == 1121
+    assert second["retry_after"] == 60
 
     status = await engine.get_status(WALLET_A)
 
@@ -290,7 +331,7 @@ async def test_rate_limit_violation_logged(database, engine):
 
     assert details["attempts"] == 3
     assert details["max_attempts"] == 3
-    assert details["version"] == "1.0.2"
+    assert details["version"] == "1.0.3"
 
 
 @pytest.mark.asyncio
@@ -350,9 +391,6 @@ async def test_cooldown_expiration_resets_attempts(engine, monkeypatch):
     assert result["allowed"] is True
     assert result["attempts"] == 1
     assert result["cooldown_until"] is None
-
-
-# Additional V1.0.2 tests
 
 
 @pytest.mark.asyncio
