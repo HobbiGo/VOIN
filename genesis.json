@@ -13,7 +13,7 @@
   "validators": [
     {
       "name": "VOIN_Genesis_Validator",
-      "address": "0xPresaleWalletAddress000000000000000001",
+      "address": "0xAEb22359588A50e6F746004E66418Eb2c978dAA2",
       "pk_mldsa_hex": "dummy_mldsa_key_for_genesis_validator"
     }
   ]
