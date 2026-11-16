@@ -14,7 +14,9 @@ dependencies = [
     "solana>=0.30.0,<0.40",
     "solders>=0.18.0",
     "flask>=3.0.0",
-    "requests>=2.31.0"
+    "flask-cors>=6.0.0",
+    "requests>=2.31.0",
+    "pytest>=8.0,<10.0"
 ]
 
 [dependency-groups]
