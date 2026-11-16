@@ -7,7 +7,7 @@ import threading
 import requests
 from flask import Flask, jsonify, request
 from voin import VoinChain, StateStore, canonical_tx_message, canonical_block_message
-from wallet.verification import register_account_keys
+from wallet.verification import register_account_keys, verify_hybrid_tx
 from eth_account import Account
 from eth_account.messages import encode_defunct
 from security.pqc_signer import generate_keypair, sign as pqc_sign
@@ -22,18 +22,32 @@ NODE_PORT = get_port()
 NODE_ID = str(NODE_PORT)
 DB_FILE = f"voin_node_{NODE_PORT}.db"
 
+# BACA GENESIS
+try:
+    with open("genesis.json", "r") as f:
+        genesis_data = json.load(f)
+except FileNotFoundError:
+    print("Warning: genesis.json not found. Using default dummy genesis.")
+    genesis_data = {"allocations": {"alice": 1000}, "validators": []}
+
 if os.path.exists(DB_FILE) and __name__ == '__main__':
     os.remove(DB_FILE)
 
 app = Flask(__name__)
 store = StateStore(DB_FILE)
-chain = VoinChain(allocations={"alice": 1000}, difficulty=1, store=store)
+chain = VoinChain(genesis_data=genesis_data, difficulty=1, store=store)
 peers = set()
-
 mempool = []
-validator_acct = Account.create()
-validator_pk_pqc, validator_sk_pqc = generate_keypair()
-chain.register_validator(validator_acct.address, 50, validator_acct.address, validator_pk_pqc.hex())
+
+# SETUP VALIDATOR DARI GENESIS
+validator_data = genesis_data["validators"][0]
+validator_address = validator_data["address"]
+validator_pk_pqc_hex = validator_data["pk_mldsa_hex"]
+
+# CATATAN: Di simulasi Devnet, kita buat private key palsu.
+# Di jaringan asli, private key Validator hanya diketahui oleh server validator tersebut.
+validator_acct = Account.create() 
+validator_sk_pqc, _ = generate_keypair() # Private key ML-DSA untuk tanda tangan
 
 def mine_block():
     while True:
@@ -43,8 +57,10 @@ def mine_block():
             txs_to_mine = list(mempool)
             mempool.clear()
             try:
-                block = chain.prepare_block(txs_to_mine, validator_acct.address)
+                block = chain.prepare_block(txs_to_mine, validator_address)
                 block_msg = canonical_block_message(block)
+                
+                # Tanda tangan blok dengan kunci Validator
                 v_sig_e = validator_acct.sign_message(encode_defunct(primitive=block_msg)).signature.hex()
                 v_sig_p = pqc_sign(block_msg, validator_sk_pqc).hex()
                 
@@ -62,44 +78,27 @@ def get_info():
     return jsonify({
         "node_id": NODE_ID, "height": len(chain.chain) - 1,
         "peers": list(peers), "mempool_size": len(mempool),
-        "validator_address": validator_acct.address
+        "validator_address": validator_address
     }), 200
 
 @app.route('/register_key', methods=['POST'])
 def register_key():
     data = request.json
-    address = data.get("address")
-    pk_ecdsa = data.get("pk_ecdsa")
-    pk_mldsa = data.get("pk_mldsa")
-    if all([address, pk_ecdsa, pk_mldsa]):
-        register_account_keys(address, pk_ecdsa, pk_mldsa)
-        return jsonify({"message": "Key registered"}), 200
-    return jsonify({"error": "Missing keys"}), 400
+    register_account_keys(data.get("address"), data.get("pk_ecdsa"), data.get("pk_mldsa"))
+    return jsonify({"message": "Key registered"}), 200
 
 @app.route('/transaction', methods=['POST'])
 def receive_transaction():
     tx = request.json.get("tx")
-    sig_ecdsa = request.json.get("sig_ecdsa")
-    sig_mldsa = request.json.get("sig_mldsa")
+    tx["sig_ecdsa"] = request.json.get("sig_ecdsa")
+    tx["sig_mldsa"] = request.json.get("sig_mldsa")
 
-    if not tx or not sig_ecdsa or not sig_mldsa:
-        return jsonify({"error": "Missing data"}), 400
-
-    tx["sig_ecdsa"] = sig_ecdsa
-    tx["sig_mldsa"] = sig_mldsa
-
-    try:
-        # Hanya validasi signature (tanpa mengeksekusi saldo dulu)
-        msg = canonical_tx_message(tx)
-        from wallet.verification import verify_hybrid_tx
-        if not verify_hybrid_tx(msg, sig_ecdsa, sig_mldsa, tx["sender"]):
-            return jsonify({"error": "Invalid signature"}), 400
-            
-        mempool.append(tx)
-        print(f"[{NODE_ID}] 📩 Transaksi masuk ke Mempool.")
-        return jsonify({"message": "Transaction added to Mempool"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    if not verify_hybrid_tx(canonical_tx_message(tx), tx["sig_ecdsa"], tx["sig_mldsa"], tx["sender"]):
+        return jsonify({"error": "Invalid signature"}), 400
+        
+    mempool.append(tx)
+    print(f"[{NODE_ID}] 📩 Transaksi masuk ke Mempool.")
+    return jsonify({"message": "Transaction added to Mempool"}), 200
 
 @app.route('/peers/register', methods=['POST'])
 def register_peer():
@@ -120,8 +119,6 @@ def receive_block():
     sig_mldsa = request.json.get("sig_mldsa")
     sender_node = request.json.get("sender_node")
 
-    if not block_data or not sig_ecdsa or not sig_mldsa:
-        return jsonify({"error": "Missing data"}), 400
     if any(b["hash"] == block_data["hash"] for b in chain.chain):
         return jsonify({"message": "Block already known"}), 200
     if block_data["index"] != len(chain.chain):
@@ -148,5 +145,5 @@ def broadcast_block(block_data, sig_ecdsa, sig_mldsa, exclude_node=None):
 
 if __name__ == '__main__':
     print(f"=== VOIN NODE {NODE_ID} MENYALA DI PORT {NODE_PORT} ===")
-    print(f"Validator Address: {validator_acct.address}")
+    print(f"Genesis Validator: {validator_address}")
     app.run(host='0.0.0.0', port=NODE_PORT, debug=False)
