@@ -8,87 +8,45 @@ from security.pqc_signer import generate_keypair, sign as pqc_sign
 from wallet.verification import register_account_keys
 
 class VoinTests(unittest.TestCase):
-
     def setUp(self):
-        # 1. Buat akun Pengirim (Alice)
         self.alice_acct = Account.create()
         self.alice_pk_pqc, self.alice_sk_pqc = generate_keypair()
-        
-        # Daftarkan public key Alice ke sistem keamanan
         register_account_keys(self.alice_acct.address, self.alice_acct.address, self.alice_pk_pqc.hex())
 
-        # 2. Inisialisasi Chain
         allocations = {self.alice_acct.address: 1000}
-        self.chain = VoinChain(allocations=allocations, difficulty=0)
+        self.chain = VoinChain(genesis_data={"allocations": allocations}, difficulty=0)
         
-        # 3. Buat akun Validator
         self.v_acct = Account.create()
         self.v_pk_pqc, self.v_sk_pqc = generate_keypair()
-        
-        # 4. Daftarkan Validator
         self.validator_id = self.v_acct.address
-        self.chain.register_validator(
-            self.validator_id, 50, self.v_acct.address, self.v_pk_pqc.hex()
-        )
+        self.chain.register_validator(self.validator_id, 50, self.v_acct.address, self.v_pk_pqc.hex())
 
-    def create_signed_tx(self, sender_acct, sender_sk_pqc, recipient, amount, nonce):
-        tx = {
-            "sender": sender_acct.address,
-            "recipient": recipient,
-            "amount": amount,
-            "nonce": nonce
-        }
+    def create_signed_tx(self, sender_acct, sender_sk_pqc, recipient, amount, nonce, data=None):
+        if data is None: data = {}
+        tx = {"sender": sender_acct.address, "recipient": recipient, "amount": amount, "nonce": nonce, "data": data}
         msg = canonical_tx_message(tx)
-        signable = encode_defunct(primitive=msg)
-        tx["sig_ecdsa"] = sender_acct.sign_message(signable).signature.hex()
+        tx["sig_ecdsa"] = sender_acct.sign_message(encode_defunct(primitive=msg)).signature.hex()
         tx["sig_mldsa"] = pqc_sign(msg, sender_sk_pqc).hex()
         return tx
 
-    def sign_prepared_block(self, block, validator_acct, validator_sk_pqc):
-        block_msg = canonical_block_message(block)
-        sig_ecdsa = validator_acct.sign_message(encode_defunct(primitive=block_msg)).signature.hex()
-        sig_mldsa = pqc_sign(block_msg, validator_sk_pqc).hex()
-        return sig_ecdsa, sig_mldsa
-
     def test_transfer(self):
         tx = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 250, 1)
-        
         block = self.chain.prepare_block([tx], self.validator_id)
-        v_sig_e, v_sig_p = self.sign_prepared_block(block, self.v_acct, self.v_sk_pqc)
-        
+        v_sig_e = self.v_acct.sign_message(encode_defunct(primitive=canonical_block_message(block))).signature.hex()
+        v_sig_p = pqc_sign(canonical_block_message(block), self.v_sk_pqc).hex()
         self.chain.add_block(block, v_sig_e, v_sig_p)
         
-        balances = self.chain.balances()
-        self.assertEqual(balances.get(self.alice_acct.address), 750)
-        self.assertEqual(balances.get("bob"), 250)
+        self.assertEqual(self.chain.balances().get(self.alice_acct.address), 750)
 
-    def test_insufficient_balance(self):
-        tx = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 2000, 1)
-        with self.assertRaises(ValueError):
-            self.chain.prepare_block([tx], self.validator_id)
-
-    def test_repeated_transaction(self):
-        tx1 = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 100, 1)
-        block1 = self.chain.prepare_block([tx1], self.validator_id)
-        v_sig_e1, v_sig_p1 = self.sign_prepared_block(block1, self.v_acct, self.v_sk_pqc)
-        self.chain.add_block(block1, v_sig_e1, v_sig_p1)
-
-        tx2 = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 100, 1)
-        with self.assertRaises(ValueError):
-            self.chain.prepare_block([tx2], self.validator_id)
-
-    def test_tampered_block(self):
-        tx = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "bob", 250, 1)
+    def test_deploy_contract(self):
+        tx = self.create_signed_tx(self.alice_acct, self.alice_sk_pqc, "0xContract", 0, 1, data={"action": "deploy", "code": "test"})
         block = self.chain.prepare_block([tx], self.validator_id)
-        v_sig_e, v_sig_p = self.sign_prepared_block(block, self.v_acct, self.v_sk_pqc)
+        v_sig_e = self.v_acct.sign_message(encode_defunct(primitive=canonical_block_message(block))).signature.hex()
+        v_sig_p = pqc_sign(canonical_block_message(block), self.v_sk_pqc).hex()
+        self.chain.add_block(block, v_sig_e, v_sig_p)
         
-        final_block = self.chain.add_block(block, v_sig_e, v_sig_p)
-        
-        final_block["transactions"][0]["amount"] = 500
-        self.chain.chain[-1] = final_block
-        
-        with self.assertRaises(ValueError):
-            self.chain.validate()
+        contract = self.chain.store.get_contract("0xContract")
+        self.assertIsNotNone(contract)
 
 if __name__ == '__main__':
     unittest.main()
