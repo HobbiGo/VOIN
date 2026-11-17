@@ -74,7 +74,7 @@ if __name__ == "__main__":
     voin = VOINIdentity()
 
     identity = voin.create_identity(
-        wallet_address="0x0000000000000000000000000000000000000000",
+        wallet_address="0xAEb22359588A50e6F746004E66418Eb2c978dAA2",
         network="BSC"
     )
 
