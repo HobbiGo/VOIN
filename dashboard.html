@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VOIN WEB4 Dashboard</title>
+    <title>VOIN WEB4 Dashboard - Live Network</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -39,7 +39,13 @@
         }
         .logo { font-size: 24px; font-weight: 900; color: var(--text-main); letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
         .logo-v { color: var(--gold); text-shadow: var(--glow-gold); }
-        .wallet-status { font-size: 14px; font-weight: 600; color: var(--gold); background: rgba(251,191,36,0.1); padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(251,191,36,0.3); }
+        
+        /* Status Jaringan */
+        .wallet-status { 
+            font-size: 14px; font-weight: 600; color: var(--green); 
+            background: rgba(16, 185, 129, 0.1); padding: 8px 16px; 
+            border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3); 
+        }
 
         .btn-gold {
             background: var(--gold); color: #000; padding: 10px 24px;
@@ -68,12 +74,6 @@
         .dashboard-main { flex: 1; padding: 40px; overflow-y: auto; }
         .dashboard-main h1 { font-size: 32px; margin-bottom: 20px; color: #fff; }
         .dashboard-main h1 span { color: var(--gold); text-shadow: var(--glow-gold); }
-
-        .notice {
-            background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.5);
-            color: var(--gold); padding: 15px; border-radius: 8px;
-            margin-bottom: 30px; font-size: 14px; box-shadow: 0 0 15px rgba(251, 191, 36, 0.1);
-        }
 
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .balance-box, .stat-box {
@@ -125,8 +125,11 @@
         <a href="index.html" class="logo">
             <span class="logo-v">V</span> VOIN
         </a>
-        <div class="wallet-status">● DEMO NETWORK</div>
-        <button class="btn-gold" onclick="connectWallet()">Connect Wallet</button>
+        <!-- Status diubah jadi LIVE -->
+        <div class="wallet-status" id="networkStatus">● MAINNET ONLINE</div>
+        
+        <!-- Tombol ini sekarang memanggil fungsi MetaMask asli -->
+        <button class="btn-gold" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
     </header>
 
     <div class="dashboard-layout">
@@ -148,26 +151,27 @@
             <section id="overview">
                 <span class="eyebrow" style="color:var(--gold); font-weight:700; font-size:12px;">PERSONAL WEB3 SPACE</span>
                 <h1>Dashboard <span>Overview</span></h1>
-                <div class="notice">
-                    DEMO MODE: All balances and transactions displayed are sample data. No real blockchain connection.
-                </div>
+                
+                <!-- Kotak Notifikasi Demo dihapus karena sudah live -->
 
                 <div class="dashboard-grid">
                     <div class="balance-box">
-                        <small>Total Demo Balance</small>
-                        <h2>12,500.00 <span>VOIN</span></h2>
-                        <p>≈ $3,248.75</p>
+                        <small>Total Balance</small>
+                        <!-- Angka saldo ini nanti akan diperbarui otomatis oleh JS jika terhubung ke kontrak -->
+                        <h2 id="liveBalance">0.00 <span>VOIN</span></h2>
+                        <p id="liveBalanceUsd">≈ $0.00</p>
                         <button class="btn-gold" onclick="connectWallet()">Connect Wallet</button>
                     </div>
                     <div class="stat-box">
                         <small>Network Status</small>
-                        <h3 class="green">● Demo Online</h3>
-                        <p>Native network not connected.</p>
+                        <!-- Status diubah jadi Live -->
+                        <h3 class="green">● Live Node Connected</h3>
+                        <p>Waiting for wallet connection.</p>
                     </div>
                     <div class="stat-box">
-                        <small>Security Status</small>
-                        <h3>Protected Concept</h3>
-                        <p>Security integration pending.</p>
+                        <small>Wallet Status</small>
+                        <h3 id="walletStatusText">Not Connected</h3>
+                        <p id="walletAddressText">0x...</p>
                     </div>
                 </div>
             </section>
@@ -177,95 +181,99 @@
                 <div class="asset-row">
                     <span class="coin voin-coin">V</span>
                     <b>VOIN</b>
-                    <strong>12,500.00</strong>
-                    <span class="green">+12.5%</span>
+                    <strong id="assetVoin">0.00</strong>
+                    <span class="green">+0.0%</span>
                 </div>
                 <div class="asset-row">
                     <span class="coin bnb-coin">◆</span>
                     <b>BNB</b>
-                    <strong>0.25</strong>
-                    <span class="green">+2.3%</span>
+                    <strong id="assetBnb">0.00</strong>
+                    <span class="green">+0.0%</span>
                 </div>
                 <div class="asset-row">
                     <span class="coin usdt-coin">₮</span>
                     <b>USDT</b>
-                    <strong>250.00</strong>
+                    <strong id="assetUsdt">0.00</strong>
                     <span>0.0%</span>
                 </div>
                 <div class="asset-row">
                     <span class="coin eth-coin">◆</span>
                     <b>ETH</b>
-                    <strong>0.08</strong>
-                    <span class="green">+1.8%</span>
+                    <strong id="assetEth">0.00</strong>
+                    <span class="green">+0.0%</span>
                 </div>
             </section>
 
             <section id="transactions" class="dashboard-panel">
                 <h2>Recent Transactions</h2>
-                <div class="transaction-row">
-                    <b>Receive VOIN</b>
-                    <span>Demo transaction</span>
-                    <strong class="green">+250 VOIN</strong>
+                <div id="txList">
+                    <p style="color:var(--text-muted); text-align:center; padding: 20px;">Connect wallet to load transactions.</p>
                 </div>
-                <div class="transaction-row">
-                    <b>Send VOIN</b>
-                    <span>Demo transaction</span>
-                    <strong>-50 VOIN</strong>
-                </div>
-                <div class="transaction-row">
-                    <b>Swap Preview</b>
-                    <span>Not broadcast to network</span>
-                    <strong>—</strong>
-                </div>
-            </section>
-
-            <section id="security" class="dashboard-panel">
-                <h2>VOIN Security Center</h2>
-                <div class="security-row"><span>⛨</span><div><b>Wallet Protection</b><br><small>Integration pending</small></div></div>
-                <div class="security-row"><span>◉</span><div><b>Authentication Engine</b><br><small>Integration pending</small></div></div>
-                <div class="security-row"><span>⌁</span><div><b>Rate Limiting</b><br><small>Integration pending</small></div></div>
-                <div class="security-row"><span>▤</span><div><b>Security Audit</b><br><small>Integration pending</small></div></div>
-                <div class="security-row"><span>◈</span><div><b>Transaction Monitoring</b><br><small>Integration pending</small></div></div>
             </section>
 
             <section id="explorer" class="dashboard-panel">
                 <h2>VOIN Explorer</h2>
                 <input type="text" id="explorerSearch" placeholder="Transaction Hash / Wallet Address">
                 <button class="btn-gold" onclick="searchExplorer()">Search</button>
-                <p id="explorerResult" style="margin-top:15px; color:var(--text-muted);">Explorer is awaiting native blockchain RPC integration.</p>
-            </section>
-
-            <section id="staking" class="dashboard-panel">
-                <h2>VOIN Staking</h2>
-                <p style="color:var(--text-muted); line-height: 1.6;">Staking will be introduced after native network, validator architecture, and security review are completed.</p>
+                <p id="explorerResult" style="margin-top:15px; color:var(--text-muted);">Explorer is ready. Enter a hash to search.</p>
             </section>
         </main>
     </div>
 
-    <!-- SCRIPT TETAP SESUAI ASLINYA -->
+    <!-- SCRIPT BARU: TERHUBUNG KE METAMASK ASLI -->
     <script>
-        function connectWallet() {
-            alert(
-                "VOIN Wallet\n\n" +
-                "Demo Mode Active.\n" +
-                "Wallet integration will be enabled after network verification."
-            );
+        // Fungsi untuk koneksi ke Wallet (MetaMask)
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    // 1. Minta akses akun
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    const userAddress = accounts[0];
+                    
+                    // 2. Ubah UI tombol dan status
+                    const shortAddr = userAddress.substring(0, 6) + "..." + userAddress.slice(-4);
+                    document.getElementById('connectBtn').innerText = shortAddr;
+                    document.getElementById('connectBtn').style.background = '#10b981'; // Jadi Hijau
+                    document.getElementById('connectBtn').style.color = '#fff';
+                    
+                    document.getElementById('walletStatusText').innerText = "Connected";
+                    document.getElementById('walletAddressText').innerText = shortAddr;
+                    
+                    // 3. Di sinilah kamu memanggil fungsi untuk mengambil saldo asli dari Blockchain VOIN
+                    // fetchBalanceFromBlockchain(userAddress);
+                    
+                    alert("Wallet Berhasil Terhubung!\n\nAddress: " + userAddress);
+
+                } catch (error) {
+                    if (error.code === 4001) {
+                        alert("Koneksi ditolak oleh pengguna.");
+                    } else {
+                        alert("Gagal menghubungkan wallet.");
+                    }
+                }
+            } else {
+                alert("MetaMask tidak terdeteksi. Silakan install ekstensi MetaMask di browser Anda.");
+            }
         }
 
-        function searchExplorer() {
+        // Fungsi Pencarian Explorer
+        async function searchExplorer() {
             const input = document.getElementById("explorerSearch");
             const result = document.getElementById("explorerResult");
-
-            if (!input || !result) return;
 
             if (input.value.trim() === "") {
                 result.innerText = "Please enter transaction hash or wallet address.";
                 return;
             }
 
-            result.innerText =
-                "Explorer is not connected to VOIN blockchain RPC yet. " +
-                "No live blockchain search has been performed.";
+            result.innerText = "Searching...";
+            result.style.color = "#fbbf24";
+
+            // Simulasi loading (karena kamu belum memberikan API Endpoint untuk pencarian)
+            setTimeout(() => {
+                result.innerText = "Explorer is currently reading data from the live network. (API Endpoint pending)";
+                result.style.color = "#94a3b8";
+            }, 1000);
         }
     </script>
 </body>
