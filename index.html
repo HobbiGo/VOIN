@@ -1,465 +1,275 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VOIN Protocol - Connected Ecosystem</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <title>VOIN WEB4 | Connecting The Future</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #c9d1d9; overflow-x: hidden; }
-        .font-orbitron { font-family: 'Orbitron', sans-serif; }
-        .gold-text { color: #fbbf24; text-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
-        .glass-panel { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(59, 130, 246, 0.3); transition: all 0.3s ease; }
-        .glass-panel:hover { border-color: rgba(251, 191, 36, 0.5); transform: translateY(-2px); box-shadow: 0 10px 30px rgba(59, 130, 246, 0.1); }
-        .nav-link { transition: color 0.2s; position: relative; }
-        .nav-link:hover { color: #fbbf24; }
-        .nav-link::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -4px; left: 0; background-color: #fbbf24; transition: width 0.3s; }
-        .nav-link:hover::after { width: 100%; }
-        .bg-glow { position: absolute; width: 800px; height: 800px; background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(2, 6, 23, 0) 70%); top: -100px; right: -200px; z-index: -1; }
-        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
-        .reveal.active { opacity: 1; transform: translateY(0); }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #020617; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
+        :root {
+            --bg-dark: #020617;
+            --bg-panel: #0b132b;
+            --bg-card: rgba(15, 23, 42, 0.6);
+            --gold: #fbbf24;
+            --gold-hover: #f59e0b;
+            --blue-neon: #3b82f6;
+            --cyan: #06b6d4;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(59, 130, 246, 0.3);
+            --glow-gold: 0 0 15px rgba(251, 191, 36, 0.4);
+            --glow-blue: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; text-decoration: none; list-style: none; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            background-image: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, .logo { font-family: 'Orbitron', sans-serif; }
+
+        .eyebrow {
+            font-size: 12px; font-weight: 700; letter-spacing: 2px;
+            color: var(--gold); text-transform: uppercase;
+            margin-bottom: 10px; display: block;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 5%; background: rgba(2, 6, 23, 0.8);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
+        }
+        .logo {
+            font-size: 24px; font-weight: 900; color: var(--text-main);
+            letter-spacing: 2px; display: flex; align-items: center; gap: 10px;
+        }
+        .logo-v { color: var(--gold); text-shadow: var(--glow-gold); }
+        .navbar nav { display: flex; gap: 30px; }
+        .navbar nav a {
+            color: var(--text-muted); font-size: 14px; font-weight: 600; transition: 0.3s;
+        }
+        .navbar nav a:hover { color: var(--gold); text-shadow: var(--glow-gold); }
+
+        .btn-gold {
+            background: var(--gold); color: #000; padding: 10px 24px;
+            border-radius: 8px; font-weight: 700; font-size: 14px;
+            transition: 0.3s; border: none; cursor: pointer; display: inline-block;
+        }
+        .btn-gold:hover { background: var(--gold-hover); box-shadow: var(--glow-gold); transform: translateY(-2px); }
+        .btn-blue {
+            background: transparent; border: 2px solid var(--blue-neon);
+            color: var(--text-main); padding: 10px 24px; border-radius: 8px;
+            font-weight: 700; font-size: 14px; transition: 0.3s;
+        }
+        .btn-blue:hover { background: var(--blue-neon); box-shadow: var(--glow-blue); }
+
+        /* HERO & PRESALE */
+        .hero {
+            display: grid; grid-template-columns: 1fr 1fr;
+            align-items: center; padding: 80px 5%; gap: 40px;
+        }
+        .hero h1 { font-size: 64px; line-height: 1.1; margin-bottom: 10px; }
+        .hero h1 span { color: var(--gold); text-shadow: var(--glow-gold); }
+        .hero h2 { font-size: 36px; margin-bottom: 20px; }
+        .hero-subtitle { font-size: 18px; color: var(--cyan); font-weight: 600; margin-bottom: 15px; }
+        .hero p { color: var(--text-muted); max-width: 500px; line-height: 1.6; margin-bottom: 30px; }
+        .hero-buttons { display: flex; gap: 15px; margin-bottom: 40px; }
+
+        .hero-visual { position: relative; height: 500px; display: flex; justify-content: center; align-items: center; }
+        .planet {
+            width: 300px; height: 300px; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #1e293b, #020617);
+            border: 1px solid var(--border-color);
+            box-shadow: inset 0 0 50px rgba(59, 130, 246, 0.2), var(--glow-blue);
+            display: flex; justify-content: center; align-items: center; z-index: 2;
+        }
+        .planet-text {
+            font-family: 'Orbitron', sans-serif; text-align: center;
+            font-size: 24px; font-weight: 700; color: var(--gold); text-shadow: var(--glow-gold);
+        }
+        .orbit {
+            position: absolute; border-radius: 50%;
+            border: 1px dashed var(--blue-neon); animation: spin 20s linear infinite;
+        }
+        .orbit-one { width: 400px; height: 400px; opacity: 0.3; }
+        .orbit-two { width: 500px; height: 500px; opacity: 0.1; animation-direction: reverse; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .presale-section { padding: 80px 5%; display: flex; justify-content: center; }
+        .presale-box {
+            background: var(--bg-card); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color); border-radius: 20px;
+            padding: 50px; text-align: center; max-width: 700px; width: 100%;
+            box-shadow: var(--glow-blue);
+        }
+        .presale-box h2 { font-size: 40px; margin-bottom: 15px; }
+        .presale-box h2 span { color: var(--gold); }
+        .presale-box h3 { font-size: 32px; color: var(--text-main); margin: 20px 0 10px; }
+        .progress { background: rgba(255, 255, 255, 0.1); height: 12px; border-radius: 10px; margin: 20px 0; overflow: hidden; }
+        .progress div { background: linear-gradient(90deg, var(--blue-neon), var(--gold)); height: 100%; width: 45%; }
+
+        /* SECTION & CARDS */
+        .section { padding: 80px 5%; }
+        .section-title { text-align: center; margin-bottom: 50px; }
+        .section-title h2 { font-size: 40px; margin-bottom: 10px; }
+        .section-title h2 span { color: var(--gold); }
+        .section-title p { color: var(--text-muted); }
+
+        .technology, .ecosystem-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px; padding: 0 5%;
+        }
+        .tech-card, .eco-card {
+            background: var(--bg-card); backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color); padding: 30px;
+            border-radius: 16px; text-align: center; transition: 0.3s;
+        }
+        .tech-card:hover, .eco-card:hover {
+            border-color: var(--gold); transform: translateY(-5px); box-shadow: var(--glow-blue);
+        }
+        .tech-card span, .eco-card span { font-size: 40px; color: var(--blue-neon); margin-bottom: 15px; display: block; }
+        .tech-card h3, .eco-card h3 { font-size: 16px; margin-bottom: 5px; }
+        .tech-card p, .eco-card small { color: var(--text-muted); font-size: 13px; }
+
+        /* ROADMAP */
+        .roadmap { display: flex; justify-content: space-between; padding: 0 10%; position: relative; }
+        .roadmap div { text-align: center; position: relative; z-index: 2; }
+        .road-dot { display: block; width: 20px; height: 20px; background: var(--bg-dark); border: 3px solid var(--gold); border-radius: 50%; margin: 0 auto 15px; box-shadow: var(--glow-gold); }
+
+        /* FOOTER */
+        footer { text-align: center; padding: 40px; border-top: 1px solid var(--border-color); margin-top: 50px; }
+        footer .logo { justify-content: center; margin-bottom: 20px; }
+        footer p { color: var(--text-muted); font-size: 14px; margin-bottom: 5px; }
+
+        @media (max-width: 900px) {
+            .hero { grid-template-columns: 1fr; text-align: center; }
+            .hero p { margin: 0 auto 30px; }
+            .hero-buttons { justify-content: center; }
+            .navbar nav { display: none; }
+            .roadmap { flex-direction: column; gap: 40px; }
+        }
     </style>
 </head>
-<body class="relative min-h-screen">
+<body>
 
-    <div class="bg-glow"></div>
+    <header class="navbar">
+        <a href="index.html" class="logo">
+            <span class="logo-v">V</span> VOIN
+        </a>
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#technology">Technology</a>
+            <a href="#ecosystem">Ecosystem</a>
+            <a href="#presale">Presale</a>
+            <a href="#roadmap">Roadmap</a>
+            <a href="dashboard.html">Dashboard</a>
+        </nav>
+        <a href="dashboard.html" class="btn-gold">Connect Wallet ↗</a>
+    </header>
 
-    <!-- Navbar Sticky (FUNGSI TETAP) -->
-    <nav class="border-b border-blue-900 border-opacity-50 bg-[#020617] bg-opacity-90 sticky top-0 z-50 backdrop-blur-md">
-        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 flex items-center justify-center font-bold text-yellow-400 text-2xl font-orbitron gold-text">V</div>
-                    <span class="text-2xl font-bold tracking-widest text-white font-orbitron">VOIN</span>
-                </div>
-                
-                <div class="hidden lg:flex space-x-8 text-sm font-semibold text-gray-300">
-                    <a href="#home" class="nav-link text-yellow-400 flex items-center gap-1">🏠 Home</a>
-                    <a href="#about" class="nav-link flex items-center gap-1">Ecosystem ⌄</a>
-                    <a href="#tokenomics" class="nav-link">Presale</a>
-                    <a href="#roadmap" class="nav-link">Roadmap</a>
-                    <a href="#faq" class="nav-link">Community ⌄</a>
-                    <a href="#documentation" class="nav-link">Docs</a>
-                </div>
-
-                <!-- Tombol Connect Wallet ke dashboard.html -->
-                <div>
-                    <a href="dashboard.html" class="px-5 py-2.5 rounded-lg bg-yellow-500 text-black hover:bg-yellow-400 transition font-bold text-sm shadow-[0_0_15px_rgba(251,191,36,0.4)] flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                        Connect Wallet
-                    </a>
-                </div>
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <span class="eyebrow">THE NEXT DIGITAL FRONTIER</span>
+            <h1><span>VOIN</span> WEB4</h1>
+            <h2>CONNECTING THE FUTURE</h2>
+            <p class="hero-subtitle">Blockchain • AI • Quantum Security • Global Ecosystem</p>
+            <p>A next-generation ecosystem connecting blockchain infrastructure, artificial intelligence, digital security and global services.</p>
+            <div class="hero-buttons">
+                <a href="#presale" class="btn-gold">Explore VOIN →</a>
+                <a href="#ecosystem" class="btn-blue">Explore Ecosystem →</a>
+            </div>
+            <div class="hero-stats" style="display:flex; gap:40px; border-top:1px solid var(--border-color); padding-top:20px;">
+                <div><strong style="font-size:24px; font-family:'Orbitron'">260M</strong><br><small style="color:var(--text-muted)">Planned Total Supply</small></div>
+                <div><strong style="font-size:24px; font-family:'Orbitron'">WEB4</strong><br><small style="color:var(--text-muted)">Connected Ecosystem</small></div>
+                <div><strong style="font-size:24px; font-family:'Orbitron'">8+</strong><br><small style="color:var(--text-muted)">Digital Products</small></div>
             </div>
         </div>
-    </nav>
-
-    <!-- MAIN CONTAINER -->
-    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-10 relative">
-        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
-            
-            <!-- KOLOM KIRI (KONTEN UTAMA) -->
-            <div class="xl:col-span-8 space-y-8 z-10">
-                
-                <!-- HERO SECTION -->
-                <div class="relative reveal active">
-                    <div class="mb-6 relative z-20">
-                        <h1 class="text-6xl md:text-7xl font-black mb-2 leading-tight tracking-tight font-orbitron">
-                            <span class="text-white block">VOIN <span class="text-yellow-400 gold-text">WEB4</span></span>
-                            <span class="text-white block text-3xl md:text-4xl mt-1 font-bold">CONNECTING THE FUTURE</span>
-                        </h1>
-                        <p class="text-lg text-gray-300 mb-2 font-semibold">Blockchain • AI • Quantum Security • Global Ecosystem</p>
-                        <p class="text-gray-400 mb-8 max-w-xl">A next-generation ecosystem for a decentralized, secure and borderless digital world.</p>
-                        
-                        <div class="flex gap-4">
-                            <a href="dashboard.html" class="px-6 py-3 rounded-full border-2 border-yellow-500 text-yellow-500 font-bold hover:bg-yellow-500 hover:text-black transition flex items-center gap-2">
-                                Buy VOIN Presale →
-                            </a>
-                            <a href="#about" class="px-6 py-3 rounded-full border-2 border-blue-500 text-white font-bold hover:bg-blue-500 transition flex items-center gap-2">
-                                Explore Ecosystem →
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- PLACEHOLDER GAMBAR BURUNG -->
-                    <div class="relative w-full h-[300px] md:h-[400px] rounded-2xl flex items-center justify-center overflow-hidden mb-8">
-                        <div class="text-center z-10 border-2 border-dashed border-blue-500/50 rounded-xl p-8">
-                            <span class="text-blue-400 font-orbitron text-lg">[ Area Gambar Burung Mekanik & Globe ]</span>
-                            <p class="text-gray-500 text-sm mt-1">Ganti div ini dengan &lt;img src="burung.png"&gt;</p>
-                        </div>
-                        <div class="absolute w-96 h-96 bg-blue-500 rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
-                        <div class="absolute w-64 h-64 bg-yellow-500 rounded-full mix-blend-screen filter blur-[80px] opacity-20 -bottom-10 right-10"></div>
-                    </div>
-                </div>
-
-                <!-- 4 FITUR UTAMA -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 reveal">
-                    <div class="glass-panel p-6 rounded-xl text-center flex flex-col items-center justify-center">
-                        <div class="text-4xl mb-2 text-blue-400">📦</div>
-                        <h3 class="font-bold text-sm text-white">Blockchain<br>Layer 1</h3>
-                    </div>
-                    <div class="glass-panel p-6 rounded-xl text-center flex flex-col items-center justify-center">
-                        <div class="text-4xl mb-2 text-blue-400">🛡️</div>
-                        <h3 class="font-bold text-sm text-white">Quantum<br>Security</h3>
-                    </div>
-                    <div class="glass-panel p-6 rounded-xl text-center flex flex-col items-center justify-center">
-                        <div class="text-4xl mb-2 text-blue-400">🧠</div>
-                        <h3 class="font-bold text-sm text-white">VOIN AI<br>Engine</h3>
-                    </div>
-                    <div class="glass-panel p-6 rounded-xl text-center flex flex-col items-center justify-center">
-                        <div class="text-4xl mb-2 text-blue-400">🌐</div>
-                        <h3 class="font-bold text-sm text-white">Global Payment<br>& Web4</h3>
-                    </div>
-                </div>
-
-                <!-- ECOSYSTEM & PRESALE -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 reveal">
-                    <div class="glass-panel p-6 rounded-xl border-l-4 border-l-yellow-500">
-                        <h3 class="text-yellow-400 font-bold text-lg font-orbitron mb-1">VOIN ECOSYSTEM</h3>
-                        <p class="text-xs text-gray-400 mb-4">Build • Connect • Grow</p>
-                        <div class="grid grid-cols-4 gap-2 text-center text-[10px]">
-                            <div class="bg-blue-900/30 p-2 rounded border border-blue-500/20">DeFi<br>Finance</div>
-                            <div class="bg-blue-900/30 p-2 rounded border border-blue-500/20">NFT<br>Marketplace</div>
-                            <div class="bg-blue-900/30 p-2 rounded border border-blue-500/20">AI Agent</div>
-                            <div class="bg-blue-900/30 p-2 rounded border border-blue-500/20">GameFi</div>
-                            <div class="bg-blue-900/30 p-2 rounded border border-blue-500/20">Travel<br>Hobigo</div>
-                            <div class="bg-blue-900/30 p-2 rounded border border-blue-500/20">eSIM<br>TELKU</div>
-                            <div class="bg-blue-900/30 p-2 rounded border border-blue-500/20">Commerce<br>Chiela</div>
-                            <div class="bg-blue-900/30 p-2 rounded border border-blue-500/20">Sports<br>Orbiss</div>
-                        </div>
-                    </div>
-                    
-                    <div class="glass-panel p-6 rounded-xl relative overflow-hidden flex flex-col justify-center border-r-4 border-r-yellow-500">
-                        <h3 class="text-yellow-400 font-bold text-xl mb-1 relative z-10">Presale Live Now</h3>
-                        <p class="text-sm text-gray-300 mb-4 relative z-10">Secure Your VOIN Today</p>
-                        <a href="dashboard.html" class="bg-yellow-500 text-black font-bold text-sm px-6 py-2 rounded-full w-max hover:bg-yellow-400 transition relative z-10">Join Presale →</a>
-                        <div class="absolute right-0 bottom-0 text-7xl opacity-20">🪙</div>
-                    </div>
-                </div>
-
-                <!-- ROADMAP HORIZONTAL -->
-                <div class="glass-panel p-6 rounded-xl reveal">
-                    <div class="flex justify-between items-center mb-6">
-                        <div>
-                            <h3 class="text-yellow-400 font-bold text-lg font-orbitron mb-1">ROADMAP</h3>
-                            <p class="text-xs text-gray-400">Our Journey to a Greater Future</p>
-                        </div>
-                        <a href="#roadmap" class="bg-yellow-500 text-black font-bold text-xs px-4 py-2 rounded-full hover:bg-yellow-400 transition">View Roadmap →</a>
-                    </div>
-                    <div class="flex justify-between items-center relative">
-                        <div class="absolute top-1/2 left-0 w-full h-0.5 bg-blue-500/30 -z-10"></div>
-                        <div class="flex flex-col items-center bg-[#020617] px-4"><div class="w-4 h-4 rounded-full border-2 border-yellow-500 bg-[#020617] mb-2 shadow-[0_0_10px_rgba(251,191,36,0.8)]"></div><span class="text-xs font-bold text-white">Nov 2026</span><span class="text-[10px] text-gray-400">Presale</span></div>
-                        <div class="flex flex-col items-center bg-[#020617] px-4"><div class="w-4 h-4 rounded-full border-2 border-blue-500 bg-[#020617] mb-2"></div><span class="text-xs font-bold text-white">Dec 2026</span><span class="text-[10px] text-gray-400">Mainnet Dev</span></div>
-                        <div class="flex flex-col items-center bg-[#020617] px-4"><div class="w-4 h-4 rounded-full border-2 border-gray-500 bg-[#020617] mb-2"></div><span class="text-xs font-bold text-white">Jan 2027</span><span class="text-[10px] text-gray-400">Mainnet Launch</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KOLOM KANAN (DASHBOARD UI) -->
-            <div class="xl:col-span-4 reveal">
-                <div class="glass-panel rounded-3xl p-6 sticky top-24 border-blue-500/30 shadow-[0_0_30px_rgba(59,130,246,0.15)]">
-                    <div class="flex justify-between items-center mb-6">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 flex items-center justify-center font-bold text-yellow-400 text-lg font-orbitron">V</div>
-                            <span class="font-bold text-xl text-white font-orbitron tracking-wider">VOIN</span>
-                        </div>
-                        <button class="text-gray-400 hover:text-white">☰</button>
-                    </div>
-
-                    <div class="bg-blue-900/20 border border-blue-500/30 rounded-2xl p-4 mb-6 flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full border-2 border-blue-500 flex items-center justify-center text-yellow-400 font-bold text-xl bg-[#020617] shadow-[0_0_10px_rgba(59,130,246,0.5)]">V</div>
-                        <div class="flex-1">
-                            <div class="font-bold text-sm text-white">VOIN Explorer</div>
-                            <div class="text-[10px] text-gray-400 mb-1">0x71a3...9f4e 📋</div>
-                            <div class="flex items-center gap-1 text-[10px]">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> <span class="text-green-500">Connected</span>
-                                <span class="bg-green-500/20 text-green-500 px-1.5 py-0.5 rounded ml-1 border border-green-500/30">BSC Mainnet</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-6 px-2">
-                        <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
-                            <span>Total Balance 👁️</span>
-                            <span class="text-yellow-400 text-lg">🪙</span>
-                        </div>
-                        <div class="text-4xl font-bold text-white font-orbitron mb-1">12,500.00 <span class="text-lg text-yellow-400">VOIN</span></div>
-                        <div class="text-sm text-gray-400">≈ $3,248.75 <span class="text-green-500">(+12.5%)</span></div>
-                    </div>
-
-                    <div class="grid grid-cols-4 gap-2 mb-8">
-                        <button class="flex flex-col items-center gap-2 group">
-                            <div class="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:bg-blue-500/30 transition">↗</div>
-                            <span class="text-[10px] text-gray-400 group-hover:text-white">Send</span>
-                        </button>
-                        <button class="flex flex-col items-center gap-2 group">
-                            <div class="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:bg-blue-500/30 transition">↙</div>
-                            <span class="text-[10px] text-gray-400 group-hover:text-white">Receive</span>
-                        </button>
-                        <button class="flex flex-col items-center gap-2 group">
-                            <div class="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:bg-blue-500/30 transition">🔄</div>
-                            <span class="text-[10px] text-gray-400 group-hover:text-white">Swap</span>
-                        </button>
-                        <button class="flex flex-col items-center gap-2 group">
-                            <div class="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:bg-blue-500/30 transition">💎</div>
-                            <span class="text-[10px] text-gray-400 group-hover:text-white">Stake</span>
-                        </button>
-                    </div>
-
-                    <div class="flex justify-between border-b border-blue-900/50 mb-4 px-2">
-                        <div class="text-sm font-bold text-yellow-400 border-b-2 border-yellow-400 pb-2 cursor-pointer">Assets</div>
-                        <div class="text-sm font-medium text-gray-500 pb-2 cursor-pointer hover:text-gray-300">Transactions</div>
-                        <div class="text-sm font-medium text-gray-500 pb-2 cursor-pointer hover:text-gray-300">Staking</div>
-                    </div>
-
-                    <div class="space-y-4 mb-6">
-                        <div class="flex justify-between items-center px-2">
-                            <div class="flex items-center gap-3 w-1/3">
-                                <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-xs">V</div>
-                                <div class="font-bold text-sm text-white">VOIN</div>
-                            </div>
-                            <div class="text-right w-1/3">
-                                <div class="font-bold text-sm text-white">12,500.00</div>
-                                <div class="text-[10px] text-gray-500">≈ $3,248.75</div>
-                            </div>
-                            <div class="text-right w-1/3 text-sm text-green-500">+12.5%</div>
-                        </div>
-                        <div class="flex justify-between items-center px-2">
-                            <div class="flex items-center gap-3 w-1/3">
-                                <div class="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center text-black font-bold text-[10px]">BNB</div>
-                                <div class="font-bold text-sm text-white">BNB</div>
-                            </div>
-                            <div class="text-right w-1/3">
-                                <div class="font-bold text-sm text-white">0.25</div>
-                                <div class="text-[10px] text-gray-500">≈ $125.40</div>
-                            </div>
-                            <div class="text-right w-1/3 text-sm text-green-500">+2.3%</div>
-                        </div>
-                        <div class="flex justify-between items-center px-2">
-                            <div class="flex items-center gap-3 w-1/3">
-                                <div class="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-white font-bold text-sm">₮</div>
-                                <div class="font-bold text-sm text-white">USDT</div>
-                            </div>
-                            <div class="text-right w-1/3">
-                                <div class="font-bold text-sm text-white">250.00</div>
-                                <div class="text-[10px] text-gray-500">≈ $250.00</div>
-                            </div>
-                            <div class="text-right w-1/3 text-sm text-gray-500">+0.0%</div>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between items-center pt-4 border-t border-blue-900/50 relative">
-                        <div class="flex flex-col items-center gap-1 text-blue-400">
-                            <span class="text-lg">🏠</span>
-                            <span class="text-[9px] font-bold">Home</span>
-                        </div>
-                        <div class="flex flex-col items-center gap-1 text-gray-500 hover:text-white cursor-pointer">
-                            <span class="text-lg">💠</span>
-                            <span class="text-[9px]">DApps</span>
-                        </div>
-                        <div class="absolute left-1/2 -translate-x-1/2 -top-8 bg-[#020617] w-14 h-14 rounded-full border-2 border-yellow-500 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.4)]">
-                            <span class="text-2xl text-yellow-400 font-bold">V</span>
-                        </div>
-                        <div class="flex flex-col items-center gap-1 text-gray-500 hover:text-white cursor-pointer">
-                            <span class="text-lg">🕒</span>
-                            <span class="text-[9px]">History</span>
-                        </div>
-                        <div class="flex flex-col items-center gap-1 text-gray-500 hover:text-white cursor-pointer">
-                            <span class="text-lg">⚙️</span>
-                            <span class="text-[9px]">Settings</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SECTION ABOUT -->
-    <section id="about" class="bg-[#081527] py-24 border-y border-blue-900/50 relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16 reveal">
-                <div>
-                    <div class="text-xs font-bold tracking-widest text-yellow-500 mb-2">01 / ABOUT VOIN</div>
-                    <h2 class="text-4xl md:text-5xl font-bold leading-tight text-white font-orbitron">
-                        From vision <br> <span class="text-yellow-400">to delivery.</span>
-                    </h2>
-                </div>
-                <div class="flex items-center">
-                    <p class="text-lg text-gray-400">VOIN is a proposed Layer-1 blockchain ecosystem exploring how to combine infrastructure, AI-assisted intelligence, security engineering, and payment connectivity.</p>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="glass-panel p-8 rounded-2xl reveal">
-                    <div class="w-14 h-14 rounded-xl border border-blue-500 border-opacity-30 flex items-center justify-center text-blue-400 text-2xl mb-6 bg-blue-500 bg-opacity-5">⛓️</div>
-                    <h3 class="text-xl font-bold mb-3 text-white">Blockchain Infrastructure</h3>
-                    <p class="text-gray-400 text-sm mb-6">Building a Layer-1 blockchain infrastructure designed for secure, scalable, decentralized applications.</p>
-                    <span class="text-xs px-3 py-1 rounded-full border border-blue-500 text-blue-400 bg-blue-500 bg-opacity-10">In Development</span>
-                </div>
-                <div class="glass-panel p-8 rounded-2xl reveal" style="transition-delay: 100ms;">
-                    <div class="w-14 h-14 rounded-xl border border-blue-500 border-opacity-30 flex items-center justify-center text-blue-400 text-2xl mb-6 bg-blue-500 bg-opacity-5">🧠</div>
-                    <h3 class="text-xl font-bold mb-3 text-white">AI Intelligence</h3>
-                    <p class="text-gray-400 text-sm mb-6">Developing AI-powered analytics, intelligent automation, predictive insights, and ecosystem intelligence.</p>
-                    <span class="text-xs px-3 py-1 rounded-full border border-blue-500 text-blue-400 bg-blue-500 bg-opacity-10">Research & Development</span>
-                </div>
-                <div class="glass-panel p-8 rounded-2xl reveal" style="transition-delay: 200ms;">
-                    <div class="w-14 h-14 rounded-xl border border-blue-500 border-opacity-30 flex items-center justify-center text-blue-400 text-2xl mb-6 bg-blue-500 bg-opacity-5">🛡️</div>
-                    <h3 class="text-xl font-bold mb-3 text-white">Security Engineering</h3>
-                    <p class="text-gray-400 text-sm mb-6">Implementing ML-DSA (Post-Quantum) security and rigorous engineering to protect the network.</p>
-                    <span class="text-xs px-3 py-1 rounded-full border border-blue-500 text-blue-400 bg-blue-500 bg-opacity-10">Implemented</span>
-                </div>
-            </div>
+        <div class="hero-visual">
+            <div class="orbit orbit-one"></div>
+            <div class="orbit orbit-two"></div>
+            <div class="planet"><div class="planet-text">VOIN<br>NETWORK</div></div>
         </div>
     </section>
 
-    <!-- SECTION TOKENOMICS -->
-    <section id="tokenomics" class="py-24 relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16 reveal">
-                <div class="text-xs font-bold tracking-widest text-yellow-500 mb-2">03 / TOKEN ECONOMY</div>
-                <h2 class="text-4xl md:text-5xl font-bold mb-4 text-white font-orbitron">Designed for <span class="text-yellow-400">Growth</span></h2>
-                <p class="text-gray-400">Total Planned Maximum Supply: <strong class="text-white">260,000,000 VOIN</strong></p>
-            </div>
+    <section class="technology section" id="technology">
+        <div class="tech-card"><span>⬡</span><h3>Blockchain Layer 1</h3><p>Native blockchain infrastructure.</p></div>
+        <div class="tech-card"><span>⛨</span><h3>Quantum Security</h3><p>Advanced security architecture.</p></div>
+        <div class="tech-card"><span>◉</span><h3>VOIN AI Engine</h3><p>Artificial intelligence ecosystem.</p></div>
+        <div class="tech-card"><span>◎</span><h3>Global Payment</h3><p>Connected digital transactions.</p></div>
+    </section>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center reveal">
-                <div class="flex justify-center">
-                    <div class="w-72 h-72 rounded-full border-8 border-blue-500 flex flex-col items-center justify-center relative shadow-[0_0_40px_rgba(59,130,246,0.3)]">
-                        <div class="text-5xl font-bold text-white font-orbitron">260M</div>
-                        <div class="text-sm text-gray-400 tracking-widest mt-2">TOTAL SUPPLY</div>
-                    </div>
-                </div>
-                <div class="glass-panel p-8 rounded-xl space-y-4">
-                    <div class="flex justify-between items-center border-b border-gray-700 pb-2"><span>Presale (50%)</span><span class="font-bold text-yellow-400">130,000,000</span></div>
-                    <div class="flex justify-between items-center border-b border-gray-700 pb-2"><span>Team (10%)</span><span class="font-bold text-white">26,000,000</span></div>
-                    <div class="flex justify-between items-center border-b border-gray-700 pb-2"><span>Reserves (10%)</span><span class="font-bold text-white">26,000,000</span></div>
-                    <div class="flex justify-between items-center border-b border-gray-700 pb-2"><span>Exchange Listings (11%)</span><span class="font-bold text-white">28,600,000</span></div>
-                    <div class="flex justify-between items-center border-b border-gray-700 pb-2"><span>Rewards (4%)</span><span class="font-bold text-white">10,400,000</span></div>
-                    <div class="flex justify-between items-center"><span>Marketing (15%)</span><span class="font-bold text-white">39,000,000</span></div>
-                </div>
-            </div>
+    <section class="section" id="ecosystem">
+        <div class="section-title">
+            <span class="eyebrow">ONE CONNECTED WORLD</span>
+            <h2>VOIN <span>ECOSYSTEM</span></h2>
+            <p>Build • Connect • Grow</p>
+        </div>
+        <div class="ecosystem-grid">
+            <div class="eco-card"><span>◇</span><h3>DeFi Finance</h3><small>Digital Finance</small></div>
+            <div class="eco-card"><span>⬡</span><h3>NFT Marketplace</h3><small>Digital Assets</small></div>
+            <div class="eco-card"><span>◉</span><h3>AI Agent</h3><small>Intelligent Services</small></div>
+            <div class="eco-card"><span>✧</span><h3>GameFi</h3><small>Gaming Ecosystem</small></div>
+            <div class="eco-card"><span>✈</span><h3>HobbiGo</h3><small>Travel Marketplace</small></div>
+            <div class="eco-card"><span>▣</span><h3>TELKU</h3><small>Global eSIM</small></div>
+            <div class="eco-card"><span>⬢</span><h3>CHELEA</h3><small>Commerce Platform</small></div>
+            <div class="eco-card"><span>◎</span><h3>ORBISS</h3><small>Sports Ecosystem</small></div>
         </div>
     </section>
 
-    <!-- SECTION ROADMAP (Bawah) -->
-    <section id="roadmap" class="bg-[#081527] py-24 border-t border-blue-900/50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16 reveal">
-                <div class="text-xs font-bold tracking-widest text-yellow-500 mb-2">04 / ROADMAP</div>
-                <h2 class="text-4xl md:text-5xl font-bold mb-4 text-white font-orbitron">Built with a <span class="text-yellow-400">clear direction.</span></h2>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="glass-panel p-8 rounded-2xl reveal border-t-4 border-t-blue-500">
-                    <div class="text-sm text-blue-400 mb-2 font-bold">PHASE 01 (IN PROGRESS)</div>
-                    <h3 class="text-xl font-bold mb-4 text-white">Foundation</h3>
-                    <ul class="text-gray-400 text-sm space-y-2">
-                        <li>✓ Project documentation</li>
-                        <li>✓ Community development</li>
-                        <li>✓ Architecture & security planning</li>
-                    </ul>
-                </div>
-                <div class="glass-panel p-8 rounded-2xl reveal border-t-4 border-t-yellow-500" style="transition-delay: 100ms;">
-                    <div class="text-sm text-yellow-400 mb-2 font-bold">PHASE 02 (AVAILABLE)</div>
-                    <h3 class="text-xl font-bold mb-4 text-white">Testnet Experience</h3>
-                    <ul class="text-gray-400 text-sm space-y-2">
-                        <li>✓ Wallet connection</li>
-                        <li>✓ Test allocation purchases</li>
-                        <li>✓ ML-DSA cryptography</li>
-                    </ul>
-                </div>
-                <div class="glass-panel p-8 rounded-2xl reveal border-t-4 border-t-gray-500" style="transition-delay: 200ms;">
-                    <div class="text-sm text-gray-500 mb-2 font-bold">PHASE 03 (PLANNED)</div>
-                    <h3 class="text-xl font-bold mb-4 text-white">Ecosystem Development</h3>
-                    <ul class="text-gray-400 text-sm space-y-2">
-                        <li>- Developer tools</li>
-                        <li>- Production readiness</li>
-                        <li>- Mainnet launch</li>
-                    </ul>
-                </div>
-            </div>
+    <section class="section presale-section" id="presale">
+        <div class="presale-box">
+            <span class="eyebrow">VOIN TOKEN MODEL</span>
+            <h2>VOIN <span>PRESALE</span></h2>
+            <p style="color: var(--text-muted);">Explore the VOIN token distribution and project development.</p>
+            <h3>260,000,000 VOIN</h3>
+            <div class="progress"><div></div></div>
+            <small style="color: var(--text-muted);">Illustrative progress only — not connected to a live contract.</small>
+            <br><br>
+            <a href="dashboard.html" class="btn-gold">Enter Dashboard →</a>
         </div>
     </section>
 
-    <!-- SECTION FAQ -->
-    <section id="faq" class="bg-[#081527] py-24 border-t border-blue-900/50">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 reveal">
-                <div>
-                    <div class="text-xs font-bold tracking-widest text-yellow-500 mb-2">07 / FAQ</div>
-                    <h2 class="text-4xl font-bold leading-tight text-white font-orbitron">Questions. <br> <span class="text-yellow-400">Clear answers.</span></h2>
-                </div>
-                <div class="flex items-center text-gray-400 text-sm">Important information about the proposed VOIN project and token allocation.</div>
-            </div>
-
-            <div class="space-y-4 reveal">
-                <div class="glass-panel rounded-xl overflow-hidden cursor-pointer" onclick="this.querySelector('.faq-content').classList.toggle('hidden'); this.querySelector('.faq-icon').classList.toggle('rotate-45')">
-                    <div class="flex justify-between items-center p-6">
-                        <h3 class="font-bold text-lg text-white">What is VOIN?</h3>
-                        <span class="text-yellow-400 faq-icon transition-transform duration-300 text-2xl font-light">+</span>
-                    </div>
-                    <div class="px-6 pb-6 text-gray-400 text-sm faq-content hidden border-t border-gray-800 pt-4">
-                        VOIN is a proposed blockchain ecosystem focused on Layer-1 infrastructure, AI-assisted intelligence, security engineering, and payment connectivity.
-                    </div>
-                </div>
-                <div class="glass-panel rounded-xl overflow-hidden cursor-pointer" onclick="this.querySelector('.faq-content').classList.toggle('hidden'); this.querySelector('.faq-icon').classList.toggle('rotate-45')">
-                    <div class="flex justify-between items-center p-6">
-                        <h3 class="font-bold text-lg text-white">What is the planned maximum supply?</h3>
-                        <span class="text-yellow-400 faq-icon transition-transform duration-300 text-2xl font-light">+</span>
-                    </div>
-                    <div class="px-6 pb-6 text-gray-400 text-sm faq-content hidden border-t border-gray-800 pt-4">
-                        The current tokenomics proposal sets a planned maximum supply of 260,000,000 VOIN. Final supply mechanics must be verified against the deployed token contract.
-                    </div>
-                </div>
-                <div class="glass-panel rounded-xl overflow-hidden cursor-pointer" onclick="this.querySelector('.faq-content').classList.toggle('hidden'); this.querySelector('.faq-icon').classList.toggle('rotate-45')">
-                    <div class="flex justify-between items-center p-6">
-                        <h3 class="font-bold text-lg text-white">When will the presale begin?</h3>
-                        <span class="text-yellow-400 faq-icon transition-transform duration-300 text-2xl font-light">+</span>
-                    </div>
-                    <div class="px-6 pb-6 text-gray-400 text-sm faq-content hidden border-t border-gray-800 pt-4">
-                        The website currently provides a Devnet testing experience. This is not a live sale of real VOIN coins. Any future production sale dates and terms require a separate official announcement.
-                    </div>
-                </div>
-            </div>
+    <section class="section" id="roadmap">
+        <div class="section-title">
+            <span class="eyebrow">OUR JOURNEY</span>
+            <h2>VOIN <span>ROADMAP</span></h2>
+        </div>
+        <div class="roadmap">
+            <div><span class="road-dot"></span><h3>November 2026</h3><p style="color:var(--text-muted)">Presale Phase</p></div>
+            <div><span class="road-dot"></span><h3>December 2026</h3><p style="color:var(--text-muted)">Development Milestone</p></div>
+            <div><span class="road-dot"></span><h3>January 2027</h3><p style="color:var(--text-muted)">Planned Network Milestone</p></div>
         </div>
     </section>
 
-    <!-- FOOTER -->
-    <footer class="bg-[#040a14] py-12 border-t border-blue-900/50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div class="flex justify-center items-center gap-3 mb-6">
-                <div class="w-10 h-10 flex items-center justify-center font-bold text-yellow-400 text-xl font-orbitron">V</div>
-                <span class="text-2xl font-bold tracking-widest text-white font-orbitron">VOIN</span>
-            </div>
-            <div class="flex justify-center space-x-6 text-sm text-gray-400 mb-8 font-semibold">
-                <a href="#about" class="hover:text-yellow-400 transition">About</a>
-                <a href="#tokenomics" class="hover:text-yellow-400 transition">Tokenomics</a>
-                <a href="#roadmap" class="hover:text-yellow-400 transition">Roadmap</a>
-                <a href="#faq" class="hover:text-yellow-400 transition">FAQ</a>
-                <a href="dashboard.html" class="hover:text-yellow-400 transition">Dashboard</a>
-            </div>
-            <p class="text-gray-600 text-xs mb-2">&copy; 2026 VOIN Project. All rights reserved. This site is a project design demonstration.</p>
-            <p class="text-gray-700 text-xs">Digital assets carry risk. This site is not an offer or solicitation to buy tokens.</p>
-        </div>
+    <footer>
+        <a href="index.html" class="logo"><span class="logo-v">V</span> VOIN</a>
+        <p>© 2026 VOIN WEB4. All Rights Reserved.</p>
+        <p>Connecting The Future.</p>
     </footer>
 
-    <!-- SCRIPT UNTUK ANIMASI SCROLL (TETAP) -->
+    <!-- SCRIPT TETAP AMAN -->
     <script>
-        function reveal() {
-            var reveals = document.querySelectorAll(".reveal");
-            for (var i = 0; i < reveals.length; i++) {
-                var windowHeight = window.innerHeight;
-                var elementTop = reveals[i].getBoundingClientRect().top;
-                var elementVisible = 100;
-                if (elementTop < windowHeight - elementVisible) {
-                    reveals[i].classList.add("active");
-                }
-            }
+        function connectWallet() {
+            alert("VOIN Wallet\n\nDemo Mode Active.\nWallet integration will be enabled after network verification.");
         }
-        window.addEventListener("scroll", reveal);
-        reveal(); // Trigger saat halaman pertama dimuat
+        function searchExplorer() {
+            const input = document.getElementById("explorerSearch");
+            const result = document.getElementById("explorerResult");
+            if (!input || !result) return;
+            if (input.value.trim() === "") {
+                result.innerText = "Please enter transaction hash or wallet address.";
+                return;
+            }
+            result.innerText = "Explorer is not connected to VOIN blockchain RPC yet. No live blockchain search has been performed.";
+        }
     </script>
 </body>
 </html>
