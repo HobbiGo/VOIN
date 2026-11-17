@@ -3,109 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - IoT Monitoring</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } 
-            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        // KONFIGURASI FIREBASE (SUDAH DISESUAIKAN)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDFY21FPt8OoyYKtmnZ-Z9vq4By8WduqGc",
-            authDomain: "voin-coin-ad692.firebaseapp.com",
-            projectId: "voin-coin-ad692",
-            storageBucket: "voin-coin-ad692.firebasestorage.app",
-            messagingSenderId: "220942707813",
-            appId: "1:220942707813:web:d76d6a9af2335a5c9bea8c",
-            measurementId: "G-90VH123WF3",
-            databaseURL: "https://voin-coin-ad692-default-rtdb.asia-southeast1.firebasedatabase.app"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
-        // Jika sudah login, langsung ke dashboard
-        onAuthStateChanged(auth, (user) => {
-            if (user) window.location.href = "dashboard.html";
-        });
-
-        // Handle form login
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('loginBtn');
-            const errorMsg = document.getElementById('errorMsg');
-
-            btn.disabled = true;
-            btn.textContent = 'Memproses...';
-            errorMsg.textContent = '';
-
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                window.location.href = "dashboard.html";
-            } catch (error) {
-                let msg = 'Login gagal. ';
-                switch (error.code) {
-                    case 'auth/invalid-email': msg += 'Email tidak valid.'; break;
-                    case 'auth/user-not-found': msg += 'Akun tidak ditemukan.'; break;
-                    case 'auth/wrong-password': msg += 'Password salah.'; break;
-                    case 'auth/invalid-credential': msg += 'Email atau password salah.'; break;
-                    default: msg += error.message;
-                }
-                errorMsg.textContent = msg;
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Login';
-            }
-        });
+    <title>IoT Monitoring</title>
+    <script>
+        // Otomatis arahkan ke dashboard saat halaman ini dibuka
+        window.location.replace("dashboard.html");
     </script>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 flex items-center justify-center p-4">
-
-    <div class="w-full max-w-md">
-        <!-- Card -->
-        <div class="bg-white rounded-2xl shadow-2xl p-8">
-            <!-- Logo/Icon -->
-            <div class="flex justify-center mb-6">
-                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                    </svg>
-                </div>
-            </div>
-
-            <h1 class="text-2xl font-bold text-gray-800 text-center mb-2">IoT Monitoring</h1>
-            <p class="text-gray-500 text-center mb-6">Sistem Monitoring Suhu & Kelembaban</p>
-
-            <form id="loginForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="email" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                        placeholder="email@example.com">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="password" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                        placeholder="••••••••">
-                </div>
-
-                <div id="errorMsg" class="text-red-600 text-sm text-center"></div>
-
-                <button type="submit" id="loginBtn"
-                    class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition shadow-lg disabled:opacity-50">
-                    Login
-                </button>
-            </form>
-
-            <p class="text-center text-gray-400 text-xs mt-6">© 2025 IoT Monitoring System</p>
-        </div>
-    </div>
-
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <p class="text-gray-500 font-semibold">Mengalihkan ke Dashboard...</p>
 </body>
 </html>
