@@ -1,19 +1,17 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VOIN WEB4 | Connecting The Future</title>
+    <title>VOIN WEB4 - The Next Digital Frontier</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-dark: #020617;
-            --bg-panel: #0b132b;
             --bg-card: rgba(15, 23, 42, 0.6);
             --gold: #fbbf24;
             --gold-hover: #f59e0b;
             --blue-neon: #3b82f6;
-            --cyan: #06b6d4;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --border-color: rgba(59, 130, 246, 0.3);
@@ -27,13 +25,7 @@
             color: var(--text-main); background-image: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
             min-height: 100vh; overflow-x: hidden;
         }
-        h1, h2, h3, .logo-text { font-family: 'Orbitron', sans-serif; }
-
-        .eyebrow {
-            font-size: 12px; font-weight: 700; letter-spacing: 2px;
-            color: var(--gold); text-transform: uppercase;
-            margin-bottom: 10px; display: block;
-        }
+        h1, h2, h3, .logo { font-family: 'Orbitron', sans-serif; }
 
         /* NAVBAR */
         .navbar {
@@ -42,13 +34,12 @@
             border-bottom: 1px solid var(--border-color);
             position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
         }
-        .logo { display: flex; align-items: center; gap: 12px; }
-        /* Menggunakan logo gambar baru */
-        .logo img { height: 35px; width: auto; }
-        
-        .navbar nav { display: flex; gap: 30px; }
-        .navbar nav a { color: var(--text-muted); font-size: 14px; font-weight: 600; transition: 0.3s; }
-        .navbar nav a:hover { color: var(--gold); text-shadow: var(--glow-gold); }
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 900; color: var(--text-main); }
+        .logo img { height: 35px; width: auto; object-fit: contain; }
+
+        .nav-links { display: flex; gap: 25px; align-items: center; }
+        .nav-links a { color: var(--text-muted); font-size: 14px; font-weight: 500; transition: 0.3s; }
+        .nav-links a:hover { color: var(--gold); }
 
         .btn-gold {
             background: var(--gold); color: #000; padding: 10px 24px;
@@ -56,275 +47,104 @@
             transition: 0.3s; border: none; cursor: pointer; display: inline-block;
         }
         .btn-gold:hover { background: var(--gold-hover); box-shadow: var(--glow-gold); transform: translateY(-2px); }
-        .btn-blue {
-            background: transparent; border: 2px solid var(--blue-neon);
-            color: var(--text-main); padding: 10px 24px; border-radius: 8px;
-            font-weight: 700; font-size: 14px; transition: 0.3s;
-        }
-        .btn-blue:hover { background: var(--blue-neon); box-shadow: var(--glow-blue); }
 
-        /* HERO */
+        /* HERO SECTION */
         .hero {
-            display: grid; grid-template-columns: 1fr 1fr;
-            align-items: center; padding: 80px 5%; gap: 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 80px 5%; min-height: calc(100vh - 80px); gap: 40px;
         }
-        .hero h1 { font-size: 64px; line-height: 1.1; margin-bottom: 10px; color: #fff; }
+        .hero-content { max-width: 600px; }
+        .eyebrow { color: var(--gold); font-weight: 700; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 15px; display: block; }
+        .hero h1 { font-size: 48px; line-height: 1.2; margin-bottom: 20px; color: #fff; }
         .hero h1 span { color: var(--gold); text-shadow: var(--glow-gold); }
-        .hero h2 { font-size: 36px; margin-bottom: 20px; color: #fff; }
-        .hero-subtitle { font-size: 18px; color: var(--cyan); font-weight: 600; margin-bottom: 15px; }
-        .hero p { color: var(--text-muted); max-width: 500px; line-height: 1.6; margin-bottom: 30px; }
-        .hero-buttons { display: flex; gap: 15px; margin-bottom: 40px; }
+        .hero p { color: var(--text-muted); font-size: 16px; margin-bottom: 30px; line-height: 1.6; }
+        
+        .hero-buttons { display: flex; gap: 15px; margin-bottom: 50px; }
+        .btn-outline {
+            background: transparent; color: var(--text-main); padding: 10px 24px;
+            border-radius: 8px; font-weight: 700; font-size: 14px; border: 1px solid var(--border-color);
+            transition: 0.3s; cursor: pointer; display: inline-block;
+        }
+        .btn-outline:hover { border-color: var(--gold); color: var(--gold); box-shadow: var(--glow-gold); }
 
-        .hero-visual {
-            width: 100%; min-height: 480px; display: flex;
-            justify-content: center; align-items: center; overflow: hidden; position: relative;
+        /* HERO IMAGE / MECHANICAL EAGLE */
+        .hero-image {
+            flex: 1; max-width: 550px; display: flex; justify-content: center; align-items: center;
         }
-        .voin-eagle {
-            width: 100%; max-width: 650px; height: auto; object-fit: contain; display: block;
-            filter: drop-shadow(0 0 20px #087cff) drop-shadow(0 0 35px #dba72c);
-            animation: eagleFloat 5s ease-in-out infinite;
-        }
-        @keyframes eagleFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-12px); }
-        }
-
-        /* SECTION & CARDS (Untuk Tokenomics, Tech, Eco) */
-        .section { padding: 80px 5%; }
-        .section-title { text-align: center; margin-bottom: 50px; }
-        .section-title h2 { font-size: 40px; margin-bottom: 10px; color: #fff; }
-        .section-title h2 span { color: var(--gold); }
-        .section-title p { color: var(--text-muted); }
-
-        .technology, .ecosystem-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px; padding: 0 5%;
-        }
-        .tech-card, .eco-card {
-            background: var(--bg-card); backdrop-filter: blur(10px);
-            border: 1px solid var(--border-color); padding: 30px;
-            border-radius: 16px; text-align: center; transition: 0.3s;
-        }
-        .tech-card:hover, .eco-card:hover { border-color: var(--gold); transform: translateY(-5px); box-shadow: var(--glow-blue); }
-        .tech-card span, .eco-card span { font-size: 40px; color: var(--blue-neon); margin-bottom: 15px; display: block; }
-        .tech-card h3, .eco-card h3 { font-size: 16px; margin-bottom: 5px; color: #fff; }
-        .tech-card p, .eco-card small { color: var(--text-muted); font-size: 13px; }
-
-        /* TOKENOMICS SECTION (Dikembalikan) */
-        .tokenomics-box {
-            background: var(--bg-card); backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color); border-radius: 20px;
-            padding: 40px; max-width: 800px; margin: 0 auto; text-align: center;
-        }
-        .tokenomics-box h3 { font-size: 36px; color: var(--gold); margin-bottom: 20px; }
-        .tokenomics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
-        .tokenomics-item { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; color: #c9d1d9; }
-        .tokenomics-item strong { color: var(--gold); }
-
-        /* PRESALE SECTION */
-        .presale-section { padding: 80px 5%; display: flex; justify-content: center; }
-        .presale-box {
-            background: var(--bg-card); backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color); border-radius: 20px;
-            padding: 50px; text-align: center; max-width: 700px; width: 100%;
+        .hero-image img {
+            width: 100%; height: auto; border-radius: 16px;
+            border: 1px solid var(--border-color);
             box-shadow: var(--glow-blue);
+            object-fit: cover;
         }
-        .presale-box h2 { font-size: 40px; margin-bottom: 15px; color: #fff; }
-        .presale-box h2 span { color: var(--gold); }
-        .presale-box h3 { font-size: 32px; color: var(--text-main); margin: 20px 0 10px; }
-        .progress { background: rgba(255, 255, 255, 0.1); height: 12px; border-radius: 10px; margin: 20px 0; overflow: hidden; }
-        .progress div { background: linear-gradient(90deg, var(--blue-neon), var(--gold)); height: 100%; width: 45%; }
 
-        /* ROADMAP */
-        .roadmap { display: flex; justify-content: space-between; padding: 0 10%; position: relative; }
-        .roadmap div { text-align: center; position: relative; z-index: 2; }
-        .road-dot { display: block; width: 20px; height: 20px; background: var(--bg-dark); border: 3px solid var(--gold); border-radius: 50%; margin: 0 auto 15px; box-shadow: var(--glow-gold); }
-
-        /* FAQ (Dikembalikan) */
-        .faq-item {
-            background: var(--bg-card); border: 1px solid var(--border-color);
-            border-radius: 12px; margin-bottom: 15px; padding: 20px; max-width: 800px; margin: 0 auto 15px;
+        /* STATS BAR */
+        .stats-bar {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+            padding: 30px 5%; background: rgba(11, 19, 43, 0.5); border-top: 1px solid var(--border-color);
         }
-        .faq-item h4 { color: var(--gold); margin-bottom: 10px; font-size: 18px; }
-        .faq-item p { color: var(--text-muted); font-size: 14px; line-height: 1.5; }
+        .stat-item h3 { font-size: 28px; color: var(--gold); margin-bottom: 5px; }
+        .stat-item p { color: var(--text-muted); font-size: 14px; }
 
-        /* FOOTER */
-        footer { text-align: center; padding: 40px; border-top: 1px solid var(--border-color); margin-top: 50px; }
-        footer .logo { justify-content: center; margin-bottom: 20px; }
-        footer p { color: var(--text-muted); font-size: 14px; margin-bottom: 5px; }
-
-        @media (max-width: 900px) {
-            .hero { grid-template-columns: 1fr; text-align: center; }
-            .hero p { margin: 0 auto 30px; }
+        @media (max-width: 960px) {
+            .hero { flex-direction: column; text-align: center; padding-top: 40px; }
             .hero-buttons { justify-content: center; }
-            .navbar nav { display: none; }
-            .roadmap { flex-direction: column; gap: 40px; }
-            .tokenomics-grid { grid-template-columns: 1fr; }
-            .hero-visual { min-height: 330px; }
-            .voin-eagle { max-width: 100%; }
+            .nav-links { display: none; }
         }
     </style>
 </head>
 <body>
 
-    <!-- NAVBAR (Menggunakan Logo Baru) -->
     <header class="navbar">
         <a href="index.html" class="logo">
-            <!-- Ganti src dengan logo teks V VOIN milikmu -->
-            <img src="assets/logo-voin.png" alt="VOIN Logo">
+            <!-- Menghubungkan Logo dari folder assets -->
+            <img src="assets/file_0000000036b48207b1aa531580373f0a.png" alt="VOIN Logo">
+            <span>VOIN</span>
         </a>
-        <nav>
-            <a href="#home">Home</a>
+        <nav class="nav-links">
+            <a href="index.html">Home</a>
             <a href="#technology">Technology</a>
             <a href="#ecosystem">Ecosystem</a>
             <a href="#presale">Presale</a>
             <a href="#roadmap">Roadmap</a>
             <a href="dashboard.html">Dashboard</a>
         </nav>
-        <a href="dashboard.html" class="btn-gold">Connect Wallet ↗</a>
+        <button class="btn-gold" onclick="location.href='dashboard.html'">Connect Wallet ↗</button>
     </header>
 
-    <!-- HERO SECTION (Menggunakan Gambar Burung) -->
-    <section class="hero" id="home">
+    <section class="hero">
         <div class="hero-content">
             <span class="eyebrow">THE NEXT DIGITAL FRONTIER</span>
-            <h1><span>VOIN</span> WEB4</h1>
-            <h2>CONNECTING THE FUTURE</h2>
-            <p class="hero-subtitle">Blockchain • AI • Quantum Security • Global Ecosystem</p>
+            <h1>VOIN WEB4 <span>CONNECTING THE FUTURE</span></h1>
+            <p>Blockchain • AI • Quantum Security • Global Ecosystem</p>
             <p>A next-generation ecosystem connecting blockchain infrastructure, artificial intelligence, digital security and global services.</p>
+            
             <div class="hero-buttons">
-                <a href="#presale" class="btn-gold">Explore VOIN →</a>
-                <a href="#ecosystem" class="btn-blue">Explore Ecosystem →</a>
-            </div>
-            <div class="hero-stats" style="display:flex; gap:40px; border-top:1px solid var(--border-color); padding-top:20px;">
-                <div><strong style="font-size:24px; font-family:'Orbitron'">260M</strong><br><small style="color:var(--text-muted)">Planned Total Supply</small></div>
-                <div><strong style="font-size:24px; font-family:'Orbitron'">WEB4</strong><br><small style="color:var(--text-muted)">Connected Ecosystem</small></div>
-                <div><strong style="font-size:24px; font-family:'Orbitron'">8+</strong><br><small style="color:var(--text-muted)">Digital Products</small></div>
+                <button class="btn-gold" onclick="location.href='#ecosystem'">Explore VOIN →</button>
+                <button class="btn-outline" onclick="location.href='#ecosystem'">Explore Ecosystem →</button>
             </div>
         </div>
-        <div class="hero-visual">
-            <!-- Ganti src dengan gambar burung mekanik milikmu -->
-            <img src="assets/burung.png" alt="VOIN Mechanical Eagle and Earth" class="voin-eagle">
+
+        <div class="hero-image">
+            <!-- Menghubungkan Gambar Mechanical Eagle dari folder assets -->
+            <img src="assets/file_00000000bcc48211a9ab6a56c546480f.jpg" alt="VOIN Mechanical Eagle and Earth">
         </div>
     </section>
 
-    <!-- TECHNOLOGY SECTION -->
-    <section class="technology section" id="technology">
-        <div class="tech-card"><span>⬡</span><h3>Blockchain Layer 1</h3><p>Native blockchain infrastructure.</p></div>
-        <div class="tech-card"><span>⛨</span><h3>Quantum Security</h3><p>Advanced security architecture.</p></div>
-        <div class="tech-card"><span>◉</span><h3>VOIN AI Engine</h3><p>Artificial intelligence ecosystem.</p></div>
-        <div class="tech-card"><span>◎</span><h3>Global Payment</h3><p>Connected digital transactions.</p></div>
-    </section>
+    <div class="stats-bar">
+        <div class="stat-item">
+            <h3>260M</h3>
+            <p>Planned Total Supply</p>
+        </div>
+        <div class="stat-item">
+            <h3>WEB4</h3>
+            <p>Connected Ecosystem</p>
+        </div>
+        <div class="stat-item">
+            <h3>8+</h3>
+            <p>Digital Products</p>
+        </div>
+    </div>
 
-    <!-- ECOSYSTEM SECTION -->
-    <section class="section" id="ecosystem">
-        <div class="section-title">
-            <span class="eyebrow">ONE CONNECTED WORLD</span>
-            <h2>VOIN <span>ECOSYSTEM</span></h2>
-            <p>Build • Connect • Grow</p>
-        </div>
-        <div class="ecosystem-grid">
-            <div class="eco-card"><span>◇</span><h3>DeFi Finance</h3><small>Digital Finance</small></div>
-            <div class="eco-card"><span>⬡</span><h3>NFT Marketplace</h3><small>Digital Assets</small></div>
-            <div class="eco-card"><span>◉</span><h3>AI Agent</h3><small>Intelligent Services</small></div>
-            <div class="eco-card"><span>✧</span><h3>GameFi</h3><small>Gaming Ecosystem</small></div>
-            <div class="eco-card"><span>✈</span><h3>HobbiGo</h3><small>Travel Marketplace</small></div>
-            <div class="eco-card"><span>▣</span><h3>TELKU</h3><small>Global eSIM</small></div>
-            <div class="eco-card"><span>⬢</span><h3>CHELEA</h3><small>Commerce Platform</small></div>
-            <div class="eco-card"><span>◎</span><h3>ORBISS</h3><small>Sports Ecosystem</small></div>
-        </div>
-    </section>
-
-    <!-- TOKENOMICS SECTION (Yang sempat hilang) -->
-    <section class="section" id="tokenomics">
-        <div class="section-title">
-            <span class="eyebrow">TOKEN DISTRIBUTION</span>
-            <h2>VOIN <span>TOKENOMICS</span></h2>
-        </div>
-        <div class="tokenomics-box">
-            <h3>260,000,000 VOIN</h3>
-            <div class="tokenomics-grid">
-                <div class="tokenomics-item"><span>Presale (50%)</span> <strong>130,000,000</strong></div>
-                <div class="tokenomics-item"><span>Team (10%)</span> <strong>26,000,000</strong></div>
-                <div class="tokenomics-item"><span>Reserves (10%)</span> <strong>26,000,000</strong></div>
-                <div class="tokenomics-item"><span>Exchange Listings (11%)</span> <strong>28,600,000</strong></div>
-                <div class="tokenomics-item"><span>Rewards (4%)</span> <strong>10,400,000</strong></div>
-                <div class="tokenomics-item"><span>Marketing (15%)</span> <strong>39,000,000</strong></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- PRESALE SECTION -->
-    <section class="section presale-section" id="presale">
-        <div class="presale-box">
-            <span class="eyebrow">VOIN TOKEN MODEL</span>
-            <h2>VOIN <span>PRESALE</span></h2>
-            <p style="color: var(--text-muted);">Explore the VOIN token distribution and project development.</p>
-            <h3>260,000,000 VOIN</h3>
-            <div class="progress"><div></div></div>
-            <small style="color: var(--text-muted);">Illustrative progress only — not connected to a live contract.</small>
-            <br><br>
-            <a href="dashboard.html" class="btn-gold">Enter Dashboard →</a>
-        </div>
-    </section>
-
-    <!-- ROADMAP SECTION -->
-    <section class="section" id="roadmap">
-        <div class="section-title">
-            <span class="eyebrow">OUR JOURNEY</span>
-            <h2>VOIN <span>ROADMAP</span></h2>
-        </div>
-        <div class="roadmap">
-            <div><span class="road-dot"></span><h3>November 2026</h3><p style="color:var(--text-muted)">Presale Phase</p></div>
-            <div><span class="road-dot"></span><h3>December 2026</h3><p style="color:var(--text-muted)">Development Milestone</p></div>
-            <div><span class="road-dot"></span><h3>January 2027</h3><p style="color:var(--text-muted)">Planned Network Milestone</p></div>
-        </div>
-    </section>
-
-    <!-- FAQ SECTION (Yang sempat hilang) -->
-    <section class="section" id="faq">
-        <div class="section-title">
-            <span class="eyebrow">QUESTIONS & ANSWERS</span>
-            <h2>FREQUENTLY ASKED <span>QUESTIONS</span></h2>
-        </div>
-        <div class="faq-item">
-            <h4>What is VOIN?</h4>
-            <p>VOIN is a proposed blockchain ecosystem focused on Layer-1 infrastructure, AI-assisted intelligence, security engineering, and payment connectivity.</p>
-        </div>
-        <div class="faq-item">
-            <h4>What is the planned maximum supply?</h4>
-            <p>The current tokenomics proposal sets a planned maximum supply of 260,000,000 VOIN. Final supply mechanics must be verified against the deployed token contract.</p>
-        </div>
-        <div class="faq-item">
-            <h4>When will the presale begin?</h4>
-            <p>The website currently provides a testing experience. This is not a live sale of real VOIN coins. Any future production sale dates require a separate official announcement.</p>
-        </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer>
-        <a href="index.html" class="logo">
-            <img src="assets/logo-voin.png" alt="VOIN Logo" style="height: 30px;">
-        </a>
-        <p>© 2026 VOIN WEB4. All Rights Reserved.</p>
-        <p>Connecting The Future.</p>
-    </footer>
-
-    <!-- SCRIPT TETAP AMAN -->
-    <script>
-        function connectWallet() {
-            alert("VOIN Wallet\n\nDemo Mode Active.\nWallet integration will be enabled after network verification.");
-        }
-        function searchExplorer() {
-            const input = document.getElementById("explorerSearch");
-            const result = document.getElementById("explorerResult");
-            if (!input || !result) return;
-            if (input.value.trim() === "") {
-                result.innerText = "Please enter transaction hash or wallet address.";
-                return;
-            }
-            result.innerText = "Explorer is not connected to VOIN blockchain RPC yet. No live blockchain search has been performed.";
-        }
-    </script>
 </body>
 </html>
