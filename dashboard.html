@@ -30,26 +30,15 @@
         }
         h1, h2, h3, .logo { font-family: 'Orbitron', sans-serif; }
 
-        /* NAVBAR & UNIFIED LOGO STYLING */
+        /* NAVBAR */
         .navbar {
             display: flex; justify-content: space-between; align-items: center;
             padding: 20px 5%; background: rgba(2, 6, 23, 0.8);
             border-bottom: 1px solid var(--border-color);
             position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
         }
-        .logo { 
-            font-size: 22px; font-weight: 900; color: var(--text-main); 
-            letter-spacing: 2px; display: flex; align-items: center; gap: 12px; 
-        }
-        .voin-emblem {
-            display: flex; align-items: center; gap: 8px;
-        }
-        .logo-text-gradient {
-            background: linear-gradient(135deg, #fbbf24 0%, #ffffff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
-        }
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 900; color: var(--text-main); }
+        .logo img { height: 35px; width: auto; object-fit: contain; }
         
         /* Status Jaringan */
         .wallet-status { 
@@ -133,22 +122,10 @@
 <body>
 
     <header class="navbar">
-        <!-- Logo Baru: Gabungan Emblem V dan Tulisan VOIN -->
         <a href="index.html" class="logo">
-            <div class="voin-emblem">
-                <svg width="34" height="30" viewBox="0 0 40 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 10px rgba(251,191,36,0.6));">
-                    <path d="M0 0L15 32H25L40 0H28L20 18L12 0H0Z" fill="url(#vGradient)"/>
-                    <defs>
-                        <linearGradient id="vGradient" x1="0" y1="0" x2="40" y2="36" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#fbbf24"/>
-                            <stop offset="1" stop-color="#f59e0b"/>
-                        </linearGradient>
-                    </defs>
-                </svg>
-                <span class="logo-text-gradient">V-VOIN</span>
-            </div>
+            <img src="assets/file_0000000036b48207b1aa531580373f0a.png" alt="VOIN Logo">
+            <span>VOIN</span>
         </a>
-
         <div class="wallet-status" id="networkStatus">● MAINNET ONLINE</div>
         <button class="btn-gold" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
     </header>
