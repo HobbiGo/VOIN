@@ -8,6 +8,7 @@
     <style>
         :root {
             --bg-dark: #020617;
+            --bg-panel: #0b132b;
             --bg-card: rgba(15, 23, 42, 0.6);
             --gold: #fbbf24;
             --gold-hover: #f59e0b;
@@ -20,6 +21,8 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; text-decoration: none; list-style: none; }
+        html { scroll-behavior: smooth; } /* Membuat klik menu bergeser halus */
+        
         body {
             font-family: 'Inter', sans-serif; background-color: var(--bg-dark);
             color: var(--text-main); background-image: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
@@ -67,7 +70,7 @@
         }
         .btn-outline:hover { border-color: var(--gold); color: var(--gold); box-shadow: var(--glow-gold); }
 
-        /* HERO IMAGE / MECHANICAL EAGLE */
+        /* HERO IMAGE */
         .hero-image {
             flex: 1; max-width: 550px; display: flex; justify-content: center; align-items: center;
         }
@@ -86,6 +89,20 @@
         .stat-item h3 { font-size: 28px; color: var(--gold); margin-bottom: 5px; }
         .stat-item p { color: var(--text-muted); font-size: 14px; }
 
+        /* SECTIONS TAMBAHAN (Agar tombol menu bisa diklik dan menuju ke sini) */
+        .section-content {
+            padding: 80px 5%;
+            border-top: 1px solid var(--border-color);
+        }
+        .section-content h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .section-content h2 span { color: var(--gold); }
+        .section-content p { color: var(--text-muted); font-size: 16px; line-height: 1.6; }
+
         @media (max-width: 960px) {
             .hero { flex-direction: column; text-align: center; padding-top: 40px; }
             .hero-buttons { justify-content: center; }
@@ -97,8 +114,7 @@
 
     <header class="navbar">
         <a href="index.html" class="logo">
-            <!-- Menghubungkan Logo dari folder assets -->
-            <img src="assets/file_0000000036b48207b1aa531580373f0a.png" alt="VOIN Logo">
+            <img src="assets/file_00000000bcc48211a9ab6a56c546480f.jpg" alt="VOIN Logo">
             <span>VOIN</span>
         </a>
         <nav class="nav-links">
@@ -126,8 +142,7 @@
         </div>
 
         <div class="hero-image">
-            <!-- Menghubungkan Gambar Mechanical Eagle dari folder assets -->
-            <img src="assets/file_00000000bcc48211a9ab6a56c546480f.jpg" alt="VOIN Mechanical Eagle and Earth">
+            <img src="assets/file_0000000036b48207b1aa531580373f0a.png" alt="VOIN Wallet">
         </div>
     </section>
 
@@ -145,6 +160,30 @@
             <p>Digital Products</p>
         </div>
     </div>
+
+    <!-- SEKSI TECHNOLOGY -->
+    <section id="technology" class="section-content">
+        <h2>VOIN <span>Technology</span></h2>
+        <p>Built with cutting-edge Web4 architecture, integrating decentralized blockchain networks, high-speed quantum security protocols, and advanced artificial intelligence engines.</p>
+    </section>
+
+    <!-- SEKSI ECOSYSTEM -->
+    <section id="ecosystem" class="section-content">
+        <h2>Global <span>Ecosystem</span></h2>
+        <p>A unified ecosystem consisting of digital assets, secure wallets, decentralized exchanges, staking platforms, and enterprise-grade security suites.</p>
+    </section>
+
+    <!-- SEKSI PRESALE -->
+    <section id="presale" class="section-content">
+        <h2>Token <span>Presale</span></h2>
+        <p>Participate early in the VOIN token allocation. Connect your Web3 wallet via the dashboard to view live allocation rounds and join the presale network securely.</p>
+    </section>
+
+    <!-- SEKSI ROADMAP -->
+    <section id="roadmap" class="section-content">
+        <h2>Project <span>Roadmap</span></h2>
+        <p>Phase 1: Concept & Core Architecture.<br>Phase 2: Mainnet Node Launch & Security Integration.<br>Phase 3: Ecosystem Expansion & Global Exchange Listings.</p>
+    </section>
 
 </body>
 </html>
