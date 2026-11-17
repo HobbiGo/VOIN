@@ -10,30 +10,19 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, onValue, query, limitToLast, off } 
+        import { getDatabase, ref, onValue, query, limitToLast } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDfY21fPt8OoyYKtmnZ-Z9vq4By8WduqGc",
-  authDomain: "voin-coin-ad692.firebaseapp.com",
-  projectId: "voin-coin-ad692",
-  storageBucket: "voin-coin-ad692.firebasestorage.app",
-  messagingSenderId: "220942707813",
-  appId: "1:220942707813:web:d76d6a9af2335a5c9bea8c",
-  measurementId: "G-90VH123WF3"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+        // KONFIGURASI FIREBASE (SUDAH DISESUAIKAN)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDFY21FPt8OoyYKtmnZ-Z9vq4By8WduqGc",
+            authDomain: "voin-coin-ad692.firebaseapp.com",
+            projectId: "voin-coin-ad692",
+            storageBucket: "voin-coin-ad692.firebasestorage.app",
+            messagingSenderId: "220942707813",
+            appId: "1:220942707813:web:d76d6a9af2335a5c9bea8c",
+            measurementId: "G-90VH123WF3",
+            databaseURL: "https://voin-coin-ad692-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -105,7 +94,6 @@ const analytics = getAnalytics(app);
 
         // Realtime listener Firebase
         function initRealtime() {
-            // Path: /sensor → { suhu: 30, kelembaban: 70, timestamp: ... }
             const sensorRef = query(ref(db, 'sensor'), limitToLast(1));
 
             onValue(sensorRef, (snapshot) => {
@@ -136,7 +124,7 @@ const analytics = getAnalytics(app);
                     statusEl.className = 'px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-700';
                 }
 
-                // Push ke chart (maks 20 titik)
+                // Push ke chart
                 const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 timeLabels.push(now);
                 tempHistory.push(suhu);
@@ -151,7 +139,7 @@ const analytics = getAnalytics(app);
             });
         }
 
-        // Ambil riwayat data (maks 50 terakhir)
+        // Ambil riwayat data
         function loadHistory() {
             const historyRef = query(ref(db, 'sensor'), limitToLast(50));
             onValue(historyRef, (snapshot) => {
