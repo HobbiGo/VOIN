@@ -8,12 +8,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } 
-            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getDatabase, ref, onValue, query, limitToLast } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // KONFIGURASI FIREBASE (SUDAH DISESUAIKAN)
+        // KONFIGURASI FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyDFY21FPt8OoyYKtmnZ-Z9vq4By8WduqGc",
             authDomain: "voin-coin-ad692.firebaseapp.com",
@@ -26,29 +24,9 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getDatabase(app);
 
         let chart, tempHistory = [], humidHistory = [], timeLabels = [];
-        let currentUser = null;
-
-        // Proteksi halaman
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                window.location.href = "index.html";
-                return;
-            }
-            currentUser = user;
-            document.getElementById('userEmail').textContent = user.email;
-            initRealtime();
-            initChart();
-        });
-
-        // Logout
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await signOut(auth);
-            window.location.href = "index.html";
-        });
 
         // Inisialisasi grafik
         function initChart() {
@@ -98,7 +76,10 @@
 
             onValue(sensorRef, (snapshot) => {
                 const data = snapshot.val();
-                if (!data) return;
+                if (!data) {
+                    document.getElementById('updateTime').textContent = "Menunggu data dari alat...";
+                    return;
+                }
 
                 const key = Object.keys(data)[0];
                 const val = data[key];
@@ -144,10 +125,15 @@
             const historyRef = query(ref(db, 'sensor'), limitToLast(50));
             onValue(historyRef, (snapshot) => {
                 const data = snapshot.val();
-                if (!data) return;
-                const rows = Object.entries(data).reverse().slice(0, 20);
                 const tbody = document.getElementById('historyBody');
                 tbody.innerHTML = '';
+                
+                if (!data) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="py-6 text-center text-gray-400 text-sm">Belum ada riwayat data</td></tr>';
+                    return;
+                }
+
+                const rows = Object.entries(data).reverse().slice(0, 20);
                 rows.forEach(([key, val]) => {
                     const tgl = val.timestamp ? new Date(val.timestamp).toLocaleString('id-ID') : '-';
                     tbody.innerHTML += `
@@ -159,7 +145,12 @@
                 });
             });
         }
+
+        // Jalankan fungsi langsung tanpa cek login
+        initChart();
+        initRealtime();
         loadHistory();
+
     </script>
 </head>
 <body class="min-h-screen bg-gray-100">
@@ -174,13 +165,7 @@
                 </svg>
                 <h1 class="text-xl font-bold">IoT Monitoring Dashboard</h1>
             </div>
-            <div class="flex items-center gap-4">
-                <span id="userEmail" class="text-sm text-blue-100 hidden sm:inline"></span>
-                <button id="logoutBtn"
-                    class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition">
-                    Logout
-                </button>
-            </div>
+            <!-- Tombol Logout dihilangkan karena tanpa login -->
         </div>
     </nav>
 
