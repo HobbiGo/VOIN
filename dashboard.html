@@ -3,428 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VOIN Protocol - Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <title>VOIN WEB4 Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #c9d1d9; }
-        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        :root {
+            --bg-dark: #020617;
+            --bg-panel: #0b132b;
+            --bg-card: rgba(15, 23, 42, 0.6);
+            --gold: #fbbf24;
+            --gold-hover: #f59e0b;
+            --blue-neon: #3b82f6;
+            --cyan: #06b6d4;
+            --green: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(59, 130, 246, 0.3);
+            --glow-gold: 0 0 15px rgba(251, 191, 36, 0.4);
+            --glow-blue: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; text-decoration: none; list-style: none; }
+        body {
+            font-family: 'Inter', sans-serif; background-color: var(--bg-dark);
+            color: var(--text-main); background-image: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
+            min-height: 100vh; overflow-x: hidden;
+        }
+        h1, h2, h3, .logo { font-family: 'Orbitron', sans-serif; }
+
+        /* NAVBAR */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 5%; background: rgba(2, 6, 23, 0.8);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
+        }
+        .logo { font-size: 24px; font-weight: 900; color: var(--text-main); letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
+        .logo-v { color: var(--gold); text-shadow: var(--glow-gold); }
+        .wallet-status { font-size: 14px; font-weight: 600; color: var(--gold); background: rgba(251,191,36,0.1); padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(251,191,36,0.3); }
+
+        .btn-gold {
+            background: var(--gold); color: #000; padding: 10px 24px;
+            border-radius: 8px; font-weight: 700; font-size: 14px;
+            transition: 0.3s; border: none; cursor: pointer; display: inline-block;
+        }
+        .btn-gold:hover { background: var(--gold-hover); box-shadow: var(--glow-gold); transform: translateY(-2px); }
+
+        /* DASHBOARD LAYOUT */
+        .dashboard-layout { display: flex; min-height: calc(100vh - 80px); }
         
-        /* Glassmorphism & Glow */
-        .glass-panel { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(59, 130, 246, 0.2); transition: all 0.3s ease; }
-        .glass-panel:hover { border-color: rgba(251, 191, 36, 0.4); box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
-        .neon-button { background: #fbbf24; color: #020617; transition: all 0.3s ease; font-weight: bold; }
-        .neon-button:hover { background: #f59e0b; box-shadow: 0 0 15px rgba(251, 191, 36, 0.6); }
-        
-        /* Sidebar */
-        .sidebar-item { transition: all 0.2s; border-left: 4px solid transparent; color: #94a3b8; }
-        .sidebar-item:hover, .sidebar-item.active { background: rgba(59, 130, 246, 0.1); border-left-color: #fbbf24; color: #fbbf24; }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #020617; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px; background: rgba(11, 19, 43, 0.8); backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border-color); padding: 30px 20px; flex-shrink: 0;
+        }
+        .sidebar h3 { font-size: 12px; color: var(--gold); letter-spacing: 1.5px; margin: 20px 0 10px 15px; text-transform: uppercase; }
+        .sidebar a {
+            display: block; color: var(--text-muted); padding: 12px 15px;
+            border-radius: 8px; margin-bottom: 5px; transition: all 0.3s;
+            font-weight: 500; font-size: 14px; border-left: 3px solid transparent;
+        }
+        .sidebar a:hover { background: rgba(59, 130, 246, 0.1); color: var(--gold); border-left-color: var(--gold); padding-left: 20px; }
+
+        /* MAIN CONTENT */
+        .dashboard-main { flex: 1; padding: 40px; overflow-y: auto; }
+        .dashboard-main h1 { font-size: 32px; margin-bottom: 20px; color: #fff; }
+        .dashboard-main h1 span { color: var(--gold); text-shadow: var(--glow-gold); }
+
+        .notice {
+            background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.5);
+            color: var(--gold); padding: 15px; border-radius: 8px;
+            margin-bottom: 30px; font-size: 14px; box-shadow: 0 0 15px rgba(251, 191, 36, 0.1);
+        }
+
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .balance-box, .stat-box {
+            background: var(--bg-card); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; transition: 0.3s;
+        }
+        .balance-box:hover, .stat-box:hover { border-color: rgba(251, 191, 36, 0.5); box-shadow: var(--glow-blue); transform: translateY(-3px); }
+
+        .balance-box h2 { font-size: 38px; color: var(--gold); margin: 10px 0; text-shadow: 0 0 15px rgba(251, 191, 36, 0.3); }
+        .balance-box h2 span { font-size: 18px; color: var(--text-muted); }
+        .balance-box p, .stat-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 15px; }
+
+        .dashboard-panel {
+            background: var(--bg-card); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; margin-bottom: 30px;
+        }
+        .dashboard-panel h2 { font-size: 20px; color: #fff; margin-bottom: 20px; border-bottom: 1px solid rgba(59, 130, 246, 0.2); padding-bottom: 10px; }
+
+        .asset-row, .transaction-row, .security-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #c9d1d9; transition: 0.2s;
+        }
+        .asset-row:hover, .transaction-row:hover, .security-row:hover { background: rgba(59, 130, 246, 0.05); border-radius: 8px; padding: 15px 10px; }
+
+        .coin { width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
+        .voin-coin { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+        .bnb-coin { background: #f3ba2f; color: #000; }
+        .usdt-coin { background: #26a17b; color: #fff; }
+        .eth-coin { background: #627eea; color: #fff; }
+
+        .green { color: var(--green); text-shadow: 0 0 8px rgba(16, 185, 129, 0.3); }
+
+        #explorerSearch {
+            width: 100%; padding: 15px; background: rgba(2, 6, 23, 0.8);
+            border: 1px solid var(--border-color); border-radius: 8px;
+            color: #fff; margin-bottom: 15px; font-family: 'Inter', sans-serif; transition: 0.3s;
+        }
+        #explorerSearch:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 15px rgba(251, 191, 36, 0.2); }
+
+        @media (max-width: 900px) {
+            .dashboard-layout { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); }
+        }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden bg-[#020617]">
+<body>
 
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-[#0b132b] border-r border-blue-900/50 flex flex-col relative z-20">
-        <!-- Logo -->
-        <a href="index.html" class="h-20 flex items-center px-6 border-b border-blue-900/50 hover:bg-blue-900/20 transition group">
-            <div class="w-8 h-8 flex items-center justify-center font-bold text-yellow-400 text-xl mr-3 group-hover:scale-110 transition font-orbitron">V</div>
-            <span class="text-xl font-bold tracking-widest text-white font-orbitron">VOIN</span>
+    <header class="navbar">
+        <a href="index.html" class="logo">
+            <span class="logo-v">V</span> VOIN
         </a>
-        
-        <nav class="flex-1 py-6 space-y-2">
-            <a href="#" onclick="switchTab('home')" id="nav-home" class="sidebar-item active flex items-center px-6 py-3 cursor-pointer font-semibold text-sm">
-                <span class="mr-3 text-lg">🏠</span> Wallet Dashboard
-            </a>
-            <a href="#" onclick="switchTab('presale')" id="nav-presale" class="sidebar-item flex items-center px-6 py-3 cursor-pointer font-semibold text-sm">
-                <span class="mr-3 text-lg">💰</span> Presale
-            </a>
-            <a href="#" onclick="switchTab('earn')" id="nav-earn" class="sidebar-item flex items-center px-6 py-3 cursor-pointer font-semibold text-sm">
-                <span class="mr-3 text-lg">📈</span> Earn
-            </a>
-            <a href="#" onclick="switchTab('markets')" id="nav-markets" class="sidebar-item flex items-center px-6 py-3 cursor-pointer font-semibold text-sm">
-                <span class="mr-3 text-lg">📊</span> Markets
-            </a>
-            <a href="#" onclick="switchTab('transactions')" id="nav-transactions" class="sidebar-item flex items-center px-6 py-3 cursor-pointer font-semibold text-sm">
-                <span class="mr-3 text-lg">📄</span> My Transactions
-            </a>
-        </nav>
+        <div class="wallet-status">● DEMO NETWORK</div>
+        <button class="btn-gold" onclick="connectWallet()">Connect Wallet</button>
+    </header>
 
-        <!-- Bottom Sidebar -->
-        <div class="p-4 border-t border-blue-900/50">
-            <a href="index.html" class="flex items-center justify-center w-full px-4 py-2 mb-4 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition text-sm font-semibold">
-                ← Back to Website
-            </a>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <h3>VOIN WEB4</h3>
+            <a href="#overview">▦ Overview</a>
+            <a href="#assets">◈ My Assets</a>
+            <a href="#transactions">↔ Transactions</a>
+            <a href="#staking">◇ Staking</a>
+            <br>
+            <h3>VOIN SERVICES</h3>
+            <a href="#security">⛨ Security Center</a>
+            <a href="#explorer">⌕ VOIN Explorer</a>
+            <br>
+            <a href="index.html">← Back to Website</a>
+        </aside>
 
-            <!-- Wallet Connect -->
-            <button id="connectBtn" class="w-full px-4 py-2 rounded-lg border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black transition font-bold text-sm">
-                Connect Wallet
-            </button>
-            <div id="walletInfo" class="hidden mt-4 flex items-center gap-3 bg-blue-900/20 p-3 rounded-xl border border-blue-500/30">
-                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs">W</div>
-                <div>
-                    <div class="text-xs font-mono text-white" id="walletAddress">0x...</div>
-                    <div class="text-[10px] text-red-400 cursor-pointer hover:underline" onclick="disconnectWallet()">Disconnect</div>
+        <main class="dashboard-main">
+            <section id="overview">
+                <span class="eyebrow" style="color:var(--gold); font-weight:700; font-size:12px;">PERSONAL WEB3 SPACE</span>
+                <h1>Dashboard <span>Overview</span></h1>
+                <div class="notice">
+                    DEMO MODE: All balances and transactions displayed are sample data. No real blockchain connection.
                 </div>
-            </div>
-        </div>
-    </aside>
 
-    <!-- MAIN CONTENT -->
-    <main class="flex-1 overflow-y-auto relative">
-        <!-- Efek Background Glow -->
-        <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600 rounded-full mix-blend-screen filter blur-[150px] opacity-10 pointer-events-none"></div>
-
-        <!-- Header -->
-        <header class="h-20 border-b border-blue-900/50 flex items-center justify-between px-8 bg-[#020617]/80 backdrop-blur-md sticky top-0 z-10">
-            <div>
-                <div class="text-xs text-gray-400 font-semibold tracking-wider uppercase">VOIN Network</div>
-                <h1 class="text-2xl font-bold text-white font-orbitron" id="pageTitle">Wallet Dashboard</h1>
-            </div>
-            <div class="flex items-center gap-4">
-                <!-- Status Node -->
-                <div class="flex items-center gap-2 px-4 py-2 bg-[#0b132b] rounded-full border border-blue-900/50 shadow-[0_0_10px_rgba(59,130,246,0.1)]">
-                    <div class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" id="nodeStatusDot"></div>
-                    <span class="text-xs font-bold text-gray-300" id="nodeStatus">Node Offline</span>
-                </div>
-                <!-- Profil Dummy -->
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-black font-bold cursor-pointer shadow-[0_0_15px_rgba(251,191,36,0.3)]">
-                    U
-                </div>
-            </div>
-        </header>
-
-        <!-- Content Area -->
-        <div class="p-8 max-w-6xl mx-auto relative z-10">
-            
-            <!-- TAB: HOME (Tampilan Mirip Gambar Referensi) -->
-            <div id="tab-home" class="tab-content block">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    
-                    <!-- KIRI: Info Jaringan & Presale (Col 7) -->
-                    <div class="lg:col-span-7 space-y-6">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="glass-panel rounded-2xl p-6">
-                                <h3 class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Network Status</h3>
-                                <div class="text-xl font-bold text-white font-orbitron" id="homeNodeStatus">Checking...</div>
-                                <p class="text-xs text-gray-500 mt-2" id="homeNodeHeight">Block Height: -</p>
-                            </div>
-                            <div class="glass-panel rounded-2xl p-6">
-                                <h3 class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Current Batch</h3>
-                                <div class="text-2xl font-bold text-yellow-400 font-orbitron">1 <span class="text-sm text-gray-500">/ 10</span></div>
-                                <p class="text-xs text-gray-500 mt-2">Price: $0.001 USD</p>
-                            </div>
-                        </div>
-
-                        <div class="glass-panel p-6 rounded-2xl border-l-4 border-l-yellow-500">
-                            <h2 class="text-lg font-bold mb-2 font-orbitron text-white">Welcome to VOIN Protocol</h2>
-                            <p class="text-gray-400 text-sm mb-4">Your gateway to the quantum-resistant Layer 1 ecosystem. Connect your wallet to view assets and participate in the presale.</p>
-                            <button onclick="switchTab('presale')" class="px-5 py-2 neon-button rounded-lg text-sm">Go to Presale →</button>
-                        </div>
+                <div class="dashboard-grid">
+                    <div class="balance-box">
+                        <small>Total Demo Balance</small>
+                        <h2>12,500.00 <span>VOIN</span></h2>
+                        <p>≈ $3,248.75</p>
+                        <button class="btn-gold" onclick="connectWallet()">Connect Wallet</button>
                     </div>
-
-                    <!-- KANAN: Wallet UI (Col 5) -->
-                    <div class="lg:col-span-5">
-                        <div class="glass-panel rounded-3xl p-6 border-blue-500/30 shadow-[0_0_30px_rgba(59,130,246,0.15)]">
-                            
-                            <!-- Explorer Card -->
-                            <div class="bg-blue-900/20 border border-blue-500/30 rounded-2xl p-4 mb-6 flex items-center gap-4">
-                                <div class="w-10 h-10 rounded-full border-2 border-blue-500 flex items-center justify-center text-yellow-400 font-bold text-lg bg-[#020617] shadow-[0_0_10px_rgba(59,130,246,0.5)]">V</div>
-                                <div class="flex-1">
-                                    <div class="font-bold text-sm text-white">VOIN Explorer</div>
-                                    <div class="text-[10px] text-gray-400 mb-1" id="walletDisplay">Not connected</div>
-                                    <div class="flex items-center gap-1 text-[10px]">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> <span class="text-green-500">Connected</span>
-                                        <span class="bg-green-500/20 text-green-500 px-1.5 py-0.5 rounded ml-1 border border-green-500/30">BSC Mainnet</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Total Balance -->
-                            <div class="mb-6 px-2">
-                                <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
-                                    <span>Total Balance 👁️</span>
-                                    <span class="text-yellow-400 text-lg">🪙</span>
-                                </div>
-                                <div class="text-4xl font-bold text-white font-orbitron mb-1">
-                                    <span id="userBalance">0</span> <span class="text-lg text-yellow-400">VOIN</span>
-                                </div>
-                                <div class="text-sm text-gray-400">≈ $0.00 <span class="text-green-500">(+0.0%)</span></div>
-                            </div>
-
-                            <!-- Action Buttons -->
-                            <div class="grid grid-cols-4 gap-2 mb-8">
-                                <button onclick="switchTab('presale')" class="flex flex-col items-center gap-2 group">
-                                    <div class="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:bg-blue-500/30 transition shadow-[0_0_10px_rgba(59,130,246,0.2)]">↗</div>
-                                    <span class="text-[10px] text-gray-400 group-hover:text-white font-semibold">Buy</span>
-                                </button>
-                                <button class="flex flex-col items-center gap-2 group">
-                                    <div class="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:bg-blue-500/30 transition shadow-[0_0_10px_rgba(59,130,246,0.2)]">↙</div>
-                                    <span class="text-[10px] text-gray-400 group-hover:text-white font-semibold">Receive</span>
-                                </button>
-                                <button class="flex flex-col items-center gap-2 group">
-                                    <div class="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:bg-blue-500/30 transition shadow-[0_0_10px_rgba(59,130,246,0.2)]">🔄</div>
-                                    <span class="text-[10px] text-gray-400 group-hover:text-white font-semibold">Swap</span>
-                                </button>
-                                <button onclick="switchTab('earn')" class="flex flex-col items-center gap-2 group">
-                                    <div class="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:bg-blue-500/30 transition shadow-[0_0_10px_rgba(59,130,246,0.2)]">💎</div>
-                                    <span class="text-[10px] text-gray-400 group-hover:text-white font-semibold">Stake</span>
-                                </button>
-                            </div>
-
-                            <!-- Tabs -->
-                            <div class="flex justify-between border-b border-blue-900/50 mb-4 px-2">
-                                <div class="text-xs font-bold text-yellow-400 border-b-2 border-yellow-400 pb-2 cursor-pointer">Assets</div>
-                                <div class="text-xs font-medium text-gray-500 pb-2 cursor-pointer hover:text-gray-300">Transactions</div>
-                                <div class="text-xs font-medium text-gray-500 pb-2 cursor-pointer hover:text-gray-300">Staking</div>
-                            </div>
-
-                            <!-- Asset List -->
-                            <div class="space-y-4 mb-6">
-                                <!-- VOIN -->
-                                <div class="flex justify-between items-center px-2">
-                                    <div class="flex items-center gap-3 w-1/3">
-                                        <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-xs">V</div>
-                                        <div class="font-bold text-sm text-white">VOIN</div>
-                                    </div>
-                                    <div class="text-right w-1/3">
-                                        <div class="font-bold text-sm text-white" id="assetVoin">0.00</div>
-                                        <div class="text-[10px] text-gray-500">≈ $0.00</div>
-                                    </div>
-                                    <div class="text-right w-1/3 text-xs text-green-500">+0.0%</div>
-                                </div>
-                                <!-- BNB -->
-                                <div class="flex justify-between items-center px-2">
-                                    <div class="flex items-center gap-3 w-1/3">
-                                        <div class="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center text-black font-bold text-[10px]">BNB</div>
-                                        <div class="font-bold text-sm text-white">BNB</div>
-                                    </div>
-                                    <div class="text-right w-1/3">
-                                        <div class="font-bold text-sm text-white">0.00</div>
-                                        <div class="text-[10px] text-gray-500">≈ $0.00</div>
-                                    </div>
-                                    <div class="text-right w-1/3 text-xs text-green-500">+0.0%</div>
-                                </div>
-                                <!-- USDT -->
-                                <div class="flex justify-between items-center px-2">
-                                    <div class="flex items-center gap-3 w-1/3">
-                                        <div class="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-white font-bold text-sm">₮</div>
-                                        <div class="font-bold text-sm text-white">USDT</div>
-                                    </div>
-                                    <div class="text-right w-1/3">
-                                        <div class="font-bold text-sm text-white">0.00</div>
-                                        <div class="text-[10px] text-gray-500">≈ $0.00</div>
-                                    </div>
-                                    <div class="text-right w-1/3 text-xs text-gray-500">+0.0%</div>
-                                </div>
-                            </div>
-
-                            <!-- Bottom Nav -->
-                            <div class="flex justify-between items-center pt-4 border-t border-blue-900/50 relative">
-                                <div class="flex flex-col items-center gap-1 text-yellow-400">
-                                    <span class="text-lg">🏠</span>
-                                    <span class="text-[9px] font-bold">Home</span>
-                                </div>
-                                <div class="flex flex-col items-center gap-1 text-gray-500 hover:text-white cursor-pointer" onclick="switchTab('markets')">
-                                    <span class="text-lg">💠</span>
-                                    <span class="text-[9px]">Markets</span>
-                                </div>
-                                <div class="absolute left-1/2 -translate-x-1/2 -top-8 bg-[#020617] w-14 h-14 rounded-full border-2 border-yellow-500 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.4)]">
-                                    <span class="text-2xl text-yellow-400 font-bold font-orbitron">V</span>
-                                </div>
-                                <div class="flex flex-col items-center gap-1 text-gray-500 hover:text-white cursor-pointer" onclick="switchTab('transactions')">
-                                    <span class="text-lg">🕒</span>
-                                    <span class="text-[9px]">History</span>
-                                </div>
-                                <div class="flex flex-col items-center gap-1 text-gray-500 hover:text-white cursor-pointer">
-                                    <span class="text-lg">⚙️</span>
-                                    <span class="text-[9px]">Settings</span>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="stat-box">
+                        <small>Network Status</small>
+                        <h3 class="green">● Demo Online</h3>
+                        <p>Native network not connected.</p>
+                    </div>
+                    <div class="stat-box">
+                        <small>Security Status</small>
+                        <h3>Protected Concept</h3>
+                        <p>Security integration pending.</p>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- TAB: PRESALE -->
-            <div id="tab-presale" class="tab-content hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="glass-panel p-8 rounded-2xl">
-                        <h2 class="text-2xl font-bold mb-6 font-orbitron text-white">Buy <span class="text-yellow-400">$VOIN</span></h2>
-                        <div class="mb-6">
-                            <label class="block text-sm font-semibold text-gray-400 mb-2">Amount to Pay (USD Simulation)</label>
-                            <div class="relative">
-                                <input type="number" id="buyAmount" value="10" class="w-full bg-[#020617] border border-blue-900/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition">
-                                <span class="absolute right-4 top-3 text-gray-500 font-bold">USD</span>
-                            </div>
-                        </div>
-                        <div class="bg-blue-900/20 rounded-lg p-4 mb-6 border border-blue-500/20">
-                            <div class="flex justify-between mb-2">
-                                <span class="text-gray-400 text-sm">You will receive</span>
-                                <span class="font-bold text-yellow-400" id="estimatedTokens">0 VOIN</span>
-                            </div>
-                        </div>
-                        <button id="buyBtn" class="w-full neon-button py-4 rounded-lg text-lg opacity-50 cursor-not-allowed" disabled>Connect Wallet to Buy</button>
-                    </div>
-                    <div class="glass-panel p-8 rounded-2xl">
-                        <h2 class="text-xl font-bold mb-4 text-white">Contract-based testnet sale</h2>
-                        <p class="text-sm text-gray-400 mb-2">OPEN · Batch 1 · Price: USD 0.001 per VOIN</p>
-                        <p class="text-sm text-gray-400 mb-2">10 batches · 13,000,000 VOIN per batch.</p>
-                        <p class="text-sm text-yellow-500/70 mt-4 border-t border-blue-900/50 pt-4">Test allocations only, not VOIN delivery or mainnet entitlement.</p>
-                    </div>
+            <section id="assets" class="dashboard-panel">
+                <h2>My Assets</h2>
+                <div class="asset-row">
+                    <span class="coin voin-coin">V</span>
+                    <b>VOIN</b>
+                    <strong>12,500.00</strong>
+                    <span class="green">+12.5%</span>
                 </div>
-            </div>
-
-            <!-- TAB: EARN -->
-            <div id="tab-earn" class="tab-content hidden">
-                <div class="glass-panel p-8 rounded-2xl border border-yellow-500/50">
-                    <h2 class="text-2xl font-bold mb-4 text-yellow-400 font-orbitron">⚠️ Earn (Coming Soon)</h2>
-                    <p class="text-gray-400">Staking and yield programs are not yet available. Our validators are currently focused on securing the network and processing the presale.</p>
+                <div class="asset-row">
+                    <span class="coin bnb-coin">◆</span>
+                    <b>BNB</b>
+                    <strong>0.25</strong>
+                    <span class="green">+2.3%</span>
                 </div>
-            </div>
-
-            <!-- TAB: MARKETS -->
-            <div id="tab-markets" class="tab-content hidden">
-                <div class="glass-panel p-8 rounded-2xl">
-                    <h2 class="text-2xl font-bold mb-6 text-white font-orbitron">Markets & Batches</h2>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center border-b border-blue-900/50 pb-3">
-                            <span class="text-gray-300 font-semibold">Batch 1</span> 
-                            <span class="text-yellow-400 font-bold bg-yellow-500/10 px-3 py-1 rounded-full text-xs border border-yellow-500/20">13,000,000 VOIN | Active</span>
-                        </div>
-                        <div class="flex justify-between items-center border-b border-blue-900/50 pb-3">
-                            <span class="text-gray-500">Batch 2 - 10</span> 
-                            <span class="text-gray-600 text-sm">Locked</span>
-                        </div>
-                    </div>
+                <div class="asset-row">
+                    <span class="coin usdt-coin">₮</span>
+                    <b>USDT</b>
+                    <strong>250.00</strong>
+                    <span>0.0%</span>
                 </div>
-            </div>
-
-            <!-- TAB: TRANSACTIONS -->
-            <div id="tab-transactions" class="tab-content hidden">
-                <div class="glass-panel p-8 rounded-2xl">
-                    <h2 class="text-2xl font-bold mb-6 text-white font-orbitron">My Transactions</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-gray-400">
-                            <thead class="text-xs uppercase bg-blue-900/30 text-gray-300 rounded-lg">
-                                <tr>
-                                    <th class="px-6 py-4 rounded-tl-lg">Date</th>
-                                    <th class="px-6 py-4">Type</th>
-                                    <th class="px-6 py-4">Amount</th>
-                                    <th class="px-6 py-4">Status</th>
-                                    <th class="px-6 py-4 rounded-tr-lg">Tx Hash</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b border-blue-900/30 hover:bg-blue-900/10 transition">
-                                    <td class="px-6 py-4">Today, 20:15</td>
-                                    <td class="px-6 py-4 text-yellow-400 font-semibold">Buy Presale</td>
-                                    <td class="px-6 py-4 text-white font-bold">10,000 VOIN</td>
-                                    <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs">Success</span></td>
-                                    <td class="px-6 py-4 font-mono text-xs text-gray-500">0x3a4b...9c1d</td>
-                                </tr>
-                                <tr class="border-b border-blue-900/30 hover:bg-blue-900/10 transition">
-                                    <td class="px-6 py-4">Yesterday, 14:30</td>
-                                    <td class="px-6 py-4 text-yellow-400 font-semibold">Buy Presale</td>
-                                    <td class="px-6 py-4 text-white font-bold">5,000 VOIN</td>
-                                    <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs">Success</span></td>
-                                    <td class="px-6 py-4 font-mono text-xs text-gray-500">0x7f2c...1a9e</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="asset-row">
+                    <span class="coin eth-coin">◆</span>
+                    <b>ETH</b>
+                    <strong>0.08</strong>
+                    <span class="green">+1.8%</span>
                 </div>
-            </div>
+            </section>
 
-        </div>
-    </main>
+            <section id="transactions" class="dashboard-panel">
+                <h2>Recent Transactions</h2>
+                <div class="transaction-row">
+                    <b>Receive VOIN</b>
+                    <span>Demo transaction</span>
+                    <strong class="green">+250 VOIN</strong>
+                </div>
+                <div class="transaction-row">
+                    <b>Send VOIN</b>
+                    <span>Demo transaction</span>
+                    <strong>-50 VOIN</strong>
+                </div>
+                <div class="transaction-row">
+                    <b>Swap Preview</b>
+                    <span>Not broadcast to network</span>
+                    <strong>—</strong>
+                </div>
+            </section>
 
-    <!-- SCRIPT TETAP UTUH (Fungsi Berjalan Normal) -->
+            <section id="security" class="dashboard-panel">
+                <h2>VOIN Security Center</h2>
+                <div class="security-row"><span>⛨</span><div><b>Wallet Protection</b><br><small>Integration pending</small></div></div>
+                <div class="security-row"><span>◉</span><div><b>Authentication Engine</b><br><small>Integration pending</small></div></div>
+                <div class="security-row"><span>⌁</span><div><b>Rate Limiting</b><br><small>Integration pending</small></div></div>
+                <div class="security-row"><span>▤</span><div><b>Security Audit</b><br><small>Integration pending</small></div></div>
+                <div class="security-row"><span>◈</span><div><b>Transaction Monitoring</b><br><small>Integration pending</small></div></div>
+            </section>
+
+            <section id="explorer" class="dashboard-panel">
+                <h2>VOIN Explorer</h2>
+                <input type="text" id="explorerSearch" placeholder="Transaction Hash / Wallet Address">
+                <button class="btn-gold" onclick="searchExplorer()">Search</button>
+                <p id="explorerResult" style="margin-top:15px; color:var(--text-muted);">Explorer is awaiting native blockchain RPC integration.</p>
+            </section>
+
+            <section id="staking" class="dashboard-panel">
+                <h2>VOIN Staking</h2>
+                <p style="color:var(--text-muted); line-height: 1.6;">Staking will be introduced after native network, validator architecture, and security review are completed.</p>
+            </section>
+        </main>
+    </div>
+
+    <!-- SCRIPT TETAP SESUAI ASLINYA -->
     <script>
-        // KONFIGURASI
-        const NODE_URL = "http://127.0.0.1:5000"; 
-        let isConnected = false;
-        let userAddress = null;
-        const currentPrice = 0.001;
-
-        // NAVIGASI TAB
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            
-            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(`nav-${tabId}`).classList.add('active');
-            
-            const titles = {home: 'Wallet Dashboard', presale: 'Presale', earn: 'Earn', markets: 'Markets', transactions: 'My Transactions'};
-            document.getElementById('pageTitle').innerText = titles[tabId];
+        function connectWallet() {
+            alert(
+                "VOIN Wallet\n\n" +
+                "Demo Mode Active.\n" +
+                "Wallet integration will be enabled after network verification."
+            );
         }
 
-        // CEK NODE
-        async function checkNode() {
-            try {
-                const res = await fetch(`${NODE_URL}/info`);
-                const data = await res.json();
-                
-                document.getElementById('nodeStatus').innerText = "Node Online";
-                document.getElementById('nodeStatusDot').className = "w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse";
-                document.getElementById('homeNodeStatus').innerText = "Connected (Devnet)";
-                document.getElementById('homeNodeHeight').innerText = `Block Height: ${data.height}`;
-            } catch (e) {
-                document.getElementById('nodeStatus').innerText = "Node Offline";
-                document.getElementById('nodeStatusDot').className = "w-2.5 h-2.5 rounded-full bg-red-500";
-                document.getElementById('homeNodeStatus').innerText = "Offline";
+        function searchExplorer() {
+            const input = document.getElementById("explorerSearch");
+            const result = document.getElementById("explorerResult");
+
+            if (!input || !result) return;
+
+            if (input.value.trim() === "") {
+                result.innerText = "Please enter transaction hash or wallet address.";
+                return;
             }
+
+            result.innerText =
+                "Explorer is not connected to VOIN blockchain RPC yet. " +
+                "No live blockchain search has been performed.";
         }
-
-        // METAMASK CONNECT
-        document.getElementById('connectBtn').addEventListener('click', async () => {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    userAddress = accounts[0];
-                    isConnected = true;
-                    
-                    document.getElementById('connectBtn').classList.add('hidden');
-                    document.getElementById('walletInfo').classList.remove('hidden');
-                    
-                    const shortAddr = userAddress.substring(0, 6) + "..." + userAddress.slice(-4);
-                    document.getElementById('walletAddress').innerText = shortAddr;
-                    document.getElementById('walletDisplay').innerText = shortAddr;
-                    
-                    const buyBtn = document.getElementById('buyBtn');
-                    buyBtn.disabled = false;
-                    buyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    buyBtn.innerText = "Buy $VOIN Now";
-                } catch (error) { alert("Koneksi ditolak."); }
-            } else { alert("MetaMask tidak terdeteksi di browser ini."); }
-        });
-
-        function disconnectWallet() {
-            isConnected = false;
-            userAddress = null;
-            document.getElementById('walletInfo').classList.add('hidden');
-            document.getElementById('connectBtn').classList.remove('hidden');
-            document.getElementById('walletDisplay').innerText = "Not connected";
-            
-            const buyBtn = document.getElementById('buyBtn');
-            buyBtn.disabled = true;
-            buyBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            buyBtn.innerText = "Connect Wallet to Buy";
-        }
-
-        // KALKULASI PRESALE
-        document.getElementById('buyAmount').addEventListener('input', () => {
-            const usd = parseFloat(document.getElementById('buyAmount').value) || 0;
-            document.getElementById('estimatedTokens').innerText = `${(usd / currentPrice).toLocaleString()} VOIN`;
-        });
-
-        // INIT
-        setInterval(checkNode, 3000);
-        checkNode();
     </script>
 </body>
 </html>
