@@ -30,15 +30,26 @@
         }
         h1, h2, h3, .logo { font-family: 'Orbitron', sans-serif; }
 
-        /* NAVBAR */
+        /* NAVBAR & UNIFIED LOGO STYLING */
         .navbar {
             display: flex; justify-content: space-between; align-items: center;
             padding: 20px 5%; background: rgba(2, 6, 23, 0.8);
             border-bottom: 1px solid var(--border-color);
             position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
         }
-        .logo { font-size: 24px; font-weight: 900; color: var(--text-main); letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
-        .logo-v { color: var(--gold); text-shadow: var(--glow-gold); }
+        .logo { 
+            font-size: 22px; font-weight: 900; color: var(--text-main); 
+            letter-spacing: 2px; display: flex; align-items: center; gap: 12px; 
+        }
+        .voin-emblem {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .logo-text-gradient {
+            background: linear-gradient(135deg, #fbbf24 0%, #ffffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+        }
         
         /* Status Jaringan */
         .wallet-status { 
@@ -122,13 +133,23 @@
 <body>
 
     <header class="navbar">
+        <!-- Logo Baru: Gabungan Emblem V dan Tulisan VOIN -->
         <a href="index.html" class="logo">
-            <span class="logo-v">V</span> VOIN
+            <div class="voin-emblem">
+                <svg width="34" height="30" viewBox="0 0 40 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 10px rgba(251,191,36,0.6));">
+                    <path d="M0 0L15 32H25L40 0H28L20 18L12 0H0Z" fill="url(#vGradient)"/>
+                    <defs>
+                        <linearGradient id="vGradient" x1="0" y1="0" x2="40" y2="36" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#fbbf24"/>
+                            <stop offset="1" stop-color="#f59e0b"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span class="logo-text-gradient">V-VOIN</span>
+            </div>
         </a>
-        <!-- Status diubah jadi LIVE -->
+
         <div class="wallet-status" id="networkStatus">● MAINNET ONLINE</div>
-        
-        <!-- Tombol ini sekarang memanggil fungsi MetaMask asli -->
         <button class="btn-gold" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
     </header>
 
@@ -151,20 +172,16 @@
             <section id="overview">
                 <span class="eyebrow" style="color:var(--gold); font-weight:700; font-size:12px;">PERSONAL WEB3 SPACE</span>
                 <h1>Dashboard <span>Overview</span></h1>
-                
-                <!-- Kotak Notifikasi Demo dihapus karena sudah live -->
 
                 <div class="dashboard-grid">
                     <div class="balance-box">
                         <small>Total Balance</small>
-                        <!-- Angka saldo ini nanti akan diperbarui otomatis oleh JS jika terhubung ke kontrak -->
                         <h2 id="liveBalance">0.00 <span>VOIN</span></h2>
                         <p id="liveBalanceUsd">≈ $0.00</p>
                         <button class="btn-gold" onclick="connectWallet()">Connect Wallet</button>
                     </div>
                     <div class="stat-box">
                         <small>Network Status</small>
-                        <!-- Status diubah jadi Live -->
                         <h3 class="green">● Live Node Connected</h3>
                         <p>Waiting for wallet connection.</p>
                     </div>
@@ -220,30 +237,22 @@
         </main>
     </div>
 
-    <!-- SCRIPT BARU: TERHUBUNG KE METAMASK ASLI -->
     <script>
-        // Fungsi untuk koneksi ke Wallet (MetaMask)
         async function connectWallet() {
             if (typeof window.ethereum !== 'undefined') {
                 try {
-                    // 1. Minta akses akun
                     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
                     const userAddress = accounts[0];
                     
-                    // 2. Ubah UI tombol dan status
                     const shortAddr = userAddress.substring(0, 6) + "..." + userAddress.slice(-4);
                     document.getElementById('connectBtn').innerText = shortAddr;
-                    document.getElementById('connectBtn').style.background = '#10b981'; // Jadi Hijau
+                    document.getElementById('connectBtn').style.background = '#10b981';
                     document.getElementById('connectBtn').style.color = '#fff';
                     
                     document.getElementById('walletStatusText').innerText = "Connected";
                     document.getElementById('walletAddressText').innerText = shortAddr;
                     
-                    // 3. Di sinilah kamu memanggil fungsi untuk mengambil saldo asli dari Blockchain VOIN
-                    // fetchBalanceFromBlockchain(userAddress);
-                    
                     alert("Wallet Berhasil Terhubung!\n\nAddress: " + userAddress);
-
                 } catch (error) {
                     if (error.code === 4001) {
                         alert("Koneksi ditolak oleh pengguna.");
@@ -256,7 +265,6 @@
             }
         }
 
-        // Fungsi Pencarian Explorer
         async function searchExplorer() {
             const input = document.getElementById("explorerSearch");
             const result = document.getElementById("explorerResult");
@@ -269,7 +277,6 @@
             result.innerText = "Searching...";
             result.style.color = "#fbbf24";
 
-            // Simulasi loading (karena kamu belum memberikan API Endpoint untuk pencarian)
             setTimeout(() => {
                 result.innerText = "Explorer is currently reading data from the live network. (API Endpoint pending)";
                 result.style.color = "#94a3b8";
