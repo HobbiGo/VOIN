@@ -1,295 +1,272 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VOIN Protocol - Dashboard</title>
+    <title>Dashboard - IoT Monitoring</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Space Grotesk', sans-serif; background-color: #0b1120; color: #c9d1d9; }
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid #334155; }
-        .neon-text { color: #2dd4bf; text-shadow: 0 0 10px rgba(45, 212, 191, 0.5); }
-        .neon-button { background: #2dd4bf; color: #0d1117; transition: all 0.3s ease; }
-        .neon-button:hover { background: #14b8a6; box-shadow: 0 0 15px rgba(45, 212, 191, 0.7); }
-        .sidebar-item { transition: all 0.2s; border-left: 4px solid transparent; }
-        .sidebar-item:hover, .sidebar-item.active { background: rgba(45, 212, 191, 0.1); border-left-color: #2dd4bf; color: #2dd4bf; }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } 
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, onValue, query, limitToLast, off } 
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // 🔥 GANTI DENGAN KONFIG FIREBASE ANDA (SAMA DENGAN index.html)
+        const firebaseConfig = {
+            apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            authDomain: "your-project.firebaseapp.com",
+            databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+            projectId: "your-project",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let chart, tempHistory = [], humidHistory = [], timeLabels = [];
+        let currentUser = null;
+
+        // Proteksi halaman
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "index.html";
+                return;
+            }
+            currentUser = user;
+            document.getElementById('userEmail').textContent = user.email;
+            initRealtime();
+            initChart();
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await signOut(auth);
+            window.location.href = "index.html";
+        });
+
+        // Inisialisasi grafik
+        function initChart() {
+            const ctx = document.getElementById('chart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timeLabels,
+                    datasets: [
+                        {
+                            label: 'Suhu (°C)',
+                            data: tempHistory,
+                            borderColor: 'rgb(239, 68, 68)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 2
+                        },
+                        {
+                            label: 'Kelembaban (%)',
+                            data: humidHistory,
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        y: { beginAtZero: false, grid: { color: '#e5e7eb' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Realtime listener Firebase
+        function initRealtime() {
+            // Path: /sensor → { suhu: 30, kelembaban: 70, timestamp: ... }
+            const sensorRef = query(ref(db, 'sensor'), limitToLast(1));
+
+            onValue(sensorRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+
+                const key = Object.keys(data)[0];
+                const val = data[key];
+                const suhu = parseFloat(val.suhu) || 0;
+                const kelembaban = parseFloat(val.kelembaban) || 0;
+
+                // Update UI angka
+                document.getElementById('suhu').textContent = suhu.toFixed(1);
+                document.getElementById('kelembaban').textContent = kelembaban.toFixed(1);
+                document.getElementById('updateTime').textContent = 
+                    new Date().toLocaleTimeString('id-ID');
+
+                // Status badge
+                const statusEl = document.getElementById('status');
+                if (suhu > 35 || kelembaban > 80) {
+                    statusEl.textContent = '⚠️ Waspada';
+                    statusEl.className = 'px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-700';
+                } else if (suhu > 30 || kelembaban > 70) {
+                    statusEl.textContent = '⚡ Normal Tinggi';
+                    statusEl.className = 'px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-700';
+                } else {
+                    statusEl.textContent = '✅ Normal';
+                    statusEl.className = 'px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-700';
+                }
+
+                // Push ke chart (maks 20 titik)
+                const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                timeLabels.push(now);
+                tempHistory.push(suhu);
+                humidHistory.push(kelembaban);
+
+                if (timeLabels.length > 20) {
+                    timeLabels.shift();
+                    tempHistory.shift();
+                    humidHistory.shift();
+                }
+                if (chart) chart.update('none');
+            });
+        }
+
+        // Ambil riwayat data (maks 50 terakhir)
+        function loadHistory() {
+            const historyRef = query(ref(db, 'sensor'), limitToLast(50));
+            onValue(historyRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+                const rows = Object.entries(data).reverse().slice(0, 20);
+                const tbody = document.getElementById('historyBody');
+                tbody.innerHTML = '';
+                rows.forEach(([key, val]) => {
+                    const tgl = val.timestamp ? new Date(val.timestamp).toLocaleString('id-ID') : '-';
+                    tbody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-2 px-3 text-sm text-gray-600">${tgl}</td>
+                            <td class="py-2 px-3 text-sm font-medium text-red-600">${parseFloat(val.suhu).toFixed(1)} °C</td>
+                            <td class="py-2 px-3 text-sm font-medium text-blue-600">${parseFloat(val.kelembaban).toFixed(1)} %</td>
+                        </tr>`;
+                });
+            });
+        }
+        loadHistory();
+    </script>
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="min-h-screen bg-gray-100">
 
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-[#0f172a] border-r border-gray-800 flex flex-col">
-        <!-- Logo (Bisa diklik untuk kembali ke Home) -->
-        <a href="index.html" class="h-20 flex items-center px-6 border-b border-gray-800 hover:bg-gray-800 transition group">
-            <div class="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center font-bold text-black text-lg mr-3 group-hover:scale-110 transition">V</div>
-            <span class="text-xl font-bold tracking-wider text-white">VOIN</span>
-        </a>
-        
-        <nav class="flex-1 py-6 space-y-2">
-            <a href="#" onclick="switchTab('home')" id="nav-home" class="sidebar-item active flex items-center px-6 py-3 cursor-pointer">
-                <span class="mr-3">ߏ</span> Home
-            </a>
-            <a href="#" onclick="switchTab('presale')" id="nav-presale" class="sidebar-item flex items-center px-6 py-3 cursor-pointer">
-                <span class="mr-3">ߒ</span> Presale
-            </a>
-            <a href="#" onclick="switchTab('earn')" id="nav-earn" class="sidebar-item flex items-center px-6 py-3 cursor-pointer">
-                <span class="mr-3">ߓ</span> Earn
-            </a>
-            <a href="#" onclick="switchTab('markets')" id="nav-markets" class="sidebar-item flex items-center px-6 py-3 cursor-pointer">
-                <span class="mr-3">ߓ</span> Markets
-            </a>
-            <a href="#" onclick="switchTab('transactions')" id="nav-transactions" class="sidebar-item flex items-center px-6 py-3 cursor-pointer">
-                <span class="mr-3">ߓ</span> My Transactions
-            </a>
-        </nav>
+    <!-- Navbar -->
+    <nav class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <h1 class="text-xl font-bold">IoT Monitoring Dashboard</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="userEmail" class="text-sm text-blue-100 hidden sm:inline"></span>
+                <button id="logoutBtn"
+                    class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
 
-        <!-- Bottom Sidebar -->
-        <div class="p-4 border-t border-gray-800">
-            <!-- Tombol Kembali ke Home -->
-            <a href="index.html" class="flex items-center justify-center w-full px-4 py-2 mb-4 rounded-md border border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition text-sm">
-                ← Back to Website
-            </a>
+    <main class="max-w-7xl mx-auto px-4 py-8">
 
-            <!-- Wallet Info -->
-            <button id="connectBtn" class="w-full px-4 py-2 rounded-md border border-teal-500 text-teal-400 hover:bg-teal-500 hover:text-black transition font-medium text-sm">
-                Connect Wallet
-            </button>
-            <div id="walletInfo" class="hidden mt-4 flex items-center gap-3 bg-[#1e293b] p-3 rounded-lg border border-gray-700">
-                <div class="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-black font-bold">W</div>
-                <div>
-                    <div class="text-xs font-mono text-white" id="walletAddress">0x...</div>
-                    <div class="text-xs text-red-400 cursor-pointer hover:underline" onclick="disconnectWallet()">Disconnect</div>
+        <!-- Status -->
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Monitoring Realtime</h2>
+                <p class="text-gray-500 text-sm">Update terakhir: <span id="updateTime">-</span></p>
+            </div>
+            <span id="status" class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-600">
+                Menunggu data...
+            </span>
+        </div>
+
+        <!-- Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Suhu -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-red-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Suhu</p>
+                        <p class="text-4xl font-bold text-gray-800 mt-2">
+                            <span id="suhu">--</span>
+                            <span class="text-xl text-gray-400">°C</span>
+                        </p>
+                    </div>
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zM9 19V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kelembaban -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Kelembaban</p>
+                        <p class="text-4xl font-bold text-gray-800 mt-2">
+                            <span id="kelembaban">--</span>
+                            <span class="text-xl text-gray-400">%</span>
+                        </p>
+                    </div>
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                        </svg>
+                    </div>
                 </div>
             </div>
         </div>
-    </aside>
 
-    <!-- MAIN CONTENT -->
-    <main class="flex-1 overflow-y-auto bg-[#0b1120] relative">
-        <!-- Header -->
-        <header class="h-20 border-b border-gray-800 flex items-center justify-between px-8 bg-[#0b1120] bg-opacity-90 sticky top-0 z-10">
-            <div>
-                <div class="text-sm text-gray-400">Welcome back,</div>
-                <h1 class="text-2xl font-bold text-white" id="pageTitle">Dashboard</h1>
+        <!-- Chart -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Grafik Realtime</h3>
+            <div style="height: 320px;">
+                <canvas id="chart"></canvas>
             </div>
-            <div class="flex items-center gap-4">
-                <!-- Status Node -->
-                <div class="flex items-center gap-2 px-4 py-2 bg-[#0f172a] rounded-full border border-gray-700">
-                    <div class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" id="nodeStatusDot"></div>
-                    <span class="text-sm font-medium text-gray-300" id="nodeStatus">Node Offline</span>
-                </div>
-                <!-- Profil Dummy -->
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-blue-500 flex items-center justify-center text-white font-bold cursor-pointer">
-                    U
-                </div>
-            </div>
-        </header>
+        </div>
 
-        <!-- Content Area -->
-        <div class="p-8 max-w-6xl mx-auto">
-            
-            <!-- TAB: HOME -->
-            <div id="tab-home" class="tab-content block">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="glass-panel rounded-xl p-6">
-                        <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Network Status</h3>
-                        <div class="text-2xl font-bold text-white" id="homeNodeStatus">Checking...</div>
-                        <p class="text-xs text-gray-500 mt-2" id="homeNodeHeight">Block Height: -</p>
-                    </div>
-                    <div class="glass-panel rounded-xl p-6">
-                        <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Current Batch</h3>
-                        <div class="text-3xl font-bold text-teal-400">1 <span class="text-lg text-gray-500">/ 10</span></div>
-                        <p class="text-xs text-gray-500 mt-2">Price: $0.001 USD</p>
-                    </div>
-                    <div class="glass-panel rounded-xl p-6">
-                        <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Your Allocation</h3>
-                        <div class="text-3xl font-bold text-white"><span id="userBalance">0</span> <span class="text-lg text-teal-500">VOIN</span></div>
-                        <p class="text-xs text-gray-500 mt-2">Wallet: <span id="walletDisplay">Not connected</span></p>
-                    </div>
-                </div>
-                <div class="glass-panel p-8 rounded-xl">
-                    <h2 class="text-xl font-bold mb-4">Welcome to VOIN Protocol</h2>
-                    <p class="text-gray-400 mb-4">Your gateway to the quantum-resistant Layer 1 ecosystem. Use the sidebar to navigate through the presale, markets, and your transaction history.</p>
-                    <button onclick="switchTab('presale')" class="px-6 py-2 neon-button rounded-lg font-bold">Go to Presale</button>
-                </div>
+        <!-- Riwayat -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Riwayat Data (20 Terakhir)</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-50 text-left">
+                            <th class="py-3 px-3 text-sm font-semibold text-gray-600">Waktu</th>
+                            <th class="py-3 px-3 text-sm font-semibold text-gray-600">Suhu</th>
+                            <th class="py-3 px-3 text-sm font-semibold text-gray-600">Kelembaban</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr>
+                            <td colspan="3" class="py-6 text-center text-gray-400 text-sm">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-
-            <!-- TAB: PRESALE -->
-            <div id="tab-presale" class="tab-content hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="glass-panel p-8 rounded-xl">
-                        <h2 class="text-2xl font-bold mb-6">Buy <span class="text-teal-400">$VOIN</span></h2>
-                        <div class="mb-6">
-                            <label class="block text-sm text-gray-400 mb-2">Amount to Pay (USD Simulation)</label>
-                            <div class="relative">
-                                <input type="number" id="buyAmount" value="10" class="w-full bg-[#0b1120] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-teal-500">
-                                <span class="absolute right-4 top-3 text-gray-500 font-bold">USD</span>
-                            </div>
-                        </div>
-                        <div class="bg-[#0f172a] rounded-lg p-4 mb-6 border border-gray-800">
-                            <div class="flex justify-between mb-2">
-                                <span class="text-gray-400">You will receive</span>
-                                <span class="font-bold text-teal-400" id="estimatedTokens">0 VOIN</span>
-                            </div>
-                        </div>
-                        <button id="buyBtn" class="w-full neon-button font-bold py-4 rounded-lg text-lg opacity-50 cursor-not-allowed" disabled>Connect Wallet to Buy</button>
-                    </div>
-                    <div class="glass-panel p-8 rounded-xl">
-                        <h2 class="text-xl font-bold mb-4">Contract-based testnet sale</h2>
-                        <p class="text-sm text-gray-400 mb-2">OPEN · Batch 1 · Price: USD 0.001 per VOIN</p>
-                        <p class="text-sm text-gray-400 mb-2">10 batches · 13,000,000 VOIN per batch.</p>
-                        <p class="text-sm text-gray-400">Test allocations only, not VOIN delivery or mainnet entitlement.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB: EARN -->
-            <div id="tab-earn" class="tab-content hidden">
-                <div class="glass-panel p-8 rounded-xl border border-yellow-500 border-opacity-50">
-                    <h2 class="text-2xl font-bold mb-4 text-yellow-400">⚠️ Earn (Coming Soon)</h2>
-                    <p class="text-gray-400">Staking and yield programs are not yet available. Our validators are currently focused on securing the network and processing the presale.</p>
-                </div>
-            </div>
-
-            <!-- TAB: MARKETS -->
-            <div id="tab-markets" class="tab-content hidden">
-                <div class="glass-panel p-8 rounded-xl">
-                    <h2 class="text-2xl font-bold mb-4">Markets & Batches</h2>
-                    <div class="space-y-4">
-                        <div class="flex justify-between border-b border-gray-700 pb-2"><span>Batch 1</span> <span class="text-teal-400">13,000,000 VOIN | Active</span></div>
-                        <div class="flex justify-between border-b border-gray-700 pb-2"><span>Batch 2 - 10</span> <span class="text-gray-500">Locked</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB: TRANSACTIONS -->
-            <div id="tab-transactions" class="tab-content hidden">
-                <div class="glass-panel p-8 rounded-xl">
-                    <h2 class="text-2xl font-bold mb-6">My Transactions</h2>
-                    <!-- Tabel Transaksi Dummy -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-gray-400">
-                            <thead class="text-xs uppercase bg-[#0f172a] text-gray-300">
-                                <tr>
-                                    <th class="px-6 py-3 rounded-tl-lg">Date</th>
-                                    <th class="px-6 py-3">Type</th>
-                                    <th class="px-6 py-3">Amount</th>
-                                    <th class="px-6 py-3">Status</th>
-                                    <th class="px-6 py-3 rounded-tr-lg">Tx Hash</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b border-gray-700 hover:bg-gray-800 transition">
-                                    <td class="px-6 py-4">Today, 20:15</td>
-                                    <td class="px-6 py-4 text-teal-400">Buy Presale</td>
-                                    <td class="px-6 py-4 text-white">10,000 VOIN</td>
-                                    <td class="px-6 py-4"><span class="px-2 py-1 bg-green-900 text-green-400 rounded text-xs">Success</span></td>
-                                    <td class="px-6 py-4 font-mono text-xs">0x3a4b...9c1d</td>
-                                </tr>
-                                <tr class="border-b border-gray-700 hover:bg-gray-800 transition">
-                                    <td class="px-6 py-4">Yesterday, 14:30</td>
-                                    <td class="px-6 py-4 text-teal-400">Buy Presale</td>
-                                    <td class="px-6 py-4 text-white">5,000 VOIN</td>
-                                    <td class="px-6 py-4"><span class="px-2 py-1 bg-green-900 text-green-400 rounded text-xs">Success</span></td>
-                                    <td class="px-6 py-4 font-mono text-xs">0x7f2c...1a9e</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </main>
 
-    <script>
-        // KONFIGURASI
-        const NODE_URL = "http://127.0.0.1:5000"; // Ganti dengan IP VPS Anda nanti
-        let isConnected = false;
-        let userAddress = null;
-        const currentPrice = 0.001;
-
-        // NAVIGASI TAB
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            
-            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(`nav-${tabId}`).classList.add('active');
-            
-            const titles = {home: 'Dashboard', presale: 'Presale', earn: 'Earn', markets: 'Markets', transactions: 'My Transactions'};
-            document.getElementById('pageTitle').innerText = titles[tabId];
-        }
-
-        // CEK NODE
-        async function checkNode() {
-            try {
-                const res = await fetch(`${NODE_URL}/info`);
-                const data = await res.json();
-                
-                // Update Header
-                document.getElementById('nodeStatus').innerText = "Node Online";
-                document.getElementById('nodeStatusDot').className = "w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse";
-                
-                // Update Home Tab
-                document.getElementById('homeNodeStatus').innerText = "Connected (Devnet)";
-                document.getElementById('homeNodeHeight').innerText = `Block Height: ${data.height}`;
-            } catch (e) {
-                // Update Header
-                document.getElementById('nodeStatus').innerText = "Node Offline";
-                document.getElementById('nodeStatusDot').className = "w-2.5 h-2.5 rounded-full bg-red-500";
-                
-                // Update Home Tab
-                document.getElementById('homeNodeStatus').innerText = "Offline";
-            }
-        }
-
-        // METAMASK CONNECT
-        document.getElementById('connectBtn').addEventListener('click', async () => {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    userAddress = accounts[0];
-                    isConnected = true;
-                    
-                    document.getElementById('connectBtn').classList.add('hidden');
-                    document.getElementById('walletInfo').classList.remove('hidden');
-                    
-                    const shortAddr = userAddress.substring(0, 6) + "..." + userAddress.slice(-4);
-                    document.getElementById('walletAddress').innerText = shortAddr;
-                    document.getElementById('walletDisplay').innerText = shortAddr;
-                    
-                    const buyBtn = document.getElementById('buyBtn');
-                    buyBtn.disabled = false;
-                    buyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    buyBtn.innerText = "Buy $VOIN Now";
-                } catch (error) { alert("Koneksi ditolak."); }
-            } else { alert("MetaMask tidak terdeteksi di browser ini."); }
-        });
-
-        function disconnectWallet() {
-            isConnected = false;
-            userAddress = null;
-            document.getElementById('walletInfo').classList.add('hidden');
-            document.getElementById('connectBtn').classList.remove('hidden');
-            document.getElementById('walletDisplay').innerText = "Not connected";
-            
-            const buyBtn = document.getElementById('buyBtn');
-            buyBtn.disabled = true;
-            buyBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            buyBtn.innerText = "Connect Wallet to Buy";
-        }
-
-        // KALKULASI
-        document.getElementById('buyAmount').addEventListener('input', () => {
-            const usd = parseFloat(document.getElementById('buyAmount').value) || 0;
-            document.getElementById('estimatedTokens').innerText = `${(usd / currentPrice).toLocaleString()} VOIN`;
-        });
-
-        // INIT
-        setInterval(checkNode, 3000);
-        checkNode();
-    </script>
 </body>
 </html>
