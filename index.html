@@ -3,13 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT Monitoring</title>
-    <script>
-        // Otomatis arahkan ke dashboard saat halaman ini dibuka
-        window.location.replace("dashboard.html");
-    </script>
+    <title>VOIN Coin - Official Presale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <p class="text-gray-500 font-semibold">Mengalihkan ke Dashboard...</p>
+<body class="bg-gray-900 text-white font-sans min-h-screen flex flex-col items-center justify-center">
+
+    <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-blue-400">VOIN COIN</h1>
+            <p class="text-gray-400 text-sm mt-1">Official Presale Mainnet</p>
+        </div>
+
+        <!-- Statistik Kuota -->
+        <div class="bg-gray-900 rounded-lg p-4 mb-6">
+            <div class="flex justify-between text-sm mb-2">
+                <span class="text-gray-400">Terjual:</span>
+                <span id="tokensSold" class="font-bold text-green-400">Memuat...</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-400">Sisa Kuota:</span>
+                <span id="tokensRemaining" class="font-bold text-yellow-400">Memuat...</span>
+            </div>
+        </div>
+
+        <!-- Form Pembelian -->
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Alamat Wallet VOIN Anda</label>
+                <input type="text" id="walletAddress" placeholder="0x..." class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Jumlah Pembayaran (USDT/IDR)</label>
+                <input type="number" id="amountPaid" placeholder="Contoh: 100" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500">
+            </div>
+            <button onclick="buyTokens()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
+                Beli VOIN Sekarang
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Ganti URL ini dengan URL VPS/Server Anda nanti
+        const API_URL = "http://127.0.0.1:5000"; 
+
+        // Muat statistik saat halaman dibuka
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_URL}/api/presale-stats`);
+                const data = await res.json();
+                
+                document.getElementById('tokensSold').innerText = data.tokens_sold.toLocaleString('id-ID') + ' VOIN';
+                document.getElementById('tokensRemaining').innerText = data.tokens_remaining.toLocaleString('id-ID') + ' VOIN';
+            } catch (e) {
+                console.error("Gagal konek ke Node", e);
+            }
+        }
+
+        // Fungsi Beli
+        async function buyTokens() {
+            const address = document.getElementById('walletAddress').value;
+            const amount = document.getElementById('amountPaid').value;
+
+            if(!address || !amount) {
+                Swal.fire('Error', 'Isi alamat wallet dan jumlah pembayaran!', 'error');
+                return;
+            }
+
+            Swal.showLoading();
+
+            try {
+                const response = await fetch(`${API_URL}/api/buy`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        wallet_address: address,
+                        amount_paid: parseFloat(amount)
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    Swal.fire('Berhasil!', result.message, 'success');
+                    loadStats(); // Refresh sisa kuota
+                } else {
+                    Swal.fire('Gagal', result.reason, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Tidak dapat terhubung ke server Node', 'error');
+            }
+        }
+
+        // Jalankan saat pertama kali dimuat
+        loadStats();
+    </script>
 </body>
 </html>
