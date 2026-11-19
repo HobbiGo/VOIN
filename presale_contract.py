@@ -1,54 +1,40 @@
-import datetime
+# presale_contract.py
 
 class VOINPresaleContract:
-    def __init__(self, treasury_address):
-        self.contract_name = "VOIN_Presale_V1"
-        self.treasury_address = 0xAEb22359588A50e6F746004E66418Eb2c978dAA2
-        self.total_presale_allocation = 130_000_000
-        self.total_batches = 10
-        self.tokens_per_batch = self.total_presale_allocation // self.total_batches
+    def __init__(self, state):
+        self.state = state
+        self.total_supply = 260000000
+        self.presale_allocation = 156000000  # 60% dari 260 Juta
+        self.tokens_sold = 0
         
-        self.batch_prices = {
-            1: 0.001, 2: 0.002, 3: 0.004, 4: 0.008, 5: 0.015,
-            6: 0.025, 7: 0.040, 8: 0.060, 9: 0.080, 10: 0.100
-        }
+        # HARGA PRESALE: 
+        # Misal 1 USDT/Rupiah (dalam satuan unit) = 10.000 VOIN
+        # Silakan sesuaikan rate ini dengan strategi bisnis Anda
+        self.voin_per_unit = 10000 
+
+    def buy_tokens(self, buyer_address, amount_paid):
+        # 1. Hitung VOIN yang didapat pembeli
+        tokens_to_receive = amount_paid * self.voin_per_unit
         
-        self.current_batch = 1
-        self.tokens_sold_current_batch = 0
-        self.total_tokens_sold = 0
-        self.investors = {} # Mencatat alamat pembeli -> jumlah VOIN
+        # 2. Cek apakah kuota presale habis
+        if self.tokens_sold + tokens_to_receive > self.presale_allocation:
+            return {
+                "status": "failed", 
+                "reason": "Maaf, alokasi presale 156 Juta VOIN sudah habis!"
+            }
 
-    def execute(self, sender_address, usd_amount):
-        """Fungsi utama yang dipanggil saat investor membeli."""
-        if self.current_batch > self.total_batches:
-            raise Exception("Presale has ended.")
-
-        price = self.batch_prices[self.current_batch]
-        tokens_to_receive = usd_amount / price
-
-        remaining_in_batch = self.tokens_per_batch - self.tokens_sold_current_batch
+        # 3. Proses Pembayaran (Di sini asumsinya amount_paid sudah tervalidasi lunas)
+        # 4. Tambahkan saldo VOIN ke dompet pembeli
+        self.state.add_balance(buyer_address, tokens_to_receive)
         
-        if tokens_to_receive > remaining_in_batch:
-            tokens_to_receive = remaining_in_batch
-            actual_usd_spent = tokens_to_receive * price
-            refund = usd_amount - actual_usd_spent
-        else:
-            actual_usd_spent = usd_amount
-            refund = 0
-
-        self.tokens_sold_current_batch += tokens_to_receive
-        self.total_tokens_sold += tokens_to_receive
-        self.investors[sender_address] = self.investors.get(sender_address, 0) + tokens_to_receive
-
-        if self.tokens_sold_current_batch >= self.tokens_per_batch:
-            self.current_batch += 1
-            self.tokens_sold_current_batch = 0
-
+        # 5. Catat penjualan
+        self.tokens_sold += tokens_to_receive
+        self.state.update_presale_sold(self.tokens_sold)
+        
+        # 6. Simpan riwayat untuk dashboard
+        self.state.save_presale_history(buyer_address, amount_paid, tokens_to_receive)
+        
         return {
-            "status": "success",
-            "investor": sender_address,
-            "tokens_bought": tokens_to_receive,
-            "usd_spent": actual_usd_spent,
-            "refund": refund,
-            "current_batch": self.current_batch
+            "status": "success", 
+            "message": f"Berhasil membeli {tokens_to_receive:,.0f} VOIN"
         }
