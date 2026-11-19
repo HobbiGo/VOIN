@@ -1,19 +1,16 @@
 {
-  "network_name": "VOIN Devnet",
+  "network_name": "VOIN Mainnet",
   "chain_id": 260,
   "total_supply": 260000000,
   "allocations": {
-    "0xAEb22359588A50e6F746004E66418Eb2c978dAA2": 130000000,
-    "0xD98732162E70A6f8EfeebCDa31a45135bd1285CE": 26000000,
-    "0x0EAf93A24695b1E66d414Ce4A6c35B2cE91D7450": 26000000,
-    ""0xaddC7E355349732AeB6050b295E9e209954a4B7F: 28600000,
-    "0x97BD8a6FFb1CFb532Fb4DE4145a5008048f17448": 10400000,
-    ""0xaf1578A36d88c309D7bf6D39d5C9ece6b57B6674: 39000000
+    "0xVOIN_PRESALE_CONTRACT_ADDRESS": 156000000,
+    "0xVOIN_TEAM_AND_DEV_ADDRESS": 52000000,
+    "0xVOIN_LIQUIDITY_ADDRESS": 52000000
   },
   "validators": [
     {
-      "name": "VOIN_Genesis_Validator",
-      "address": "0xAEb22359588A50e6F746004E66418Eb2c978dAA2",
+      "name": "VOIN_Mainnet_Validator_01",
+      "address": "0x0AEb22359588A50e6F746004E66418Eb2c978dAA2",
       "pk_mldsa_hex": "dummy_mldsa_key_for_genesis_validator"
     }
   ]
