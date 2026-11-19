@@ -1,20 +1,7 @@
-# Gunakan Python versi ringan
-FROM python:3.13-slim
-
-# Set working directory di dalam container
-WORKDIR /app
-
-# Copy file requirements terlebih dahulu agar caching lebih cepat
-COPY requirements.txt .
-
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy seluruh sisa kode proyek ke dalam container
+FROM python:3.11-slim
+WORKDIR /code
+COPY ./requirements.txt /code/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 COPY . .
-
-# Buka port default (5000)
-EXPOSE 5000
-
-# Perintah untuk menjalankan Node VOIN saat container dinyalakan
-CMD ["python", "node.py", "5000"]
+EXPOSE 7860
+CMD ["gunicorn", "node:app", "--bind", "0.0.0.0:7860"]
