@@ -58,7 +58,8 @@
     </div>
 
     <script>
-        const API_URL = "http://127.0.0.1:5000"; 
+        // PERUBAHAN PENTING: Menggunakan window.location.origin agar otomatis mengikuti link Cloudflare aktif
+        const API_URL = window.location.origin; 
 
         async function loadStats() {
             try {
