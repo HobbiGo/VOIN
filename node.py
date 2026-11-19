@@ -1,10 +1,16 @@
-# node.py
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from presale_contract import VOINPresaleContract
+import os
 
 app = Flask(__name__)
 CORS(app)
+
+# --- RUTE UNTUK MENAMPILKAN HALAMAN UTAMA (index.html) ---
+@app.route('/')
+def serve_index():
+    # Mencari file index.html di folder yang sama dengan node.py
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), 'index.html')
 
 class BlockchainState:
     def __init__(self):
