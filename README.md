@@ -1,24 +1,39 @@
-# VOIN — Native Layer 1 Blockchain
+# 🌐 VOIN — Native Layer 1 Blockchain (Mainnet)
 
-**Quantum-resistant Layer 1 with native VOIN coin (260,000,000 supply), modular security, and Web4 vision.**
+VOIN adalah jaringan Layer 1 yang dibangun dengan Python, berfokus pada keamanan Post-Quantum Cryptography (PQC) dan ekosistem Web4.
 
-VOIN is an independent blockchain technology initiative building a modular Layer 1 network from the ground up. The long-term target is a self-sovereign chain with its own native coin, ML-DSA (FIPS 204) post-quantum signatures, distributed consensus, peer-to-peer networking, and a Web4 application layer.
+## 🪙 Tokenomics (Total Supply: 260.000.000 VOIN)
 
-> **Status: Early development.** This repository currently contains a functional local ledger, P2P networking layer, and ML-DSA security research. **No mainnet. No native coin in circulation. No production consensus.** 
+*   **Public Presale (60%):** 156.000.000 VOIN
+*   **Tim & Developer (20%):** 52.000.000 VOIN
+*   **Marketing & Ekosistem (10%):** 26.000.000 VOIN
+*   **Likuiditas (10%):** 26.000.000 VOIN
 
----
+## 🗓️ Jadwal Presale (Desember 2026 - Desember 2028)
 
-## 🚀 Quick Start (Developer Guide)
+Penjualan publik dibagi menjadi **10 Batch** untuk menjaga stabilitas harga dan memberikan kesempatan yang adil bagi komunitas.
 
-Want to run a VOIN node locally and test the network? Follow these steps.
+*   **Total Batch:** 10
+*   **Kuota Per Batch:** 15.600.000 VOIN (10% dari total alokasi presale)
+*   **Durasi:** Desember 2026 hingga Desember 2028.
 
-### Prerequisites
-- Python 3.13+
-- pip
+### Rincian Batch:
+*   **Batch 1 - 10:** Masing-masing menjual 15.600.000 VOIN.
+*   Jika kuota Batch 1 habis, penjualan akan otomatis beralih ke Batch 2, dan seterusnya hingga Batch 10.
 
-### 1. Installation
-Clone the repository and install the dependencies:
-```bash
-git clone https://github.com/HobbiGo/VOIN.git
-cd VOIN
-pip install -r requirements.txt
+## 🚀 Cara Menjalankan Node (Lokal)
+
+1.  Clone repository ini.
+2.  Install dependensi:
+    ```bash
+    pip install -r requirements.txt
+    pip install flask flask-cors
+    ```
+3.  Jalankan Node:
+    ```bash
+    python node.py
+    ```
+4.  Buka `index.html` di browser untuk melihat dashboard presale.
+
+## 🔒 Keamanan
+Jaringan ini menggunakan kombinasi validasi transaksi ECDSA (seperti Ethereum) dan ML-DSA (Post-Quantum) untuk memastikan keamanan data pengguna di masa depan.
