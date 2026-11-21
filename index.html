@@ -7,12 +7,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body class="bg-gray-900 text-white font-sans min-h-screen flex flex-col items-center justify-center py-10">
+<body class="bg-gray-900 text-white font-sans min-h-screen flex flex-col items-center justify-center py-10 px-4">
 
     <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-700">
         <div class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-400">VOIN COIN</h1>
             <p class="text-gray-400 text-sm mt-1">Presale Mainnet (Des 2026 - Des 2028)</p>
+            <p id="connectionStatus" class="text-xs text-yellow-400 mt-2">Menghubungkan ke server...</p>
         </div>
 
         <!-- Indikator Batch -->
@@ -45,9 +46,9 @@
             </div>
             <div>
                 <label class="block text-sm text-gray-400 mb-1">Jumlah Pembayaran (USDT/IDR)</label>
-                <input type="number" id="amountPaid" placeholder="Contoh: 100" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500">
+                <input type="number" id="amountPaid" min="0.01" step="any" placeholder="Contoh: 100" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500">
             </div>
-            <button onclick="buyTokens()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
+            <button id="buyBtn" onclick="buyTokens()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
                 Beli VOIN
             </button>
         </div>
@@ -58,60 +59,98 @@
     </div>
 
     <script>
-        // PERUBAHAN PENTING: Menggunakan window.location.origin agar otomatis mengikuti link Cloudflare aktif
-        const API_URL = window.location.origin; 
+        // Ganti URL ini jika halaman dibuka dari GitHub Pages/domain lain
+        // Jika dibuka langsung dari server Flask, window.location.origin akan dipakai otomatis
+        const CONFIGURED_API_URL = ""; 
+        const API_URL = (CONFIGURED_API_URL || window.location.origin).replace(/\/+$/, "");
+        const MAX_PER_BATCH = 15600000;
+
+        function setStatus(text, colorClass = "text-yellow-400") {
+            const el = document.getElementById("connectionStatus");
+            el.innerText = text;
+            el.className = `text-xs mt-2 ${colorClass}`;
+        }
 
         async function loadStats() {
             try {
-                const res = await fetch(`${API_URL}/api/presale-stats`);
+                const res = await fetch(`${API_URL}/api/presale-stats`, {
+                    method: "GET",
+                    headers: { "Accept": "application/json" }
+                });
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
                 const data = await res.json();
-                
-                document.getElementById('currentBatch').innerText = data.current_batch;
-                document.getElementById('tokensSold').innerText = data.tokens_sold.toLocaleString('id-ID') + ' VOIN';
-                document.getElementById('tokensRemaining').innerText = data.tokens_remaining.toLocaleString('id-ID') + ' VOIN';
-                
-                // Hitung sisa kuota di batch saat ini (Maks 15.6 Juta per batch)
-                const maxPerBatch = 15600000;
-                const soldInBatch = data.batch_details[data.current_batch] || 0;
-                const remainingInBatch = maxPerBatch - soldInBatch;
-                
-                document.getElementById('batchRemaining').innerText = remainingInBatch.toLocaleString('id-ID') + ' VOIN';
+                const currentBatch = Number(data.current_batch) || 1;
+                const tokensSold = Number(data.tokens_sold) || 0;
+                const tokensRemaining = Number(data.tokens_remaining) || 0;
+                const soldInBatch = Number((data.batch_details && data.batch_details[currentBatch]) || 0);
+                const remainingInBatch = Math.max(0, MAX_PER_BATCH - soldInBatch);
+
+                document.getElementById("currentBatch").innerText = currentBatch;
+                document.getElementById("tokensSold").innerText = tokensSold.toLocaleString("id-ID") + " VOIN";
+                document.getElementById("tokensRemaining").innerText = tokensRemaining.toLocaleString("id-ID") + " VOIN";
+                document.getElementById("batchRemaining").innerText = remainingInBatch.toLocaleString("id-ID") + " VOIN";
+
+                setStatus("Terhubung ke server presale", "text-green-400");
             } catch (e) {
-                console.error("Gagal konek ke Node", e);
+                console.error("Gagal konek ke server presale:", e);
+                setStatus("Server presale belum terhubung", "text-red-400");
+                document.getElementById("tokensSold").innerText = "-";
+                document.getElementById("tokensRemaining").innerText = "-";
+                document.getElementById("batchRemaining").innerText = "-";
             }
         }
 
         async function buyTokens() {
-            const address = document.getElementById('walletAddress').value;
-            const amount = document.getElementById('amountPaid').value;
+            const address = document.getElementById("walletAddress").value.trim();
+            const amount = parseFloat(document.getElementById("amountPaid").value);
+            const buyBtn = document.getElementById("buyBtn");
 
-            if(!address || !amount) {
-                Swal.fire('Error', 'Isi alamat wallet dan jumlah pembayaran!', 'error');
+            if (!address || Number.isNaN(amount) || amount <= 0) {
+                Swal.fire("Error", "Isi alamat wallet dan jumlah pembayaran yang valid!", "error");
                 return;
             }
 
-            Swal.showLoading();
+            buyBtn.disabled = true;
+            Swal.fire({
+                title: "Memproses...",
+                text: "Menghubungi server presale",
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
 
             try {
                 const response = await fetch(`${API_URL}/api/buy`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
                     body: JSON.stringify({
                         wallet_address: address,
-                        amount_paid: parseFloat(amount)
+                        amount_paid: amount
                     })
                 });
 
-                const result = await response.json();
+                const result = await response.json().catch(() => ({}));
 
-                if (result.status === 'success') {
-                    Swal.fire('Berhasil!', result.message, 'success');
-                    loadStats(); 
+                if (response.ok && result.status === "success") {
+                    Swal.fire("Berhasil!", result.message || "Pembelian berhasil dicatat.", "success");
+                    document.getElementById("walletAddress").value = "";
+                    document.getElementById("amountPaid").value = "";
+                    await loadStats();
                 } else {
-                    Swal.fire('Gagal', result.reason, 'error');
+                    const errMsg = result.reason || result.message || "Transaksi gagal diproses.";
+                    Swal.fire("Gagal", errMsg, "error");
                 }
             } catch (error) {
-                Swal.fire('Error', 'Tidak dapat terhubung ke server Node', 'error');
+                console.error("Error saat membeli token:", error);
+                Swal.fire("Error", "Tidak dapat terhubung ke server presale.", "error");
+            } finally {
+                buyBtn.disabled = false;
             }
         }
 
