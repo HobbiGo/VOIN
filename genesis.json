@@ -1,54 +1,19 @@
-import json
-from pathlib import Path
-from security.pqc_signer import generate_keypair
-
-GENESIS_PATH = Path("genesis.json")
-KEYPAIR_SECRET_FILE = Path(".voin_validator_pqc_key.json")
-
-
-def main():
-    if not GENESIS_PATH.exists():
-        raise FileNotFoundError("genesis.json tidak ditemukan di direktori saat ini.")
-
-    # 1. Bangkitkan pasangan kunci ML-DSA-44 asli
-    # Perhatikan: generate_keypair() mengembalikan (public_key_bytes, private_key_bytes)
-    pk_bytes, sk_bytes = generate_keypair()
-    pk_hex = pk_bytes.hex()
-    sk_hex = sk_bytes.hex()
-
-    # 2. Simpan private key ke file terpisah di luar genesis.json
-    # Pastikan nama file ini masuk ke .gitignore dan tidak di-commit ke Git
-    KEYPAIR_SECRET_FILE.write_text(
-        json.dumps(
-            {
-                "algorithm": "ML-DSA-44",
-                "public_key_hex": pk_hex,
-                "private_key_hex": sk_hex,
-            },
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
-
-    # 3. Baca genesis.json dan isi pk_mldsa_hex pada validator pertama
-    genesis_data = json.loads(GENESIS_PATH.read_text(encoding="utf-8"))
-    genesis_data["pqc_algorithm"] = "ML-DSA-44"
-
-    validators = genesis_data.get("validators", [])
-    if not validators:
-        raise ValueError("Daftar validators di genesis.json kosong.")
-
-    validators[0]["pk_mldsa_hex"] = pk_hex
-
-    GENESIS_PATH.write_text(
-        json.dumps(genesis_data, indent=2) + "\n",
-        encoding="utf-8",
-    )
-
-    print("Berhasil memperbarui genesis.json dengan public key ML-DSA-44 asli.")
-    print(f"Public key tersimpan di genesis.json (panjang hex: {len(pk_hex)} karakter).")
-    print(f"Private key disimpan di {KEYPAIR_SECRET_FILE} (JANGAN upload ke Git/repo).")
-
-
-if __name__ == "__main__":
-    main()
+{
+  "network_name": "VOIN Mainnet",
+  "chain_id": 260,
+  "total_supply": 260000000,
+  "pqc_algorithm": "ML-DSA-44",
+  "allocations": {
+    "0xAEb22359588A50e6F746004E66418Eb2c978dAA2": 156000000,
+    "0xD98732162E70A6f8EfeebCDa31a45135bd1285CE": 52000000,
+    "0x0EAf93A24695b1E66d414Ce4A6c35B2cE91D7450": 26000000,
+    "0xaddC7E355349732AeB6050b295E9e209954a4B7F": 26000000
+  },
+  "validators": [
+    {
+      "name": "VOIN_Mainnet_Validator_01",
+      "address": "0x0AEb22359588A50e6F746004E66418Eb2c978dAA2",
+      "pk_mldsa_hex": "<PASTE_REAL_MLDSA_44_PUBLIC_KEY_HEX_HERE>"
+    }
+  ]
+}
