@@ -1,8 +1,16 @@
 import os
-from security.api import VOINSecurityAPIEngine # sesuaikan nama modul file API
-from security.http_server import VOINSecurityHTTPServer # sesuaikan nama modul HTTP server
-# import class dashboard Anda, lalu buat instance-nya, misalnya:
-# from security.dashboard import ...
+from security.api import VOINSecurityAPIEngine
+from security.http_server import VOINSecurityHTTPServer
+
+
+class FallbackDashboard:
+    def get_dashboard(self):
+        return {
+            "status": "OPERATIONAL",
+            "engine": "VOIN Security Dashboard",
+            "source": "security.wsgi",
+        }
+
 
 class APIAdapter:
     def __init__(self, api_engine):
@@ -13,19 +21,35 @@ class APIAdapter:
             method=method,
             path=path,
             headers=headers,
-            query=query
+            query=query,
         )
 
-api_token = os.environ["API_TOKEN"]
-dashboard = ... # isi dengan instance dashboard yang punya method get_dashboard()
-api_engine = VOINSecurityAPIEngine(dashboard=dashboard, api_token=api_token)
-adapter = APIAdapter(api_engine)
 
-port = int(os.environ.get("PORT", 8080))
-server = VOINSecurityHTTPServer(adapter, host="0.0.0.0", port=port)
+def _get_api_token():
+    token = os.environ.get("API_TOKEN", "").strip()
+    if len(token) < 32:
+        raise ValueError("API_TOKEN environment variable must be at least 32 characters")
+    return token
 
-# Dipakai oleh Gunicorn
-application = server.application
+
+def create_application():
+    api_token = _get_api_token()
+    dashboard = FallbackDashboard()
+    api_engine = VOINSecurityAPIEngine(
+        dashboard=dashboard,
+        api_token=api_token,
+    )
+    adapter = APIAdapter(api_engine)
+    port = int(os.environ.get("PORT", 8080))
+    http_server = VOINSecurityHTTPServer(
+        adapter,
+        host="0.0.0.0",
+        port=port,
+    )
+    return http_server, http_server.application
+
+
+_server, application = create_application()
 
 if __name__ == "__main__":
-    server.serve_forever()
+    _server.serve_forever()
