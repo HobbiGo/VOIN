@@ -1,4 +1,4 @@
-name = "voin"
+name = "voin-gateway"
 main = "worker.py"
 
 compatibility_date = "2026-11-16"
