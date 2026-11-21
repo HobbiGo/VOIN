@@ -13,7 +13,7 @@
     {
       "name": "VOIN_Mainnet_Validator_01",
       "address": "0x0AEb22359588A50e6F746004E66418Eb2c978dAA2",
-      "pk_mldsa_hex": "<PASTE_REAL_MLDSA_44_PUBLIC_KEY_HEX_HERE>"
+      "pk_mldsa_hex": "36e98fbc6483191180a3459bc77b8ea2b432ddda24e4e1b48edea8e0087f6ce98d367c52cfabbd7d1c59ce6ff0b155829aa666e8a3edaaf86277..."
     }
   ]
 }
