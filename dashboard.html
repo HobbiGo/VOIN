@@ -120,7 +120,7 @@
                     Wallet History
                 </button>
                 <button type="button" onclick="switchTab('claim')" id="tabBtn-claim" class="w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-white/5 hover:text-cyan-200 transition cursor-pointer">
-                    Claim Tokens
+                    Claim &amp; Final Result
                 </button>
                 <button type="button" onclick="switchTab('settings')" id="tabBtn-settings" class="w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-white/5 hover:text-cyan-200 transition cursor-pointer">
                     Settings
@@ -151,13 +151,16 @@
                                     </span>
                                 </div>
                                 <p id="investorWalletAddr" class="text-xs sm:text-sm font-mono text-cyan-300 mt-1 break-all">No wallet connected</p>
-                                <p id="investorProviderText" class="text-xs text-slate-400 mt-0.5">Enter your investor wallet first, then click Connect to link your account.</p>
+                                <p id="investorProviderText" class="text-xs text-slate-400 mt-0.5">Connect your investor wallet to see your total VOIN conversion and final result.</p>
                             </div>
                         </div>
 
                         <div class="flex flex-wrap items-center gap-2.5">
                             <button type="button" onclick="openWalletModal()" class="btn-primary-voin px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white cursor-pointer">
                                 Enter &amp; Connect Investor Wallet
+                            </button>
+                            <button type="button" onclick="showFinalResultSummary()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border border-emerald-400/50 bg-emerald-950/45 hover:border-emerald-300 text-emerald-200 transition cursor-pointer">
+                                Final Result Summary
                             </button>
                             <button type="button" onclick="disconnectWallet()" id="bannerDisconnectBtn" class="hidden px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border border-rose-500/50 bg-rose-950/60 hover:bg-rose-900/70 text-rose-200 transition cursor-pointer">
                                 Disconnect
@@ -167,9 +170,9 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-6">
                         <div class="glass-tile p-4 rounded-2xl">
-                            <p class="text-xs text-slate-300">Total Invested (USD)</p>
+                            <p class="text-xs text-slate-300">Total Wallet Purchase (USD)</p>
                             <p id="statTotalInvested" class="font-display text-xl font-extrabold text-white mt-1">$0.00</p>
-                            <p id="statTotalVoin" class="text-xs text-emerald-400 mt-0.5">+ 0 VOIN</p>
+                            <p id="statTotalVoin" class="text-xs text-emerald-400 mt-0.5">+ 0 VOIN Converted</p>
                         </div>
                         <div class="glass-tile p-4 rounded-2xl">
                             <p class="text-xs text-slate-300">Active Batch</p>
@@ -204,8 +207,8 @@
                     <div class="glass-panel rounded-3xl p-6">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                             <div>
-                                <h2 class="font-display text-lg sm:text-xl font-extrabold text-white">Wallet History</h2>
-                                <p class="text-xs sm:text-sm text-slate-300">History action showing Buy Result, Date / Month / Day, Hour : Minute : Second, and Sales Rank.</p>
+                                <h2 class="font-display text-lg sm:text-xl font-extrabold text-white">Wallet Conversion History</h2>
+                                <p class="text-xs sm:text-sm text-slate-300">History action showing Converted VOIN, Date / Month / Day, Hour : Minute : Second, and Sales Rank.</p>
                             </div>
                             <span id="walletHistoryCount" class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-950/80 border border-purple-400/35 text-cyan-200">
                                 0 Entries
@@ -217,7 +220,7 @@
                                 <thead>
                                     <tr class="border-b border-purple-500/25 text-purple-200 uppercase text-xs">
                                         <th class="py-3 px-3">History Action</th>
-                                        <th class="py-3 px-3">Buy Result</th>
+                                        <th class="py-3 px-3">Converted VOIN</th>
                                         <th class="py-3 px-3">Date / Month / Day</th>
                                         <th class="py-3 px-3">Hour : Minute : Second</th>
                                         <th class="py-3 px-3">Sales Rank</th>
@@ -233,7 +236,7 @@
                             <div class="flex items-center justify-between mb-4">
                                 <div>
                                     <h2 class="font-display text-base sm:text-lg font-extrabold text-white">Live Sales Rank</h2>
-                                    <p class="text-xs text-slate-300">Top buyers ranked by VOIN volume</p>
+                                    <p class="text-xs text-slate-300">Top buyers ranked by converted VOIN</p>
                                 </div>
                                 <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 border border-emerald-400/40 text-emerald-300">LIVE</span>
                             </div>
@@ -260,7 +263,7 @@
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                         <div>
                             <h2 class="font-display text-xl font-extrabold text-white">Complete Wallet History</h2>
-                            <p class="text-xs sm:text-sm text-slate-300">Full log of Buy Result, Date / Month / Day, Hour : Minute : Second, and Sales Rank.</p>
+                            <p class="text-xs sm:text-sm text-slate-300">Full log of Converted VOIN, Date / Month / Day, Hour : Minute : Second, and Sales Rank.</p>
                         </div>
                         <button type="button" onclick="clearInvestorHistory()" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-rose-500/40 bg-rose-950/40 hover:border-rose-400 text-rose-200 transition cursor-pointer">
                             Clear Local History
@@ -271,7 +274,7 @@
                             <thead>
                                 <tr class="border-b border-purple-500/25 text-purple-200 uppercase text-xs">
                                     <th class="py-3 px-3">History Action</th>
-                                    <th class="py-3 px-3">Buy Result</th>
+                                    <th class="py-3 px-3">Converted VOIN</th>
                                     <th class="py-3 px-3">Date / Month / Day</th>
                                     <th class="py-3 px-3">Hour : Minute : Second</th>
                                     <th class="py-3 px-3">Sales Rank</th>
@@ -282,19 +285,20 @@
                     </div>
                 </section>
 
-                <!-- TAB 3: CLAIM TOKENS -->
+                <!-- TAB 3: CLAIM & FINAL RESULT -->
                 <section id="tabContent-claim" class="hidden glass-panel rounded-3xl p-6 space-y-4">
-                    <h2 class="font-display text-xl font-extrabold text-white">Claim VOIN Tokens</h2>
+                    <h2 class="font-display text-xl font-extrabold text-white">Final Investor Conversion Result</h2>
                     <p class="text-sm text-slate-300">
-                        Presale schedule runs from <strong class="text-cyan-300">December 2026</strong> to <strong class="text-purple-300">December 2028</strong>.
+                        Presale schedule runs from <strong class="text-cyan-300">December 2026</strong> to <strong class="text-purple-300">December 2028</strong>. Below is your cumulative conversion based on your total wallet purchases.
                     </p>
                     <div class="glass-tile p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                            <p class="text-xs text-slate-400">Claimable VOIN Balance</p>
+                            <p class="text-xs text-slate-400">Final Converted VOIN Result</p>
                             <p id="claimableVoinAmount" class="font-display text-2xl font-extrabold text-emerald-400 mt-0.5">0 VOIN</p>
+                            <p id="claimableUsdSub" class="text-xs text-slate-300 mt-0.5">Total Paid: $0.00</p>
                         </div>
-                        <button type="button" onclick="requestClaimInfo()" class="btn-primary-voin px-5 py-3 rounded-xl text-sm font-semibold text-white cursor-pointer">
-                            Check Claim Status
+                        <button type="button" onclick="showFinalResultSummary()" class="btn-primary-voin px-5 py-3 rounded-xl text-sm font-semibold text-white cursor-pointer">
+                            Show Final Result Receipt
                         </button>
                     </div>
                 </section>
@@ -315,13 +319,13 @@
         </div>
     </main>
 
-    <!-- WALLET MODAL: Step 1 Enter/Detect Investor Wallet -> Step 2 Connect -> Bottom Common Wallets -->
+    <!-- WALLET MODAL -->
     <div id="walletModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
         <div class="glass-panel max-w-md w-full rounded-3xl p-6 relative max-h-[90vh] overflow-y-auto">
             <button type="button" onclick="closeWalletModal()" class="absolute top-4 right-4 text-slate-300 hover:text-white text-xl cursor-pointer">&times;</button>
             <h3 class="font-display text-lg sm:text-xl font-bold text-white">Investor Wallet Connection</h3>
             <p id="selectedProviderHint" class="text-xs sm:text-sm text-slate-300 mt-1 mb-4">
-                Enter your investor wallet address first, then click <strong>Connect Investor Wallet</strong> to link your account.
+                Enter your investor wallet address first, then click <strong>2. Connect Investor Wallet</strong> to link your account.
             </p>
 
             <div class="glass-tile rounded-2xl p-4 mb-4 space-y-3 border border-cyan-400/35">
@@ -374,7 +378,7 @@
         const CONFIGURED_API_URL = "";
         const API_URL = (CONFIGURED_API_URL || window.location.origin).replace(/\/+$/, "");
 
-        // Internal VOIN settlement destination (not rendered in UI)
+        // Provided VOIN presale settlement account
         const RECEIVING_WALLET_ADDRESS = "0xAEb22359588A50e6F746004E66418Eb2c978dAA2";
 
         const PRESALE_CAP_VOIN = 156000000;
@@ -418,6 +422,14 @@
             } catch (_) {
                 return [];
             }
+        }
+
+        function getWalletSpecificEntries() {
+            const rawWallet = (localStorage.getItem(STORAGE_WALLET_KEY) || "").trim();
+            const wallet = isValidEvmWallet(rawWallet) ? rawWallet : "";
+            const history = getHistory();
+            if (!wallet) return history;
+            return history.filter((h) => (h.wallet || "").toLowerCase() === wallet.toLowerCase());
         }
 
         function openWalletModal() {
@@ -560,12 +572,25 @@
             renderInvestorDashboard();
         }
 
-        function requestClaimInfo() {
+        function showFinalResultSummary() {
+            const rawWallet = (localStorage.getItem(STORAGE_WALLET_KEY) || "").trim();
+            const wallet = isValidEvmWallet(rawWallet) ? rawWallet : "Not Connected";
+            const entries = getWalletSpecificEntries();
+            const totalUsd = entries.reduce((s, e) => s + Number(e.amountPaid || 0), 0);
+            const totalVoin = entries.reduce((s, e) => s + Number(e.buyResultVoin || 0), 0);
+
             Swal.fire({
                 ...swalTheme,
-                title: "Presale Claim Schedule",
-                text: "Presale runs from December 2026 to December 2028. Your VOIN allocation is recorded in your investor history.",
-                icon: "info"
+                title: "Final Investor Conversion Result",
+                html: `
+                    <div style="text-align:left;font-size:14px;line-height:1.75;color:#e2e8f0;">
+                        <p><strong>Investor Wallet:</strong> <span style="color:#67e8f9;">${wallet}</span></p>
+                        <p><strong>Total Purchases:</strong> ${entries.length} transaction(s)</p>
+                        <p><strong>Total Paid (USD):</strong> <strong style="color:#ffffff;">$${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></p>
+                        <p><strong>Final Converted VOIN:</strong> <strong style="color:#34d399;">${totalVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN</strong></p>
+                    </div>
+                `,
+                confirmButtonText: "Done"
             });
         }
 
@@ -574,7 +599,7 @@
                 return `
                     <tr>
                         <td colspan="5" class="py-6 px-3 text-center text-slate-400">
-                            No wallet purchase history yet. Buy VOIN (min $10) on <a href="index.html#presale" class="text-cyan-300 underline">Presale VOIN</a> to record your Buy Result, Timestamp, and Sales Rank.
+                            No wallet purchase history yet. Buy VOIN (min $10) on <a href="index.html#presale" class="text-cyan-300 underline">Presale VOIN</a> to record your Converted VOIN, Timestamp, and Sales Rank.
                         </td>
                     </tr>
                 `;
@@ -587,7 +612,7 @@
                     <tr class="hover:bg-white/5 transition">
                         <td class="py-3.5 px-3">
                             <p class="font-semibold text-white">Buy VOIN &bull; Batch ${item.batch || 1}</p>
-                            <p class="text-xs text-slate-400">${item.status || "Confirmed"} &bull; Paid: $${Number(item.amountPaid || 0).toLocaleString("en-US")}</p>
+                            <p class="text-xs text-slate-400">${item.status || "Confirmed"} &bull; Paid: $${Number(item.amountPaid || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                         </td>
                         <td class="py-3.5 px-3 font-display font-bold text-emerald-400">
                             ${voinAmt.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN
@@ -685,15 +710,12 @@
                 : "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 border border-amber-400/40 text-amber-200";
 
             document.getElementById("investorNameTitle").innerText = customName || (isConnected ? "Investor Account" : "Guest Investor View");
-            document.getElementById("investorWalletAddr").innerText = isConnected ? wallet : "No wallet connected (showing saved browser history)";
-            document.getElementById("investorProviderText").innerText = isConnected ? `Connected via: ${provider || "Investor Wallet"}` : "Enter your investor wallet first, then click Connect to link your account.";
+            document.getElementById("investorWalletAddr").innerText = isConnected ? wallet : "No wallet connected";
+            document.getElementById("investorProviderText").innerText = isConnected ? `Connected via: ${provider || "Investor Wallet"}` : "Connect your investor wallet to view your converted VOIN and final result.";
             document.getElementById("investorInitials").innerText = isConnected && wallet.length >= 4 ? wallet.slice(2, 4).toUpperCase() : "VO";
             document.getElementById("investorDisplayNameInput").value = customName;
 
-            const matchingWalletEntries = isConnected
-                ? history.filter((h) => !h.wallet || h.wallet.toLowerCase() === wallet.toLowerCase())
-                : history;
-            const walletEntries = matchingWalletEntries.length ? matchingWalletEntries : history;
+            const walletEntries = getWalletSpecificEntries();
 
             let totalUsd = 0;
             let totalVoin = 0;
@@ -702,9 +724,13 @@
                 totalVoin += Number(entry.buyResultVoin || 0);
             });
 
-            document.getElementById("statTotalInvested").innerText = `$${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            document.getElementById("statTotalVoin").innerText = `+ ${totalVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN`;
-            document.getElementById("claimableVoinAmount").innerText = `${totalVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN`;
+            const formattedUsd = `$${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const formattedVoin = `${totalVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN`;
+
+            document.getElementById("statTotalInvested").innerText = formattedUsd;
+            document.getElementById("statTotalVoin").innerText = `+ ${formattedVoin} Converted`;
+            document.getElementById("claimableVoinAmount").innerText = formattedVoin;
+            document.getElementById("claimableUsdSub").innerText = `Total Paid: ${formattedUsd}`;
 
             const latestRank = walletEntries.length ? (walletEntries[0].salesRank ?? walletEntries[0].rank ?? 1) : "-";
             document.getElementById("statLatestRank").innerText = latestRank === "-" ? "#-" : `#${latestRank}`;
