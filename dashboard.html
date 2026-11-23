@@ -393,6 +393,10 @@
             confirmButtonColor: "#9333ea"
         };
 
+        function isValidEvmWallet(addr) {
+            return /^0x[a-fA-F0-9]{40}$/.test((addr || "").trim());
+        }
+
         function switchTab(tabName) {
             const tabs = ["overview", "history", "claim", "settings"];
             tabs.forEach((t) => {
@@ -418,13 +422,15 @@
 
         function openWalletModal() {
             const modal = document.getElementById("walletModal");
-            document.getElementById("modalWalletInput").value = localStorage.getItem(STORAGE_WALLET_KEY) || "";
+            const savedAddr = (localStorage.getItem(STORAGE_WALLET_KEY) || "").trim();
+            const inputEl = document.getElementById("modalWalletInput");
+            if (inputEl) inputEl.value = savedAddr;
             selectedCommonWalletName = localStorage.getItem(STORAGE_PROVIDER_KEY) || "";
             document.getElementById("selectedProviderHint").innerHTML =
-                `Enter your investor wallet address first, then click <strong>Connect Investor Wallet</strong> to link your account.`;
+                `Enter your investor wallet address (<code>0x...</code>) first, then click <strong>2. Connect Investor Wallet</strong> to link your account.`;
             modal.classList.remove("hidden");
             modal.classList.add("flex");
-            setTimeout(() => document.getElementById("modalWalletInput")?.focus(), 50);
+            setTimeout(() => inputEl?.focus(), 50);
         }
 
         function closeWalletModal() {
@@ -433,15 +439,40 @@
             modal.classList.remove("flex");
         }
 
-        function selectCommonWallet(walletName) {
+        async function selectCommonWallet(walletName) {
             selectedCommonWalletName = walletName;
+            const inputEl = document.getElementById("modalWalletInput");
             document.getElementById("selectedProviderHint").innerHTML =
-                `Selected Wallet: <strong style="color:#67e8f9;">${walletName}</strong>. Enter or confirm your investor wallet address above, then click <strong>Connect Investor Wallet</strong>.`;
-            document.getElementById("modalWalletInput")?.focus();
+                `Selected Wallet: <strong style="color:#67e8f9;">${walletName}</strong>. Enter or confirm your investor wallet address above, then click <strong>2. Connect Investor Wallet</strong>.`;
+
+            if (window.ethereum && typeof window.ethereum.request === "function") {
+                try {
+                    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+                    if (accounts && accounts[0] && isValidEvmWallet(accounts[0])) {
+                        const cleanAddr = accounts[0].trim();
+                        if (inputEl) inputEl.value = cleanAddr;
+                        localStorage.setItem(STORAGE_WALLET_KEY, cleanAddr);
+                        localStorage.setItem(STORAGE_PROVIDER_KEY, walletName);
+                        closeWalletModal();
+                        renderInvestorDashboard();
+                        Swal.fire({
+                            ...swalTheme,
+                            title: "Investor Wallet Connected",
+                            html: `<p style="font-size:14px;color:#cbd5e1;">Wallet: <strong style="color:#c084fc;">${walletName}</strong><br>Address: <strong style="color:#67e8f9;">${cleanAddr}</strong></p>`,
+                            icon: "success"
+                        });
+                        return;
+                    }
+                } catch (err) {
+                    console.warn(`${walletName} connection skipped/cancelled:`, err);
+                }
+            }
+
+            inputEl?.focus();
         }
 
         async function detectBrowserInvestorWallet() {
-            if (!window.ethereum) {
+            if (!window.ethereum || typeof window.ethereum.request !== "function") {
                 Swal.fire({
                     ...swalTheme,
                     title: "Browser Wallet Not Detected",
@@ -452,13 +483,21 @@
             }
             try {
                 const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-                if (accounts && accounts[0]) {
-                    document.getElementById("modalWalletInput").value = accounts[0].trim();
+                if (accounts && accounts[0] && isValidEvmWallet(accounts[0])) {
+                    const cleanAddr = accounts[0].trim();
+                    document.getElementById("modalWalletInput").value = cleanAddr;
                     Swal.fire({
                         ...swalTheme,
                         title: "Wallet Detected",
-                        text: `Detected ${accounts[0].trim()}. Click "2. Connect Investor Wallet" to connect.`,
+                        text: `Detected ${cleanAddr}. Click "2. Connect Investor Wallet" to connect.`,
                         icon: "success"
+                    });
+                } else {
+                    Swal.fire({
+                        ...swalTheme,
+                        title: "Invalid Address",
+                        text: "Detected wallet address is not a valid EVM (0x...) address.",
+                        icon: "error"
                     });
                 }
             } catch (err) {
@@ -468,12 +507,12 @@
 
         function connectInvestorWalletFinal() {
             const addr = (document.getElementById("modalWalletInput").value || "").trim();
-            if (!addr) {
+            if (!isValidEvmWallet(addr)) {
                 Swal.fire({
                     ...swalTheme,
-                    title: "Investor Wallet Required",
-                    text: "Please enter your investor wallet address first before connecting.",
-                    icon: "warning"
+                    title: "Invalid Investor Wallet",
+                    html: `<p style="font-size:14px;color:#cbd5e1;">Please enter a valid EVM wallet address starting with <strong style="color:#67e8f9;">0x</strong> followed by 40 hex characters.</p>`,
+                    icon: "error"
                 });
                 return;
             }
@@ -627,7 +666,8 @@
         }
 
         function renderInvestorDashboard() {
-            const wallet = localStorage.getItem(STORAGE_WALLET_KEY) || "";
+            const rawWallet = (localStorage.getItem(STORAGE_WALLET_KEY) || "").trim();
+            const wallet = isValidEvmWallet(rawWallet) ? rawWallet : "";
             const provider = localStorage.getItem(STORAGE_PROVIDER_KEY) || "";
             const customName = localStorage.getItem(STORAGE_INVESTOR_NAME_KEY) || "";
             const history = getHistory();
@@ -650,9 +690,10 @@
             document.getElementById("investorInitials").innerText = isConnected && wallet.length >= 4 ? wallet.slice(2, 4).toUpperCase() : "VO";
             document.getElementById("investorDisplayNameInput").value = customName;
 
-            const walletEntries = isConnected
+            const matchingWalletEntries = isConnected
                 ? history.filter((h) => !h.wallet || h.wallet.toLowerCase() === wallet.toLowerCase())
                 : history;
+            const walletEntries = matchingWalletEntries.length ? matchingWalletEntries : history;
 
             let totalUsd = 0;
             let totalVoin = 0;
