@@ -1,6 +1,37 @@
 const DEFAULT_GATEWAY_URL = "http://127.0.0.1:5000";
 const DEFAULT_API_TOKEN = "voin-secret-token-yang-sangat-panjang-dan-aman-123";
 
+const PRESALE_PUBLIC_CONFIG = {
+  treasuryAddress: "0xAEb22359588A50e6F746004E66418Eb2c978dAA2",
+  schedule: {
+    startTimestampUtc: 1796083200, // 1 Desember 2026 00:00:00 UTC
+    endTimestampUtc: 1861919999,   // 31 Desember 2028 23:59:59 UTC
+    startLabel: "1 Desember 2026",
+    endLabel: "31 Desember 2028",
+  },
+  limitsUsd: {
+    minPurchaseUsd: 25,
+    maxPurchaseUsdPerWalletPerBatch: 10000,
+    totalBatches: 10,
+    batchVoinAllocation: "15600000",
+    totalPresaleVoinAllocation: "156000000",
+  },
+  supportedChains: {
+    bscMainnet: {
+      chainId: 56,
+      chainIdHex: "0x38",
+      name: "BNB Smart Chain",
+      explorerUrl: "https://bscscan.com",
+    },
+    bscTestnet: {
+      chainId: 97,
+      chainIdHex: "0x61",
+      name: "BNB Smart Chain Testnet",
+      explorerUrl: "https://testnet.bscscan.com",
+    },
+  },
+};
+
 function buildUpstreamUrl(requestUrl, upstreamBase) {
   const incomingUrl = new URL(requestUrl);
   const baseUrl = new URL(upstreamBase);
@@ -47,7 +78,34 @@ export default {
         }),
         {
           status: 200,
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-VOIN-Gateway": "cloudflare-worker",
+          },
+        }
+      );
+    }
+
+    if (url.pathname === "/presale/config" && (request.method || "GET").toUpperCase() === "GET") {
+      return new Response(
+        JSON.stringify({
+          status: "OK",
+          presale: {
+            ...PRESALE_PUBLIC_CONFIG,
+            treasuryAddress: env.TREASURY_ADDRESS || PRESALE_PUBLIC_CONFIG.treasuryAddress,
+            contracts: {
+              voinToken: env.VOIN_TOKEN_ADDRESS || "",
+              voinPresale: env.VOIN_PRESALE_CONTRACT || "",
+              voinVesting: env.VOIN_VESTING_CONTRACT || "",
+            },
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "X-VOIN-Gateway": "cloudflare-worker",
+          },
         }
       );
     }
@@ -89,7 +147,10 @@ export default {
         }),
         {
           status: 502,
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-VOIN-Gateway": "cloudflare-worker",
+          },
         }
       );
     }
