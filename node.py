@@ -36,8 +36,7 @@ class BlockchainState:
         self.history = []
         self.batch_sold = {i: 0 for i in range(1, 11)}
         self.current_batch = 1
-        # FITUR KEAMANAN: Anti-Replay Attack
-        self.processed_txs = set() 
+        self.processed_txs = set()
 
     def add_balance(self, address, amount):
         self.balances[address] = self.balances.get(address, 0) + amount
@@ -59,6 +58,7 @@ class BlockchainState:
             "received": received,
             "batch": batch,
         })
+
 
 presale_state = BlockchainState()
 presale_contract = VOINPresaleContract(presale_state)
@@ -115,6 +115,7 @@ def _to_canonical_bytes(msg) -> bytes:
         return msg.encode("utf-8")
     return json.dumps(msg, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
+
 def _normalize_hex_sig(sig) -> str:
     if isinstance(sig, (bytes, bytearray)):
         hex_str = bytes(sig).hex()
@@ -124,6 +125,7 @@ def _normalize_hex_sig(sig) -> str:
             hex_str = hex_str[2:]
     return f"0x{hex_str}"
 
+
 def _is_authorized() -> bool:
     if not API_TOKEN:
         return True
@@ -132,6 +134,7 @@ def _is_authorized() -> bool:
     x_token = (request.headers.get("X-API-Token") or "").strip()
     candidate = bearer_token or x_token
     return hmac.compare_digest(candidate, API_TOKEN) if candidate else False
+
 
 def _broadcast_block_to_peers(block, sig_e, sig_p, skip_peer=None):
     payload = {
@@ -154,9 +157,11 @@ def _broadcast_block_to_peers(block, sig_e, sig_p, skip_peer=None):
 app = Flask(__name__)
 CORS(app)
 
+
 @app.route("/")
 def serve_index():
     return send_from_directory(BASE_DIR, "index.html")
+
 
 @app.route("/<path:filename>")
 def serve_static(filename):
@@ -164,6 +169,7 @@ def serve_static(filename):
     if safe.startswith("..") or os.path.isabs(safe):
         return jsonify({"error": "invalid path"}), 400
     return send_from_directory(BASE_DIR, safe)
+
 
 # ---------- PRESALE API ----------
 @app.route("/api/presale-stats", methods=["GET"])
@@ -178,6 +184,7 @@ def get_stats():
         "batch_prices_usd": presale_contract.batch_prices_usd,
     })
 
+
 @app.route("/api/buy", methods=["POST"])
 def buy_presale():
     if not _is_authorized():
@@ -186,7 +193,7 @@ def buy_presale():
     data = request.get_json(silent=True) or {}
     buyer_address = str(data.get("wallet_address", "")).strip()
     tx_hash = str(data.get("tx_hash", "")).strip().lower()
-    
+
     try:
         claimed_amount = float(data.get("amount_paid", 0))
     except (TypeError, ValueError):
@@ -196,18 +203,18 @@ def buy_presale():
         return jsonify({"status": "error", "message": "Wallet address required"}), 400
 
     amount_to_process = claimed_amount
-    
+
     if not SKIP_ONCHAIN_VERIFICATION:
         if not tx_hash:
             return jsonify({"status": "error", "message": "tx_hash BSC wajib dikirim."}), 400
 
-        # Anti-Replay Attack Check
-        if tx_hash in presale_state.processed_txs:
-            return jsonify({"status": "failed", "reason": "Transaksi ini sudah pernah diklaim."}), 400
+        with LOCK:
+            if tx_hash in presale_state.processed_txs:
+                return jsonify({"status": "failed", "reason": "Transaksi ini sudah pernah diklaim."}), 400
 
         print(f"[VERIFIER] Memeriksa tx {tx_hash} untuk {buyer_address}...")
         res = verifier.verify_presale_transaction(tx_hash=tx_hash, expected_buyer=buyer_address)
-        
+
         if not res.valid:
             return jsonify({"status": "failed", "reason": f"Verifikasi Gagal: {res.reason}"}), 400
 
@@ -218,17 +225,20 @@ def buy_presale():
         amount_to_process = float(usd_wei) / 1e18
         print(f"[VERIFIER] Sukses! Pembayaran valid: ${amount_to_process}")
 
-    result = presale_contract.buy_tokens(buyer_address, amount_to_process)
-    
-    if result.get("status") == "success":
-        if not SKIP_ONCHAIN_VERIFICATION:
-            # Catat tx_hash agar tidak bisa dipakai lagi
-            presale_state.processed_txs.add(tx_hash) 
-            
-        result["verified_tx_hash"] = tx_hash if not SKIP_ONCHAIN_VERIFICATION else "bypassed"
-        return jsonify(result), 200
-        
+    with LOCK:
+        if not SKIP_ONCHAIN_VERIFICATION and tx_hash in presale_state.processed_txs:
+            return jsonify({"status": "failed", "reason": "Transaksi ini sudah pernah diklaim."}), 400
+
+        result = presale_contract.buy_tokens(buyer_address, amount_to_process)
+
+        if result.get("status") == "success":
+            if not SKIP_ONCHAIN_VERIFICATION and tx_hash:
+                presale_state.processed_txs.add(tx_hash)
+            result["verified_tx_hash"] = tx_hash if not SKIP_ONCHAIN_VERIFICATION else "bypassed"
+            return jsonify(result), 200
+
     return jsonify(result), 400
+
 
 # ---------- BLOCKCHAIN L1 API ----------
 @app.route("/info", methods=["GET"])
@@ -242,9 +252,11 @@ def info():
         "genesis_hash": chain.chain[0]["hash"],
     })
 
+
 @app.route("/sync", methods=["GET"])
 def sync():
     return jsonify({"height": len(chain.chain) - 1, "chain": chain.chain})
+
 
 @app.route("/balance/<address>", methods=["GET"])
 def balance(address):
@@ -254,6 +266,7 @@ def balance(address):
         "balance": balances.get(address, 0),
         "nonce": chain.store.get_account(address).get("nonce", 0),
     })
+
 
 @app.route("/transaction", methods=["POST"])
 def submit_transaction():
@@ -324,6 +337,7 @@ def submit_transaction():
         "tx_count": len(added["transactions"]),
     })
 
+
 @app.route("/block", methods=["POST"])
 def receive_block():
     body = request.get_json(silent=True) or {}
@@ -344,6 +358,7 @@ def receive_block():
 
     return jsonify({"ok": True, "block_index": added["index"]})
 
+
 # ---------- P2P API ----------
 @app.route("/peers/register", methods=["POST"])
 def register_peer():
@@ -354,6 +369,7 @@ def register_peer():
         return jsonify({"ok": False, "error": "peer_address kosong"}), 400
     PEERS.add(peer)
     return jsonify({"ok": True, "peers": list(PEERS)})
+
 
 @app.route("/peers", methods=["GET"])
 def list_peers():
