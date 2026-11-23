@@ -615,7 +615,7 @@
         <div class="glass-panel max-w-md w-full rounded-3xl p-6 relative max-h-[90vh] overflow-y-auto">
             <button type="button" onclick="closeWalletModal()" class="absolute top-4 right-4 text-slate-300 hover:text-white text-xl cursor-pointer">&times;</button>
             <h3 class="font-display text-lg sm:text-xl font-bold text-white">Investor Wallet Connection</h3>
-            <p id="homeWalletHint" class="text-xs sm:text-sm text-slate-300 mt-1 mb-4">Enter your wallet address first, then click <strong>Connect Wallet</strong>.</p>
+            <p id="homeWalletHint" class="text-xs sm:text-sm text-slate-300 mt-1 mb-4">Enter your wallet address first, then click <strong>2. Connect Wallet</strong>.</p>
 
             <div class="glass-tile rounded-2xl p-4 mb-4 space-y-3 border border-cyan-400/35">
                 <div class="flex items-center justify-between gap-2">
@@ -694,6 +694,20 @@
             color: "#ffffff",
             confirmButtonColor: "#9333ea"
         };
+
+        function isValidEvmAddress(addr) {
+            return /^0x[a-fA-F0-9]{40}$/.test((addr || "").trim());
+        }
+
+        function getInjectedProvider(providerName = "") {
+            if (typeof window === "undefined") return null;
+            const p = (providerName || "").toLowerCase();
+            if (p.includes("okx") && window.okxwallet) return window.okxwallet;
+            if (p.includes("rabby") && window.rabbyEthereum) return window.rabbyEthereum;
+            if (p.includes("coinbase") && window.coinbaseWalletExtension) return window.coinbaseWalletExtension;
+            if (window.ethereum) return window.ethereum;
+            return null;
+        }
 
         function getBatchPriceUsd(batchNum) {
             const num = Number(batchNum) || 1;
@@ -898,19 +912,20 @@
             const navDot = document.getElementById("navWalletDot");
             const navDisconnect = document.getElementById("navDisconnectBtn");
             const input = document.getElementById("walletAddress");
+            const cleanAddr = (address || "").trim();
 
-            if (address) {
-                input.value = address;
-                navText.innerText = `${address.slice(0, 6)}...${address.slice(-4)}`;
-                navDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-                navDisconnect.classList.remove("hidden");
-                localStorage.setItem(STORAGE_WALLET_KEY, address);
+            if (cleanAddr && isValidEvmAddress(cleanAddr)) {
+                if (input) input.value = cleanAddr;
+                if (navText) navText.innerText = `${cleanAddr.slice(0, 6)}...${cleanAddr.slice(-4)}`;
+                if (navDot) navDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                if (navDisconnect) navDisconnect.classList.remove("hidden");
+                localStorage.setItem(STORAGE_WALLET_KEY, cleanAddr);
                 if (provider) localStorage.setItem(STORAGE_PROVIDER_KEY, provider);
             } else {
-                input.value = "";
-                navText.innerText = "Connect Wallet";
-                navDot.className = "w-2 h-2 rounded-full bg-slate-400";
-                navDisconnect.classList.add("hidden");
+                if (input) input.value = "";
+                if (navText) navText.innerText = "Connect Wallet";
+                if (navDot) navDot.className = "w-2 h-2 rounded-full bg-slate-400";
+                if (navDisconnect) navDisconnect.classList.add("hidden");
                 localStorage.removeItem(STORAGE_WALLET_KEY);
                 localStorage.removeItem(STORAGE_PROVIDER_KEY);
             }
@@ -929,13 +944,17 @@
 
         function openWalletModal() {
             const modal = document.getElementById("walletModal");
-            const currentVal = document.getElementById("walletAddress").value.trim() || localStorage.getItem(STORAGE_WALLET_KEY) || "";
-            document.getElementById("modalManualAddress").value = currentVal;
+            const currentVal = (document.getElementById("walletAddress")?.value || "").trim()
+                || localStorage.getItem(STORAGE_WALLET_KEY)
+                || "";
+            const manualInput = document.getElementById("modalManualAddress");
+            if (manualInput) manualInput.value = currentVal;
+
             document.getElementById("homeWalletHint").innerHTML =
-                `Enter your wallet address first, then click <strong>2. Connect Wallet</strong>.`;
+                `Enter your wallet address (<code>0x...</code>) first, then click <strong>2. Connect Wallet</strong>.`;
             modal.classList.remove("hidden");
             modal.classList.add("flex");
-            setTimeout(() => document.getElementById("modalManualAddress")?.focus(), 50);
+            setTimeout(() => manualInput?.focus(), 50);
         }
 
         function closeWalletModal() {
@@ -944,15 +963,41 @@
             modal.classList.remove("flex");
         }
 
-        function selectWalletProvider(providerName) {
+        async function selectWalletProvider(providerName) {
             selectedHomeProvider = providerName;
+            const manualInput = document.getElementById("modalManualAddress");
+            const provider = getInjectedProvider(providerName);
+
             document.getElementById("homeWalletHint").innerHTML =
-                `Selected Wallet: <strong style="color:#67e8f9;">${providerName}</strong>. Enter or confirm your wallet address above, then click <strong>2. Connect Wallet</strong>.`;
-            document.getElementById("modalManualAddress")?.focus();
+                `Selected Wallet: <strong style="color:#67e8f9;">${providerName}</strong>. Enter or confirm your <code>0x...</code> address above, then click <strong>2. Connect Wallet</strong>.`;
+
+            if (provider && typeof provider.request === "function") {
+                try {
+                    const accounts = await provider.request({ method: "eth_requestAccounts" });
+                    if (accounts && accounts[0] && isValidEvmAddress(accounts[0])) {
+                        const cleanAddr = accounts[0].trim();
+                        if (manualInput) manualInput.value = cleanAddr;
+                        syncWalletState(cleanAddr, providerName);
+                        closeWalletModal();
+                        Swal.fire({
+                            ...swalTheme,
+                            title: "Wallet Connected",
+                            html: `<p style="font-size:14px;color:#cbd5e1;">Wallet: <strong style="color:#c084fc;">${providerName}</strong><br>Address: <strong style="color:#67e8f9;">${cleanAddr}</strong></p>`,
+                            icon: "success"
+                        });
+                        return;
+                    }
+                } catch (err) {
+                    console.warn(`${providerName} connection skipped/rejected:`, err);
+                }
+            }
+
+            manualInput?.focus();
         }
 
         async function detectHomeBrowserWallet() {
-            if (!window.ethereum) {
+            const provider = getInjectedProvider(selectedHomeProvider);
+            if (!provider || typeof provider.request !== "function") {
                 Swal.fire({
                     ...swalTheme,
                     title: "Browser Wallet Not Detected",
@@ -962,14 +1007,22 @@
                 return;
             }
             try {
-                const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-                if (accounts && accounts[0]) {
-                    document.getElementById("modalManualAddress").value = accounts[0].trim();
+                const accounts = await provider.request({ method: "eth_requestAccounts" });
+                if (accounts && accounts[0] && isValidEvmAddress(accounts[0])) {
+                    const cleanAddr = accounts[0].trim();
+                    document.getElementById("modalManualAddress").value = cleanAddr;
                     Swal.fire({
                         ...swalTheme,
                         title: "Wallet Detected",
-                        text: `Detected ${accounts[0].trim()}. Click "2. Connect Wallet" to connect.`,
+                        text: `Detected ${cleanAddr}. Click "2. Connect Wallet" to connect.`,
                         icon: "success"
+                    });
+                } else {
+                    Swal.fire({
+                        ...swalTheme,
+                        title: "Invalid Address",
+                        text: "Detected wallet is not a valid EVM (0x...) address.",
+                        icon: "error"
                     });
                 }
             } catch (err) {
@@ -978,9 +1031,14 @@
         }
 
         function saveManualWallet() {
-            const addr = document.getElementById("modalManualAddress").value.trim();
-            if (!addr) {
-                Swal.fire({ ...swalTheme, title: "Invalid Address", text: "Please enter your wallet address first before connecting.", icon: "error" });
+            const addr = (document.getElementById("modalManualAddress").value || "").trim();
+            if (!isValidEvmAddress(addr)) {
+                Swal.fire({
+                    ...swalTheme,
+                    title: "Invalid Address",
+                    html: `<p style="font-size:14px;color:#cbd5e1;">Please enter a valid EVM wallet address starting with <strong style="color:#67e8f9;">0x</strong> followed by 40 hex characters.</p>`,
+                    icon: "error"
+                });
                 return;
             }
             const providerLabel = selectedHomeProvider || "Wallet";
@@ -1113,16 +1171,26 @@
         }
 
         async function buyTokens() {
-            const address = document.getElementById("walletAddress").value.trim();
+            const address = (document.getElementById("walletAddress").value || "").trim();
             const amount = parseFloat(document.getElementById("amountPaid").value);
             const buyBtn = document.getElementById("buyBtn");
             const activeBatch = Number(document.getElementById("currentBatch").innerText) || 1;
 
-            if (!address || Number.isNaN(amount) || amount < MIN_PURCHASE_USD) {
+            if (!isValidEvmAddress(address)) {
+                Swal.fire({
+                    ...swalTheme,
+                    title: "Invalid Wallet Address",
+                    html: `<p style="font-size:14px;color:#cbd5e1;">Please enter or connect a valid EVM wallet address (<strong style="color:#67e8f9;">0x...</strong>, 42 characters).</p>`,
+                    icon: "error"
+                });
+                return;
+            }
+
+            if (Number.isNaN(amount) || amount < MIN_PURCHASE_USD) {
                 Swal.fire({
                     ...swalTheme,
                     title: "Minimum Purchase $10",
-                    text: "Please enter a valid wallet address and payment amount of at least $10.",
+                    text: "Please enter a payment amount of at least $10.",
                     icon: "error"
                 });
                 return;
@@ -1249,9 +1317,9 @@
             }
         }
 
-        const savedWallet = localStorage.getItem(STORAGE_WALLET_KEY);
+        const savedWallet = (localStorage.getItem(STORAGE_WALLET_KEY) || "").trim();
         const savedProvider = localStorage.getItem(STORAGE_PROVIDER_KEY) || "";
-        if (savedWallet) {
+        if (savedWallet && isValidEvmAddress(savedWallet)) {
             syncWalletState(savedWallet, savedProvider);
         }
 
