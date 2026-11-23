@@ -463,17 +463,6 @@
                     </p>
                 </div>
 
-                <!-- VOIN Receive Address Box -->
-                <div class="glass-tile rounded-2xl p-3.5 mb-4 text-xs sm:text-sm border border-purple-400/35">
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="text-slate-300 font-medium">VOIN Receive Address:</span>
-                        <button type="button" onclick="copyReceivingWallet()" class="text-cyan-300 hover:underline font-semibold cursor-pointer">
-                            Copy Address
-                        </button>
-                    </div>
-                    <p id="receivingWalletDisplay" class="font-mono text-xs text-emerald-300 mt-1 break-all"></p>
-                </div>
-
                 <div class="glass-tile rounded-2xl p-4 mb-5 space-y-2.5 text-sm sm:text-base">
                     <div class="flex justify-between items-center">
                         <span class="text-slate-300">Tokens Sold:</span>
@@ -670,7 +659,7 @@
         const CONFIGURED_API_URL = "";
         const API_URL = (CONFIGURED_API_URL || window.location.origin).replace(/\/+$/, "");
 
-        // Official VOIN receive address for buyer presale payments
+        // Internal VOIN settlement destination (not rendered in UI)
         const RECEIVING_WALLET_ADDRESS = "0xAEb22359588A50e6F746004E66418Eb2c978dAA2";
 
         const MAX_PER_BATCH = 15600000;
@@ -705,23 +694,6 @@
             color: "#ffffff",
             confirmButtonColor: "#9333ea"
         };
-
-        function initReceivingWalletDisplay() {
-            const el = document.getElementById("receivingWalletDisplay");
-            if (el) el.innerText = RECEIVING_WALLET_ADDRESS;
-        }
-
-        function copyReceivingWallet() {
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(RECEIVING_WALLET_ADDRESS);
-            }
-            Swal.fire({
-                ...swalTheme,
-                title: "VOIN Receive Address Copied",
-                text: RECEIVING_WALLET_ADDRESS,
-                icon: "success"
-            });
-        }
 
         function getBatchPriceUsd(batchNum) {
             const num = Number(batchNum) || 1;
@@ -1283,7 +1255,6 @@
             syncWalletState(savedWallet, savedProvider);
         }
 
-        initReceivingWalletDisplay();
         updateEstimatedVoin();
         updatePresaleCountdown();
         setInterval(updatePresaleCountdown, 1000);
