@@ -4,15 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VOIN Block Explorer</title>
+    <script src="contract_config.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: auto; }
         h1 { color: #38bdf8; text-align: center; }
-        .header-bar { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; }
-        .input-group { display: flex; gap: 10px; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .input-group { display: flex; gap: 10px; flex-wrap: wrap; }
         input { padding: 8px 12px; border-radius: 4px; border: 1px solid #475569; background: #0f172a; color: white; }
         button { padding: 8px 16px; background: #0ea5e9; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         button:hover { background: #0284c7; }
+        .meta-bar { background: #1e293b; border-radius: 8px; padding: 12px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 0.9em; color: #cbd5e1; border: 1px solid #334155; }
+        .meta-bar code { color: #38bdf8; word-break: break-all; }
         .block-card { background: #1e293b; border-radius: 8px; padding: 20px; margin-bottom: 15px; border-left: 4px solid #38bdf8; }
         .block-header { display: flex; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 10px; }
         .hash { font-family: monospace; color: #94a3b8; word-break: break-all; font-size: 0.9em; }
@@ -36,6 +39,12 @@
             </div>
         </div>
 
+        <div class="meta-bar" id="presaleMetaBar">
+            <div><strong>Treasury:</strong> <code id="explorerTreasury">0xAEb22359588A50e6F746004E66418Eb2c978dAA2</code></div>
+            <div><strong>Network:</strong> <span id="explorerNetwork">BNB Smart Chain (56 / 97)</span></div>
+            <div><strong>Presale Window:</strong> <span id="explorerSchedule">Dec 1, 2026 - Dec 31, 2028</span></div>
+        </div>
+
         <div id="chain-container">
             <!-- Blok akan dimuat di sini -->
             <p style="text-align: center; color: #64748b;">Tekan "Connect" untuk memuat data dari Node.</p>
@@ -43,6 +52,25 @@
     </div>
 
     <script>
+        (function hydrateExplorerConfig() {
+            const cfg = typeof window.VOIN_PRESALE_CONFIG !== "undefined" ? window.VOIN_PRESALE_CONFIG : null;
+            if (!cfg) return;
+
+            const treasuryEl = document.getElementById("explorerTreasury");
+            const networkEl = document.getElementById("explorerNetwork");
+            const scheduleEl = document.getElementById("explorerSchedule");
+
+            if (treasuryEl && cfg.treasuryAddress) {
+                treasuryEl.innerText = cfg.treasuryAddress;
+            }
+            if (networkEl && cfg.networks?.bscMainnet && cfg.networks?.bscTestnet) {
+                networkEl.innerText = `${cfg.networks.bscMainnet.name} (${cfg.networks.bscMainnet.chainId} / ${cfg.networks.bscTestnet.chainId})`;
+            }
+            if (scheduleEl && cfg.schedule?.startLabel && cfg.schedule?.endLabel) {
+                scheduleEl.innerText = `${cfg.schedule.startLabel} - ${cfg.schedule.endLabel}`;
+            }
+        })();
+
         async function fetchChain() {
             const nodeUrl = document.getElementById('nodeUrl').value;
             const statusEl = document.getElementById('status');
