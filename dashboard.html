@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VOIN Investor Dashboard — Wallet &amp; Presale Activity</title>
+    <script src="contract_config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -375,14 +376,16 @@
     </div>
 
     <script>
+        const VOIN_CFG = typeof window.VOIN_PRESALE_CONFIG !== "undefined" ? window.VOIN_PRESALE_CONFIG : null;
         const CONFIGURED_API_URL = "";
         const API_URL = (CONFIGURED_API_URL || window.location.origin).replace(/\/+$/, "");
 
         // Provided VOIN presale settlement account
-        const RECEIVING_WALLET_ADDRESS = "0xAEb22359588A50e6F746004E66418Eb2c978dAA2";
+        const RECEIVING_WALLET_ADDRESS = VOIN_CFG?.treasuryAddress || "0xAEb22359588A50e6F746004E66418Eb2c978dAA2";
+        const MIN_PURCHASE_USD = VOIN_CFG?.limitsUsd?.minPurchaseUsd ? Number(VOIN_CFG.limitsUsd.minPurchaseUsd) : 25;
 
-        const PRESALE_CAP_VOIN = 156000000;
-        const TOTAL_SUPPLY_VOIN = 260000000;
+        const PRESALE_CAP_VOIN = VOIN_CFG?.totalPresaleVoinAllocation ? Number(VOIN_CFG.totalPresaleVoinAllocation) : 156000000;
+        const TOTAL_SUPPLY_VOIN = VOIN_CFG?.totalSupply ? Number(VOIN_CFG.totalSupply) : 260000000;
 
         const STORAGE_WALLET_KEY = "voin_wallet_address";
         const STORAGE_PROVIDER_KEY = "voin_wallet_provider";
@@ -585,6 +588,7 @@
                 html: `
                     <div style="text-align:left;font-size:14px;line-height:1.75;color:#e2e8f0;">
                         <p><strong>Investor Wallet:</strong> <span style="color:#67e8f9;">${wallet}</span></p>
+                        <p><strong>Treasury Account:</strong> <span style="color:#c084fc;font-size:12px;">${RECEIVING_WALLET_ADDRESS}</span></p>
                         <p><strong>Total Purchases:</strong> ${entries.length} transaction(s)</p>
                         <p><strong>Total Paid (USD):</strong> <strong style="color:#ffffff;">$${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></p>
                         <p><strong>Final Converted VOIN:</strong> <strong style="color:#34d399;">${totalVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN</strong></p>
@@ -599,7 +603,7 @@
                 return `
                     <tr>
                         <td colspan="5" class="py-6 px-3 text-center text-slate-400">
-                            No wallet purchase history yet. Buy VOIN (min $10) on <a href="index.html#presale" class="text-cyan-300 underline">Presale VOIN</a> to record your Converted VOIN, Timestamp, and Sales Rank.
+                            No wallet purchase history yet. Buy VOIN (min $${MIN_PURCHASE_USD}) on <a href="index.html#presale" class="text-cyan-300 underline">Presale VOIN</a> to record your Converted VOIN, Timestamp, and Sales Rank.
                         </td>
                     </tr>
                 `;
