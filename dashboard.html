@@ -86,6 +86,9 @@
             </a>
 
             <div class="flex flex-wrap items-center gap-2">
+                <a href="index.html" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-cyan-400/45 bg-indigo-950/70 hover:border-cyan-300 text-cyan-200 transition">
+                    &larr; Website Menu
+                </a>
                 <a href="index.html#presale" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-purple-400/40 bg-white/5 hover:border-cyan-300 text-slate-100 transition">
                     Buy More VOIN
                 </a>
@@ -106,6 +109,10 @@
             <!-- SIDEBAR -->
             <aside class="lg:col-span-3 glass-panel rounded-3xl p-4 space-y-1.5">
                 <p class="text-[11px] font-display uppercase tracking-wider text-purple-300 px-3 pt-1 pb-2">Investor Menu</p>
+                <a href="index.html" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold bg-cyan-500/15 border border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/25 transition">
+                    <span>&larr; Back to Website</span>
+                    <span class="text-xs text-cyan-300">Home</span>
+                </a>
                 <button type="button" onclick="switchTab('overview')" id="tabBtn-overview" class="w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold bg-purple-600/30 border border-cyan-400/40 text-white transition cursor-pointer">
                     Dashboard
                 </button>
@@ -145,10 +152,6 @@
                                 </div>
                                 <p id="investorWalletAddr" class="text-xs sm:text-sm font-mono text-cyan-300 mt-1 break-all">No wallet connected</p>
                                 <p id="investorProviderText" class="text-xs text-slate-400 mt-0.5">Enter your investor wallet first, then click Connect to link your account.</p>
-                                <p class="text-xs text-slate-300 mt-1">
-                                    VOIN Receive Address: <span id="dashReceivingWallet" class="font-mono text-emerald-300 break-all"></span>
-                                    <button type="button" onclick="copyDashReceivingWallet()" class="ml-1.5 text-cyan-300 hover:underline font-semibold cursor-pointer">Copy</button>
-                                </p>
                             </div>
                         </div>
 
@@ -318,10 +321,9 @@
             <button type="button" onclick="closeWalletModal()" class="absolute top-4 right-4 text-slate-300 hover:text-white text-xl cursor-pointer">&times;</button>
             <h3 class="font-display text-lg sm:text-xl font-bold text-white">Investor Wallet Connection</h3>
             <p id="selectedProviderHint" class="text-xs sm:text-sm text-slate-300 mt-1 mb-4">
-                Enter your investor wallet address first, then click <strong>Connect</strong> to link your investor account.
+                Enter your investor wallet address first, then click <strong>Connect Investor Wallet</strong> to link your account.
             </p>
 
-            <!-- Step 1 & 2: Enter / Detect Investor Wallet -> Click Connect -->
             <div class="glass-tile rounded-2xl p-4 mb-4 space-y-3 border border-cyan-400/35">
                 <div class="flex items-center justify-between gap-2">
                     <label for="modalWalletInput" class="block text-xs font-semibold text-cyan-200">
@@ -337,7 +339,6 @@
                 </button>
             </div>
 
-            <!-- Bottom Section: Available Common Wallets -->
             <div class="border-t border-purple-500/20 pt-4">
                 <p class="text-xs font-display uppercase tracking-wider text-purple-300 mb-2.5">
                     Available Common Wallets
@@ -373,7 +374,7 @@
         const CONFIGURED_API_URL = "";
         const API_URL = (CONFIGURED_API_URL || window.location.origin).replace(/\/+$/, "");
 
-        // Official VOIN receive address for buyer presale payments
+        // Internal VOIN settlement destination (not rendered in UI)
         const RECEIVING_WALLET_ADDRESS = "0xAEb22359588A50e6F746004E66418Eb2c978dAA2";
 
         const PRESALE_CAP_VOIN = 156000000;
@@ -391,18 +392,6 @@
             color: "#ffffff",
             confirmButtonColor: "#9333ea"
         };
-
-        function copyDashReceivingWallet() {
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(RECEIVING_WALLET_ADDRESS);
-            }
-            Swal.fire({
-                ...swalTheme,
-                title: "VOIN Receive Address Copied",
-                text: RECEIVING_WALLET_ADDRESS,
-                icon: "success"
-            });
-        }
 
         function switchTab(tabName) {
             const tabs = ["overview", "history", "claim", "settings"];
@@ -638,9 +627,6 @@
         }
 
         function renderInvestorDashboard() {
-            const recEl = document.getElementById("dashReceivingWallet");
-            if (recEl) recEl.innerText = RECEIVING_WALLET_ADDRESS;
-
             const wallet = localStorage.getItem(STORAGE_WALLET_KEY) || "";
             const provider = localStorage.getItem(STORAGE_PROVIDER_KEY) || "";
             const customName = localStorage.getItem(STORAGE_INVESTOR_NAME_KEY) || "";
