@@ -9,7 +9,7 @@ class VOINPresaleContract:
         self.presale_allocation = 156000000  # 60%
 
         # Official receiving wallet for buyer presale payments
-        self.receiving_wallet = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+        self.receiving_wallet = "0xAEb22359588A50e6F746004E66418Eb2c978dAA2"
 
         # 10 batches x 15,600,000 VOIN = 156,000,000 VOIN
         self.total_batches = 10
