@@ -1,257 +1,664 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - IoT Monitoring</title>
+    <title>VOIN Investor Dashboard — Wallet &amp; Presale Activity</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, query, limitToLast } 
-            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        // KONFIGURASI FIREBASE
-        const firebaseConfig = {
-            apiKey: "AIzaSyDFY21FPt8OoyYKtmnZ-Z9vq4By8WduqGc",
-            authDomain: "voin-coin-ad692.firebaseapp.com",
-            projectId: "voin-coin-ad692",
-            storageBucket: "voin-coin-ad692.firebasestorage.app",
-            messagingSenderId: "220942707813",
-            appId: "1:220942707813:web:d76d6a9af2335a5c9bea8c",
-            measurementId: "G-90VH123WF3",
-            databaseURL: "https://voin-coin-ad692-default-rtdb.asia-southeast1.firebasedatabase.app"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        let chart, tempHistory = [], humidHistory = [], timeLabels = [];
-
-        // Inisialisasi grafik
-        function initChart() {
-            const ctx = document.getElementById('chart').getContext('2d');
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: timeLabels,
-                    datasets: [
-                        {
-                            label: 'Suhu (°C)',
-                            data: tempHistory,
-                            borderColor: 'rgb(239, 68, 68)',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            tension: 0.3,
-                            fill: true,
-                            pointRadius: 2
-                        },
-                        {
-                            label: 'Kelembaban (%)',
-                            data: humidHistory,
-                            borderColor: 'rgb(59, 130, 246)',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            tension: 0.3,
-                            fill: true,
-                            pointRadius: 2
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top' }
-                    },
-                    scales: {
-                        y: { beginAtZero: false, grid: { color: '#e5e7eb' } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight-navy: #050818;
+            --deep-space: #0c122e;
+            --electric-blue: #38bdf8;
+            --neon-purple: #a855f7;
         }
 
-        // Realtime listener Firebase
-        function initRealtime() {
-            const sensorRef = query(ref(db, 'sensor'), limitToLast(1));
-
-            onValue(sensorRef, (snapshot) => {
-                const data = snapshot.val();
-                if (!data) {
-                    document.getElementById('updateTime').textContent = "Menunggu data dari alat...";
-                    return;
-                }
-
-                const key = Object.keys(data)[0];
-                const val = data[key];
-                const suhu = parseFloat(val.suhu) || 0;
-                const kelembaban = parseFloat(val.kelembaban) || 0;
-
-                // Update UI angka
-                document.getElementById('suhu').textContent = suhu.toFixed(1);
-                document.getElementById('kelembaban').textContent = kelembaban.toFixed(1);
-                document.getElementById('updateTime').textContent = 
-                    new Date().toLocaleTimeString('id-ID');
-
-                // Status badge
-                const statusEl = document.getElementById('status');
-                if (suhu > 35 || kelembaban > 80) {
-                    statusEl.textContent = '⚠️ Waspada';
-                    statusEl.className = 'px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-700';
-                } else if (suhu > 30 || kelembaban > 70) {
-                    statusEl.textContent = '⚡ Normal Tinggi';
-                    statusEl.className = 'px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-700';
-                } else {
-                    statusEl.textContent = '✅ Normal';
-                    statusEl.className = 'px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-700';
-                }
-
-                // Push ke chart
-                const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                timeLabels.push(now);
-                tempHistory.push(suhu);
-                humidHistory.push(kelembaban);
-
-                if (timeLabels.length > 20) {
-                    timeLabels.shift();
-                    tempHistory.shift();
-                    humidHistory.shift();
-                }
-                if (chart) chart.update('none');
-            });
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--midnight-navy);
+            background-image:
+                radial-gradient(circle at 16% 18%, rgba(168, 85, 247, 0.25) 0%, transparent 42%),
+                radial-gradient(circle at 82% 24%, rgba(56, 189, 248, 0.22) 0%, transparent 45%),
+                linear-gradient(180deg, #040714 0%, #0a0f29 50%, #050818 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        // Ambil riwayat data
-        function loadHistory() {
-            const historyRef = query(ref(db, 'sensor'), limitToLast(50));
-            onValue(historyRef, (snapshot) => {
-                const data = snapshot.val();
-                const tbody = document.getElementById('historyBody');
-                tbody.innerHTML = '';
-                
-                if (!data) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="py-6 text-center text-gray-400 text-sm">Belum ada riwayat data</td></tr>';
-                    return;
-                }
-
-                const rows = Object.entries(data).reverse().slice(0, 20);
-                rows.forEach(([key, val]) => {
-                    const tgl = val.timestamp ? new Date(val.timestamp).toLocaleString('id-ID') : '-';
-                    tbody.innerHTML += `
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="py-2 px-3 text-sm text-gray-600">${tgl}</td>
-                            <td class="py-2 px-3 text-sm font-medium text-red-600">${parseFloat(val.suhu).toFixed(1)} °C</td>
-                            <td class="py-2 px-3 text-sm font-medium text-blue-600">${parseFloat(val.kelembaban).toFixed(1)} %</td>
-                        </tr>`;
-                });
-            });
+        .font-display {
+            font-family: 'Orbitron', sans-serif;
         }
 
-        // Jalankan fungsi langsung tanpa cek login
-        initChart();
-        initRealtime();
-        loadHistory();
+        .cyber-grid {
+            background-size: 46px 46px;
+            background-image:
+                linear-gradient(to right, rgba(139, 92, 246, 0.055) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(56, 189, 248, 0.055) 1px, transparent 1px);
+        }
 
-    </script>
+        .glass-panel {
+            background: rgba(15, 21, 50, 0.78);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(168, 85, 247, 0.28);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-tile {
+            background: rgba(11, 16, 40, 0.85);
+            border: 1px solid rgba(129, 140, 248, 0.25);
+            transition: all 0.25s ease;
+        }
+
+        .glass-tile:hover {
+            border-color: rgba(168, 85, 247, 0.68);
+        }
+
+        .btn-primary-voin {
+            background: linear-gradient(135deg, #6366f1 0%, #9333ea 55%, #3b82f6 100%);
+            box-shadow: 0 0 24px rgba(147, 51, 234, 0.45);
+            transition: all 0.25s ease;
+        }
+
+        .btn-primary-voin:hover:not(:disabled) {
+            box-shadow: 0 0 34px rgba(56, 189, 248, 0.65);
+            transform: translateY(-1px);
+        }
+    </style>
 </head>
-<body class="min-h-screen bg-gray-100">
+<body class="cyber-grid selection:bg-purple-500 selection:text-white">
 
-    <!-- Navbar -->
-    <nav class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                </svg>
-                <h1 class="text-xl font-bold">IoT Monitoring Dashboard</h1>
-            </div>
-            <!-- Tombol Logout dihilangkan karena tanpa login -->
-        </div>
-    </nav>
-
-    <main class="max-w-7xl mx-auto px-4 py-8">
-
-        <!-- Status -->
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-800">Monitoring Realtime</h2>
-                <p class="text-gray-500 text-sm">Update terakhir: <span id="updateTime">-</span></p>
-            </div>
-            <span id="status" class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-600">
-                Menunggu data...
-            </span>
-        </div>
-
-        <!-- Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <!-- Suhu -->
-            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-red-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm font-medium">Suhu</p>
-                        <p class="text-4xl font-bold text-gray-800 mt-2">
-                            <span id="suhu">--</span>
-                            <span class="text-xl text-gray-400">°C</span>
-                        </p>
-                    </div>
-                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zM9 19V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                        </svg>
-                    </div>
+    <header class="sticky top-0 z-40 border-b border-purple-500/20 bg-[#050818]/90 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+            <a href="index.html" class="flex items-center gap-2.5 shrink-0">
+                <div class="w-10 h-10 rounded-full overflow-hidden border border-purple-400/60 bg-[#080c24] flex items-center justify-center p-0.5 shadow-[0_0_16px_rgba(168,85,247,0.5)]">
+                    <img src="voin-logo.jpg?v=7" alt="VOIN Wallet" class="w-full h-full object-contain scale-110 rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="hidden w-full h-full items-center justify-center font-display font-bold text-base">V</span>
                 </div>
-            </div>
-
-            <!-- Kelembaban -->
-            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-blue-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm font-medium">Kelembaban</p>
-                        <p class="text-4xl font-bold text-gray-800 mt-2">
-                            <span id="kelembaban">--</span>
-                            <span class="text-xl text-gray-400">%</span>
-                        </p>
-                    </div>
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
-                        </svg>
-                    </div>
+                <div class="leading-tight">
+                    <span class="font-display font-extrabold text-base sm:text-lg tracking-wider text-white block">VOIN</span>
+                    <span class="text-[10px] tracking-widest text-purple-300 uppercase block">INVESTOR DASHBOARD</span>
                 </div>
+            </a>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="index.html#presale" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-purple-400/40 bg-white/5 hover:border-cyan-300 text-slate-100 transition">
+                    Buy More VOIN
+                </a>
+                <button type="button" onclick="openWalletModal()" id="headerWalletBadge" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-cyan-400/50 bg-indigo-950/80 hover:border-cyan-300 text-cyan-100 transition flex items-center gap-2 cursor-pointer">
+                    <span id="headerWalletDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+                    <span id="headerWalletLabel">Connect Wallet</span>
+                </button>
+                <button type="button" onclick="disconnectWallet()" id="headerDisconnectBtn" class="hidden px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-rose-500/50 bg-rose-950/60 hover:bg-rose-900/70 text-rose-200 transition cursor-pointer">
+                    Disconnect
+                </button>
             </div>
         </div>
+    </header>
 
-        <!-- Chart -->
-        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Grafik Realtime</h3>
-            <div style="height: 320px;">
-                <canvas id="chart"></canvas>
-            </div>
-        </div>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-7">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-        <!-- Riwayat -->
-        <div class="bg-white rounded-2xl shadow-lg p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Riwayat Data (20 Terakhir)</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="bg-gray-50 text-left">
-                            <th class="py-3 px-3 text-sm font-semibold text-gray-600">Waktu</th>
-                            <th class="py-3 px-3 text-sm font-semibold text-gray-600">Suhu</th>
-                            <th class="py-3 px-3 text-sm font-semibold text-gray-600">Kelembaban</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyBody">
-                        <tr>
-                            <td colspan="3" class="py-6 text-center text-gray-400 text-sm">Memuat data...</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- SIDEBAR -->
+            <aside class="lg:col-span-3 glass-panel rounded-3xl p-4 space-y-1.5">
+                <p class="text-[11px] font-display uppercase tracking-wider text-purple-300 px-3 pt-1 pb-2">Investor Menu</p>
+                <button type="button" onclick="switchTab('overview')" id="tabBtn-overview" class="w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold bg-purple-600/30 border border-cyan-400/40 text-white transition cursor-pointer">
+                    Dashboard
+                </button>
+                <button type="button" onclick="switchTab('history')" id="tabBtn-history" class="w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-white/5 hover:text-cyan-200 transition cursor-pointer">
+                    Wallet History
+                </button>
+                <button type="button" onclick="switchTab('claim')" id="tabBtn-claim" class="w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-white/5 hover:text-cyan-200 transition cursor-pointer">
+                    Claim Tokens
+                </button>
+                <button type="button" onclick="switchTab('settings')" id="tabBtn-settings" class="w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-white/5 hover:text-cyan-200 transition cursor-pointer">
+                    Settings
+                </button>
+
+                <div class="pt-3 mt-3 border-t border-purple-500/20 space-y-1.5">
+                    <button type="button" onclick="disconnectWallet()" class="w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold text-rose-300 hover:bg-rose-950/50 border border-transparent hover:border-rose-500/35 transition cursor-pointer">
+                        Disconnect / Log Out
+                    </button>
+                </div>
+            </aside>
+
+            <!-- CONTENT -->
+            <div class="lg:col-span-9 space-y-6">
+
+                <!-- Investor Account Banner -->
+                <section class="glass-panel rounded-3xl p-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 to-cyan-500 flex items-center justify-center font-display text-xl font-black text-white shrink-0 shadow-[0_0_24px_rgba(168,85,247,0.45)]">
+                                <span id="investorInitials">VO</span>
+                            </div>
+                            <div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <h1 id="investorNameTitle" class="font-display text-lg sm:text-2xl font-extrabold text-white">Investor Account</h1>
+                                    <span id="connectionPill" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 border border-amber-400/40 text-amber-200">
+                                        Wallet Disconnected
+                                    </span>
+                                </div>
+                                <p id="investorWalletAddr" class="text-xs sm:text-sm font-mono text-cyan-300 mt-1 break-all">No wallet connected</p>
+                                <p id="investorProviderText" class="text-xs text-slate-400 mt-0.5">Click "Connect Wallet" to link your investor wallet.</p>
+                                <p class="text-xs text-slate-300 mt-1">
+                                    Receiving Wallet: <span id="dashReceivingWallet" class="font-mono text-emerald-300 break-all"></span>
+                                    <button type="button" onclick="copyDashReceivingWallet()" class="ml-1.5 text-cyan-300 hover:underline font-semibold cursor-pointer">Copy</button>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <button type="button" onclick="openWalletModal()" class="btn-primary-voin px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white cursor-pointer">
+                                Switch / Connect Wallet
+                            </button>
+                            <button type="button" onclick="disconnectWallet()" id="bannerDisconnectBtn" class="hidden px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border border-rose-500/50 bg-rose-950/60 hover:bg-rose-900/70 text-rose-200 transition cursor-pointer">
+                                Disconnect
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-6">
+                        <div class="glass-tile p-4 rounded-2xl">
+                            <p class="text-xs text-slate-300">Total Invested (USD)</p>
+                            <p id="statTotalInvested" class="font-display text-xl font-extrabold text-white mt-1">$0.00</p>
+                            <p id="statTotalVoin" class="text-xs text-emerald-400 mt-0.5">+ 0 VOIN</p>
+                        </div>
+                        <div class="glass-tile p-4 rounded-2xl">
+                            <p class="text-xs text-slate-300">Active Batch</p>
+                            <p id="statActiveBatch" class="font-display text-xl font-extrabold text-cyan-300 mt-1">Batch #1</p>
+                            <p class="text-xs text-slate-400 mt-0.5">6% (15,600,000 VOIN)</p>
+                        </div>
+                        <div class="glass-tile p-4 rounded-2xl">
+                            <p class="text-xs text-slate-300">Latest Sales Rank</p>
+                            <p id="statLatestRank" class="font-display text-xl font-extrabold text-purple-300 mt-1">#-</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Investor order rank</p>
+                        </div>
+                        <div class="glass-tile p-4 rounded-2xl">
+                            <p class="text-xs text-slate-300">Presale Supply Pool</p>
+                            <p class="font-display text-xl font-extrabold text-white mt-1">156M / 260M</p>
+                            <p class="text-xs text-slate-400 mt-0.5">10 batches total</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 glass-tile p-4 rounded-2xl">
+                        <div class="flex items-center justify-between text-xs sm:text-sm mb-2">
+                            <span class="font-semibold text-slate-200">Presale Progress</span>
+                            <span id="presaleProgressLabel" class="font-mono text-cyan-300">0 / 156,000,000 VOIN (260,000,000 Total Supply)</span>
+                        </div>
+                        <div class="w-full h-3 rounded-full bg-[#06091a] overflow-hidden border border-purple-500/25">
+                            <div id="presaleProgressBar" class="h-full bg-gradient-to-r from-cyan-400 via-purple-500 to-fuchsia-500 transition-all duration-500" style="width: 1%;"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 1: OVERVIEW -->
+                <section id="tabContent-overview" class="space-y-6">
+                    <div class="glass-panel rounded-3xl p-6">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h2 class="font-display text-lg sm:text-xl font-extrabold text-white">Wallet History</h2>
+                                <p class="text-xs sm:text-sm text-slate-300">History action showing Buy Result, Date / Month / Day, Hour : Minute : Second, and Sales Rank.</p>
+                            </div>
+                            <span id="walletHistoryCount" class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-950/80 border border-purple-400/35 text-cyan-200">
+                                0 Entries
+                            </span>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                                <thead>
+                                    <tr class="border-b border-purple-500/25 text-purple-200 uppercase text-xs">
+                                        <th class="py-3 px-3">History Action</th>
+                                        <th class="py-3 px-3">Buy Result</th>
+                                        <th class="py-3 px-3">Date / Month / Day</th>
+                                        <th class="py-3 px-3">Hour : Minute : Second</th>
+                                        <th class="py-3 px-3">Sales Rank</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="investorHistoryBody" class="divide-y divide-slate-800/80 text-slate-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                        <div class="xl:col-span-5 glass-panel rounded-3xl p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 class="font-display text-base sm:text-lg font-extrabold text-white">Live Sales Rank</h2>
+                                    <p class="text-xs text-slate-300">Top buyers ranked by VOIN volume</p>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 border border-emerald-400/40 text-emerald-300">LIVE</span>
+                            </div>
+                            <div id="liveSalesRankList" class="space-y-2.5"></div>
+                        </div>
+
+                        <div class="xl:col-span-7 glass-panel rounded-3xl p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 class="font-display text-base sm:text-lg font-extrabold text-white">Live Purchase History</h2>
+                                    <p class="text-xs text-slate-300">Recent presale purchases &amp; timestamps</p>
+                                </div>
+                                <button type="button" onclick="refreshLiveData()" class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-cyan-400/40 bg-white/5 hover:border-cyan-300 text-cyan-200 transition cursor-pointer">
+                                    Refresh
+                                </button>
+                            </div>
+                            <div id="livePurchaseHistoryList" class="space-y-2.5"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 2: WALLET HISTORY FULL -->
+                <section id="tabContent-history" class="hidden glass-panel rounded-3xl p-6">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                        <div>
+                            <h2 class="font-display text-xl font-extrabold text-white">Complete Wallet History</h2>
+                            <p class="text-xs sm:text-sm text-slate-300">Full log of Buy Result, Date / Month / Day, Hour : Minute : Second, and Sales Rank.</p>
+                        </div>
+                        <button type="button" onclick="clearInvestorHistory()" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-rose-500/40 bg-rose-950/40 hover:border-rose-400 text-rose-200 transition cursor-pointer">
+                            Clear Local History
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                            <thead>
+                                <tr class="border-b border-purple-500/25 text-purple-200 uppercase text-xs">
+                                    <th class="py-3 px-3">History Action</th>
+                                    <th class="py-3 px-3">Buy Result</th>
+                                    <th class="py-3 px-3">Date / Month / Day</th>
+                                    <th class="py-3 px-3">Hour : Minute : Second</th>
+                                    <th class="py-3 px-3">Sales Rank</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fullHistoryBody" class="divide-y divide-slate-800/80 text-slate-200"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- TAB 3: CLAIM TOKENS -->
+                <section id="tabContent-claim" class="hidden glass-panel rounded-3xl p-6 space-y-4">
+                    <h2 class="font-display text-xl font-extrabold text-white">Claim VOIN Tokens</h2>
+                    <p class="text-sm text-slate-300">
+                        Presale schedule runs from <strong class="text-cyan-300">December 2026</strong> to <strong class="text-purple-300">December 2028</strong>.
+                    </p>
+                    <div class="glass-tile p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <p class="text-xs text-slate-400">Claimable VOIN Balance</p>
+                            <p id="claimableVoinAmount" class="font-display text-2xl font-extrabold text-emerald-400 mt-0.5">0 VOIN</p>
+                        </div>
+                        <button type="button" onclick="requestClaimInfo()" class="btn-primary-voin px-5 py-3 rounded-xl text-sm font-semibold text-white cursor-pointer">
+                            Check Claim Status
+                        </button>
+                    </div>
+                </section>
+
+                <!-- TAB 4: SETTINGS -->
+                <section id="tabContent-settings" class="hidden glass-panel rounded-3xl p-6 space-y-4">
+                    <h2 class="font-display text-xl font-extrabold text-white">Investor Account Settings</h2>
+                    <div class="max-w-lg space-y-3">
+                        <label for="investorDisplayNameInput" class="block text-sm font-medium text-slate-200">Investor Display Name</label>
+                        <input type="text" id="investorDisplayNameInput" placeholder="e.g. VOIN Early Investor" class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-400">
+                        <button type="button" onclick="saveInvestorProfile()" class="btn-primary-voin px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer">
+                            Save Investor Profile
+                        </button>
+                    </div>
+                </section>
+
             </div>
         </div>
     </main>
 
+    <!-- WALLET MODAL -->
+    <div id="walletModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+        <div class="glass-panel max-w-md w-full rounded-3xl p-6 relative">
+            <button type="button" onclick="closeWalletModal()" class="absolute top-4 right-4 text-slate-300 hover:text-white text-xl cursor-pointer">&times;</button>
+            <h3 class="font-display text-lg sm:text-xl font-bold text-white">Connect Investor Wallet</h3>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1 mb-4">Select a wallet or enter a wallet address to view your investor dashboard.</p>
+
+            <div class="space-y-2.5 text-sm mb-4">
+                <button type="button" onclick="connectInvestorProvider('MetaMask')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
+                    <span>MetaMask</span><span class="text-cyan-300">Connect &rarr;</span>
+                </button>
+                <button type="button" onclick="connectInvestorProvider('Trust Wallet')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
+                    <span>Trust Wallet</span><span class="text-cyan-300">Connect &rarr;</span>
+                </button>
+                <button type="button" onclick="connectInvestorProvider('Coinbase Wallet')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
+                    <span>Coinbase Wallet</span><span class="text-cyan-300">Connect &rarr;</span>
+                </button>
+                <button type="button" onclick="connectInvestorProvider('WalletConnect')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
+                    <span>WalletConnect</span><span class="text-cyan-300">Connect &rarr;</span>
+                </button>
+            </div>
+
+            <div class="border-t border-purple-500/20 pt-4">
+                <label for="modalWalletInput" class="block text-xs font-semibold text-slate-200 mb-1.5">Or Enter Wallet Address</label>
+                <div class="flex gap-2">
+                    <input type="text" id="modalWalletInput" placeholder="0x..." class="flex-1 bg-[#070b1f] border border-slate-600/80 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-cyan-400">
+                    <button type="button" onclick="applyManualWallet()" class="btn-primary-voin px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white cursor-pointer shrink-0">
+                        Use Wallet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIGURED_API_URL = "";
+        const API_URL = (CONFIGURED_API_URL || window.location.origin).replace(/\/+$/, "");
+
+        // Must match RECEIVING_WALLET_ADDRESS in index.html & presale_contract.py
+        const RECEIVING_WALLET_ADDRESS = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
+
+        const PRESALE_CAP_VOIN = 156000000;
+        const TOTAL_SUPPLY_VOIN = 260000000;
+
+        const STORAGE_WALLET_KEY = "voin_wallet_address";
+        const STORAGE_PROVIDER_KEY = "voin_wallet_provider";
+        const STORAGE_HISTORY_KEY = "voin_wallet_history";
+        const STORAGE_INVESTOR_NAME_KEY = "voin_investor_name";
+
+        const swalTheme = {
+            background: "#0c122e",
+            color: "#ffffff",
+            confirmButtonColor: "#9333ea"
+        };
+
+        function copyDashReceivingWallet() {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(RECEIVING_WALLET_ADDRESS);
+            }
+            Swal.fire({
+                ...swalTheme,
+                title: "Receiving Wallet Copied",
+                text: RECEIVING_WALLET_ADDRESS,
+                icon: "success"
+            });
+        }
+
+        function switchTab(tabName) {
+            const tabs = ["overview", "history", "claim", "settings"];
+            tabs.forEach((t) => {
+                const section = document.getElementById(`tabContent-${t}`);
+                const btn = document.getElementById(`tabBtn-${t}`);
+                if (section) section.classList.toggle("hidden", t !== tabName);
+                if (btn) {
+                    btn.className = t === tabName
+                        ? "w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold bg-purple-600/30 border border-cyan-400/40 text-white transition cursor-pointer"
+                        : "w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-white/5 hover:text-cyan-200 transition cursor-pointer";
+                }
+            });
+        }
+
+        function getHistory() {
+            try {
+                const raw = localStorage.getItem(STORAGE_HISTORY_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (_) {
+                return [];
+            }
+        }
+
+        function openWalletModal() {
+            const modal = document.getElementById("walletModal");
+            document.getElementById("modalWalletInput").value = localStorage.getItem(STORAGE_WALLET_KEY) || "";
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        function closeWalletModal() {
+            const modal = document.getElementById("walletModal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        async function connectInvestorProvider(providerName) {
+            let addr = localStorage.getItem(STORAGE_WALLET_KEY) || "";
+            if (window.ethereum) {
+                try {
+                    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+                    if (accounts && accounts[0]) addr = accounts[0];
+                } catch (_) {}
+            }
+            if (!addr) {
+                addr = document.getElementById("modalWalletInput").value.trim() || "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
+            }
+            localStorage.setItem(STORAGE_WALLET_KEY, addr);
+            localStorage.setItem(STORAGE_PROVIDER_KEY, providerName);
+            closeWalletModal();
+            renderInvestorDashboard();
+            Swal.fire({ ...swalTheme, title: "Wallet Connected", text: `${providerName} connected (${addr}).`, icon: "success" });
+        }
+
+        function applyManualWallet() {
+            const addr = document.getElementById("modalWalletInput").value.trim();
+            if (!addr) {
+                Swal.fire({ ...swalTheme, title: "Address Required", text: "Please enter a wallet address.", icon: "error" });
+                return;
+            }
+            localStorage.setItem(STORAGE_WALLET_KEY, addr);
+            localStorage.setItem(STORAGE_PROVIDER_KEY, "Manual Wallet");
+            closeWalletModal();
+            renderInvestorDashboard();
+        }
+
+        function disconnectWallet() {
+            localStorage.removeItem(STORAGE_WALLET_KEY);
+            localStorage.removeItem(STORAGE_PROVIDER_KEY);
+            renderInvestorDashboard();
+            Swal.fire({
+                ...swalTheme,
+                title: "Wallet Disconnected",
+                text: "Your wallet has been disconnected.",
+                icon: "info"
+            });
+        }
+
+        function saveInvestorProfile() {
+            const val = document.getElementById("investorDisplayNameInput").value.trim();
+            if (val) {
+                localStorage.setItem(STORAGE_INVESTOR_NAME_KEY, val);
+            } else {
+                localStorage.removeItem(STORAGE_INVESTOR_NAME_KEY);
+            }
+            renderInvestorDashboard();
+            Swal.fire({ ...swalTheme, title: "Saved", text: "Investor profile updated.", icon: "success" });
+        }
+
+        function clearInvestorHistory() {
+            localStorage.removeItem(STORAGE_HISTORY_KEY);
+            renderInvestorDashboard();
+        }
+
+        function requestClaimInfo() {
+            Swal.fire({
+                ...swalTheme,
+                title: "Presale Claim Schedule",
+                text: "Presale runs from December 2026 to December 2028. Your VOIN allocation is recorded in your investor history.",
+                icon: "info"
+            });
+        }
+
+        function buildHistoryRowsHtml(items) {
+            if (!items.length) {
+                return `
+                    <tr>
+                        <td colspan="5" class="py-6 px-3 text-center text-slate-400">
+                            No wallet purchase history yet. Buy VOIN (min $10) on <a href="index.html#presale" class="text-cyan-300 underline">Presale VOIN</a> to record your Buy Result, Timestamp, and Sales Rank.
+                        </td>
+                    </tr>
+                `;
+            }
+
+            return items.map((item, idx) => {
+                const displayRank = item.salesRank ?? item.rank ?? (items.length - idx);
+                const voinAmt = Number(item.buyResultVoin || 0);
+                return `
+                    <tr class="hover:bg-white/5 transition">
+                        <td class="py-3.5 px-3">
+                            <p class="font-semibold text-white">Buy VOIN &bull; Batch ${item.batch || 1}</p>
+                            <p class="text-xs text-slate-400">${item.status || "Confirmed"} &bull; Paid: $${Number(item.amountPaid || 0).toLocaleString("en-US")}</p>
+                        </td>
+                        <td class="py-3.5 px-3 font-display font-bold text-emerald-400">
+                            ${voinAmt.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN
+                        </td>
+                        <td class="py-3.5 px-3">
+                            <p class="font-medium text-white">${item.dateStr || "-"}</p>
+                            <p class="text-xs text-cyan-300">Month: ${item.monthStr || "-"} &bull; Day: ${item.dayStr || "-"}</p>
+                        </td>
+                        <td class="py-3.5 px-3 font-mono text-purple-200">
+                            ${item.timeStr || "-"}
+                        </td>
+                        <td class="py-3.5 px-3">
+                            <span class="px-2.5 py-1 rounded-lg bg-purple-950/80 border border-purple-400/40 font-display font-bold text-cyan-300 text-xs">
+                                Sales Rank #${displayRank}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        function renderLiveRankAndFeed(history, liveFeedFromApi = null) {
+            const rankContainer = document.getElementById("liveSalesRankList");
+            const feedContainer = document.getElementById("livePurchaseHistoryList");
+
+            const combinedFeed = Array.isArray(liveFeedFromApi) && liveFeedFromApi.length
+                ? liveFeedFromApi
+                : history;
+
+            if (!combinedFeed.length) {
+                rankContainer.innerHTML = `<p class="text-xs text-slate-400">Waiting for presale purchases to rank buyers.</p>`;
+                feedContainer.innerHTML = `<p class="text-xs text-slate-400">No live purchases recorded yet.</p>`;
+                return;
+            }
+
+            const ranked = [...combinedFeed]
+                .map((entry, idx) => ({
+                    ...entry,
+                    computedVoin: Number(entry.buyResultVoin ?? entry.tokens_received ?? 0),
+                    computedRank: entry.salesRank ?? entry.rank ?? (idx + 1)
+                }))
+                .sort((a, b) => b.computedVoin - a.computedVoin)
+                .slice(0, 5);
+
+            rankContainer.innerHTML = ranked.map((r, pos) => {
+                const shortWallet = r.wallet ? `${r.wallet.slice(0, 6)}...${r.wallet.slice(-4)}` : "Investor";
+                return `
+                    <div class="glass-tile p-3 rounded-2xl flex items-center justify-between gap-2 text-xs sm:text-sm">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-7 h-7 rounded-lg bg-purple-950 border border-cyan-400/40 flex items-center justify-center font-display font-bold text-cyan-300 text-xs">#${pos + 1}</span>
+                            <div>
+                                <p class="font-semibold text-white">${shortWallet}</p>
+                                <p class="text-[11px] text-slate-400">Batch ${r.batch || 1} &bull; Sales Rank #${r.computedRank}</p>
+                            </div>
+                        </div>
+                        <span class="font-display font-bold text-emerald-400">${r.computedVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN</span>
+                    </div>
+                `;
+            }).join("");
+
+            feedContainer.innerHTML = combinedFeed.slice(0, 6).map((item, idx) => {
+                const voinAmt = Number(item.buyResultVoin ?? item.tokens_received ?? 0);
+                const rankVal = item.salesRank ?? item.rank ?? (combinedFeed.length - idx);
+                return `
+                    <div class="glass-tile p-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                        <div>
+                            <p class="font-semibold text-white">Buy ${voinAmt.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN <span class="text-cyan-300">(Batch ${item.batch || 1})</span></p>
+                            <p class="text-slate-400 mt-0.5">${item.dateStr || ""} &bull; Month: ${item.monthStr || ""} &bull; Day: ${item.dayStr || ""} &bull; Time: ${item.timeStr || ""}</p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-lg bg-indigo-950/90 border border-purple-400/35 font-display font-bold text-purple-200 self-start sm:self-center">
+                            Sales Rank #${rankVal}
+                        </span>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function renderInvestorDashboard() {
+            const recEl = document.getElementById("dashReceivingWallet");
+            if (recEl) recEl.innerText = RECEIVING_WALLET_ADDRESS;
+
+            const wallet = localStorage.getItem(STORAGE_WALLET_KEY) || "";
+            const provider = localStorage.getItem(STORAGE_PROVIDER_KEY) || "";
+            const customName = localStorage.getItem(STORAGE_INVESTOR_NAME_KEY) || "";
+            const history = getHistory();
+
+            const isConnected = Boolean(wallet);
+            document.getElementById("headerWalletLabel").innerText = isConnected ? `${wallet.slice(0, 6)}...${wallet.slice(-4)}` : "Connect Wallet";
+            document.getElementById("headerWalletDot").className = isConnected ? "w-2 h-2 rounded-full bg-emerald-400 animate-pulse" : "w-2 h-2 rounded-full bg-slate-400";
+            document.getElementById("headerDisconnectBtn").classList.toggle("hidden", !isConnected);
+            document.getElementById("bannerDisconnectBtn").classList.toggle("hidden", !isConnected);
+
+            const pill = document.getElementById("connectionPill");
+            pill.innerText = isConnected ? "Connected" : "Wallet Disconnected";
+            pill.className = isConnected
+                ? "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 border border-emerald-400/40 text-emerald-300"
+                : "px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 border border-amber-400/40 text-amber-200";
+
+            document.getElementById("investorNameTitle").innerText = customName || (isConnected ? "Investor Account" : "Guest Investor View");
+            document.getElementById("investorWalletAddr").innerText = isConnected ? wallet : "No wallet connected (showing saved browser history)";
+            document.getElementById("investorProviderText").innerText = isConnected ? `Wallet Provider: ${provider || "Web3 Wallet"}` : "Connect a wallet above or buy VOIN from the presale page.";
+            document.getElementById("investorInitials").innerText = isConnected ? wallet.slice(2, 4).toUpperCase() : "VO";
+            document.getElementById("investorDisplayNameInput").value = customName;
+
+            const walletEntries = isConnected
+                ? history.filter((h) => !h.wallet || h.wallet.toLowerCase() === wallet.toLowerCase())
+                : history;
+
+            let totalUsd = 0;
+            let totalVoin = 0;
+            walletEntries.forEach((entry) => {
+                totalUsd += Number(entry.amountPaid || 0);
+                totalVoin += Number(entry.buyResultVoin || 0);
+            });
+
+            document.getElementById("statTotalInvested").innerText = `$${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById("statTotalVoin").innerText = `+ ${totalVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN`;
+            document.getElementById("claimableVoinAmount").innerText = `${totalVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN`;
+
+            const latestRank = walletEntries.length ? (walletEntries[0].salesRank ?? walletEntries[0].rank ?? 1) : "-";
+            document.getElementById("statLatestRank").innerText = latestRank === "-" ? "#-" : `#${latestRank}`;
+            document.getElementById("walletHistoryCount").innerText = `${walletEntries.length} Entries`;
+
+            const rowsHtml = buildHistoryRowsHtml(walletEntries);
+            document.getElementById("investorHistoryBody").innerHTML = rowsHtml;
+            document.getElementById("fullHistoryBody").innerHTML = rowsHtml;
+
+            renderLiveRankAndFeed(history);
+        }
+
+        async function refreshLiveData() {
+            const history = getHistory();
+            try {
+                const res = await fetch(`${API_URL}/api/presale-stats`, {
+                    method: "GET",
+                    headers: { "Accept": "application/json" }
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+
+                const currentBatch = Number(data.current_batch) || 1;
+                const sold = Number(data.tokens_sold) || 0;
+                document.getElementById("statActiveBatch").innerText = `Batch #${currentBatch}`;
+
+                const pct = Math.min(100, Math.max(1, (sold / PRESALE_CAP_VOIN) * 100));
+                document.getElementById("presaleProgressBar").style.width = `${pct}%`;
+                document.getElementById("presaleProgressLabel").innerText =
+                    `${sold.toLocaleString("en-US")} / ${PRESALE_CAP_VOIN.toLocaleString("en-US")} VOIN (${TOTAL_SUPPLY_VOIN.toLocaleString("en-US")} Total Supply)`;
+
+                const apiFeed = Array.isArray(data.recent_purchases) ? data.recent_purchases : null;
+                renderLiveRankAndFeed(history, apiFeed);
+            } catch (_) {
+                renderLiveRankAndFeed(history, null);
+            }
+        }
+
+        renderInvestorDashboard();
+        refreshLiveData();
+    </script>
 </body>
 </html>
