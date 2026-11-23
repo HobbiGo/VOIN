@@ -8,6 +8,9 @@ class VOINPresaleContract:
         self.total_supply = 260000000
         self.presale_allocation = 156000000  # 60%
 
+        # Official receiving wallet for buyer presale payments
+        self.receiving_wallet = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+
         # 10 batches x 15,600,000 VOIN = 156,000,000 VOIN
         self.total_batches = 10
         self.tokens_per_batch = 15600000
@@ -43,7 +46,7 @@ class VOINPresaleContract:
         batch = int(batch_number if batch_number is not None else self.current_batch)
         return float(self.batch_prices_usd.get(batch, batch * 0.01))
 
-    def buy_tokens(self, buyer_address, amount_paid):
+    def buy_tokens(self, buyer_address, amount_paid, receiver_wallet=None):
         current_time = self.get_current_time()
 
         if current_time < self.start_date:
@@ -88,6 +91,7 @@ class VOINPresaleContract:
 
         self.sales_counter += 1
         sales_rank = self.sales_counter
+        target_receiver = str(receiver_wallet).strip() if receiver_wallet else self.receiving_wallet
 
         self.state.add_balance(buyer_address, tokens_to_receive)
         self.state.update_batch_sold(self.current_batch, tokens_to_receive)
@@ -96,6 +100,7 @@ class VOINPresaleContract:
         return {
             "status": "success",
             "batch": self.current_batch,
+            "receiver_wallet": target_receiver,
             "price_per_voin_usd": unit_price_usd,
             "voin_per_usd": round(1.0 / unit_price_usd, 4),
             "tokens_received": tokens_to_receive,
