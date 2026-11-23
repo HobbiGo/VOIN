@@ -20,6 +20,15 @@ def normalize_signature(sig: Any) -> str:
     return f"0x{hex_str}"
 
 
+def _to_canonical_bytes(msg: Any) -> bytes:
+    """Mengonversi hasil canonical_tx_message menjadi bytes secara deterministik."""
+    if isinstance(msg, (bytes, bytearray)):
+        return bytes(msg)
+    if isinstance(msg, str):
+        return msg.encode("utf-8")
+    return json.dumps(msg, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
 def build_signed_tx_payload(
     sender_sk_evm: str,
     sender_sk_pqc: Any,
@@ -27,38 +36,61 @@ def build_signed_tx_payload(
     amount: int | str,
     nonce: int,
     validator_id: Optional[str] = None,
+    data: Optional[Dict[str, Any]] = None,
+    include_sigs_in_tx: bool = True,
 ) -> Dict[str, Any]:
-    """Membuat transaksi kanonis dan menandatanganinya dengan ECDSA + PQC."""
+    """
+    Membuat transaksi kanonis VOIN dan menandatanganinya dengan ECDSA + PQC (ML-DSA).
+    - nonce minimal 1 (nonce 0 khusus genesis)
+    - amount divalidasi sebagai int positif (> 0)
+    - menyertakan 'data' (default {}) agar sesuai REQUIRED_TX_FIELDS
+    """
     if not sender_sk_evm or not sender_sk_evm.strip():
         raise ValueError("sender_sk_evm tidak boleh kosong.")
     if not recipient or not recipient.strip():
         raise ValueError("recipient tidak boleh kosong.")
-    if nonce < 0:
-        raise ValueError("nonce tidak boleh negatif.")
+    if isinstance(nonce, bool) or not isinstance(nonce, int) or nonce < 1:
+        raise ValueError("nonce minimal 1 (nonce 0 hanya untuk genesis).")
+
+    if isinstance(amount, bool):
+        raise ValueError("amount tidak boleh bertipe boolean.")
+    try:
+        amount_int = int(amount)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"amount tidak valid: {amount!r}") from exc
+
+    if amount_int <= 0:
+        raise ValueError("amount harus bilangan bulat positif.")
+
+    if sender_sk_pqc is None:
+        raise ValueError("sender_sk_pqc tidak boleh kosong.")
 
     sender_acct = Account.from_key(sender_sk_evm.strip())
-    tx: Dict[str, Any] = {
+    tx_core: Dict[str, Any] = {
         "sender": sender_acct.address,
         "recipient": recipient.strip(),
-        "amount": amount,
+        "amount": amount_int,
         "nonce": nonce,
+        "data": data if data is not None else {},
     }
 
-    msg = canonical_tx_message(tx)
-    if isinstance(msg, str):
-        msg_bytes = msg.encode("utf-8")
-    elif isinstance(msg, (bytes, bytearray)):
-        msg_bytes = bytes(msg)
-    else:
-        msg_bytes = json.dumps(msg, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    msg_bytes = _to_canonical_bytes(canonical_tx_message(tx_core))
 
     ecdsa_sig_raw = sender_acct.sign_message(encode_defunct(primitive=msg_bytes)).signature
     pqc_sig_raw = pqc_sign(msg_bytes, sender_sk_pqc)
 
+    sig_ecdsa_hex = normalize_signature(ecdsa_sig_raw)
+    sig_mldsa_hex = normalize_signature(pqc_sig_raw)
+
+    tx_final: Dict[str, Any] = dict(tx_core)
+    if include_sigs_in_tx:
+        tx_final["sig_ecdsa"] = sig_ecdsa_hex
+        tx_final["sig_mldsa"] = sig_mldsa_hex
+
     payload: Dict[str, Any] = {
-        "tx": tx,
-        "sig_ecdsa": normalize_signature(ecdsa_sig_raw),
-        "sig_mldsa": normalize_signature(pqc_sig_raw),
+        "tx": tx_final,
+        "sig_ecdsa": sig_ecdsa_hex,
+        "sig_mldsa": sig_mldsa_hex,
     }
 
     if validator_id and validator_id.strip():
@@ -75,6 +107,8 @@ def send_voin(
     amount: int | str,
     nonce: int,
     validator_id: Optional[str] = None,
+    data: Optional[Dict[str, Any]] = None,
+    include_sigs_in_tx: bool = True,
     api_token: Optional[str] = None,
     timeout: int = 15,
 ) -> Dict[str, Any]:
@@ -90,6 +124,8 @@ def send_voin(
         amount=amount,
         nonce=nonce,
         validator_id=validator_id,
+        data=data,
+        include_sigs_in_tx=include_sigs_in_tx,
     )
 
     headers: Dict[str, str] = {"Content-Type": "application/json"}
@@ -99,7 +135,7 @@ def send_voin(
         headers["X-API-Token"] = token
 
     endpoint = f"{base_url}/transaction"
-    print(f"Mengirim transaksi {amount} VOIN ke {recipient} melalui {endpoint}...")
+    print(f"Mengirim transaksi {payload['tx']['amount']} VOIN ke {payload['tx']['recipient']} melalui {endpoint}...")
 
     try:
         response = requests.post(endpoint, json=payload, headers=headers, timeout=timeout)
@@ -132,4 +168,4 @@ if __name__ == "__main__":
     )
     print("Kerangka CLI Wallet VOIN siap digunakan.")
     print(f"Default Node/Gateway URL: {default_node_url}")
-    print("Atur VOIN_NODE_URL / VOIN_GATEWAY_URL dan panggil send_voin(...) untuk mengirim transaksi.")
+    print("Gunakan generate_keypair() untuk sender_sk_pqc dan panggil send_voin(...).")
