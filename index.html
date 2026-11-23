@@ -1,679 +1,1038 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VOIN COIN — Presale Mainnet (Des 2026 - Des 2028)</title>
+    <title>VOIN — Build. Play. Earn. with VOIN | Official Presale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; }
+        :root {
+            --midnight-navy: #050818;
+            --deep-space: #0c122e;
+            --electric-blue: #38bdf8;
+            --neon-purple: #a855f7;
+        }
 
         body {
-            margin: 0;
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-            background: #070b19;
-            color: #f8fafc;
-            min-height: 100vh;
-        }
-
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-            padding: 14px 20px;
-            background: #0d1326;
-            border-bottom: 1px solid #1e293b;
-        }
-
-        .brand {
-            font-weight: 800;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 16px;
-            letter-spacing: 0.04em;
+            background-color: var(--midnight-navy);
+            background-image:
+                radial-gradient(circle at 16% 18%, rgba(168, 85, 247, 0.25) 0%, transparent 42%),
+                radial-gradient(circle at 82% 24%, rgba(56, 189, 248, 0.22) 0%, transparent 45%),
+                radial-gradient(circle at 50% 85%, rgba(124, 58, 237, 0.16) 0%, transparent 50%),
+                linear-gradient(180deg, #040714 0%, #0a0f29 50%, #050818 100%);
             color: #ffffff;
-            text-decoration: none;
+            overflow-x: hidden;
         }
 
-        .top-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
+        .font-display {
+            font-family: 'Orbitron', sans-serif;
         }
 
-        .btn-top {
-            padding: 8px 14px;
-            border-radius: 8px;
-            border: 1px solid #334155;
-            background: #16203a;
-            color: #f8fafc;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
+        .cyber-grid {
+            background-size: 46px 46px;
+            background-image:
+                linear-gradient(to right, rgba(139, 92, 246, 0.055) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(56, 189, 248, 0.055) 1px, transparent 1px);
         }
 
-        .btn-top.primary {
-            background: #2563eb;
-            border-color: #3b82f6;
+        .glass-panel {
+            background: rgba(15, 21, 50, 0.78);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(168, 85, 247, 0.28);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
-        .btn-top.danger {
-            background: #7f1d1d;
-            border-color: #ef4444;
+        .glass-tile {
+            background: rgba(11, 16, 40, 0.85);
+            border: 1px solid rgba(129, 140, 248, 0.25);
+            transition: all 0.25s ease;
         }
 
-        .wrap {
-            max-width: 520px;
-            margin: 36px auto;
-            padding: 0 16px 48px;
+        .glass-tile:hover {
+            border-color: rgba(168, 85, 247, 0.72);
+            box-shadow: 0 10px 28px rgba(168, 85, 247, 0.22);
+            transform: translateY(-2px);
         }
 
-        .card {
-            background: #141b2d;
-            border: 1px solid #26324d;
-            border-radius: 16px;
-            padding: 28px 24px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+        @keyframes voinCoinFloat {
+            0%, 100% {
+                transform: translateY(0px) rotateY(-6deg) scale(1);
+                filter: drop-shadow(0 0 28px rgba(168, 85, 247, 0.65));
+            }
+            50% {
+                transform: translateY(-12px) rotateY(6deg) scale(1.02);
+                filter: drop-shadow(0 16px 36px rgba(56, 189, 248, 0.7));
+            }
         }
 
-        .title {
-            margin: 0;
-            text-align: center;
-            font-size: 26px;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-            color: #60a5fa;
+        @keyframes orbitSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
-        .subtitle {
-            margin: 6px 0 4px;
-            text-align: center;
-            font-size: 13px;
-            color: #94a3b8;
+        @keyframes toolFly {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
         }
 
-        .server-status {
-            text-align: center;
-            font-size: 13px;
-            font-weight: 600;
-            color: #34d399;
-            margin-bottom: 18px;
+        .voin-3d-wrap { perspective: 900px; }
+        .voin-coin-fly { animation: voinCoinFloat 4.8s ease-in-out infinite; will-change: transform; }
+        .orbit-ring { animation: orbitSpin 22s linear infinite; will-change: transform; }
+        .voin-tool-fly { animation: toolFly 4s ease-in-out infinite; will-change: transform; }
+
+        .btn-primary-voin {
+            background: linear-gradient(135deg, #6366f1 0%, #9333ea 55%, #3b82f6 100%);
+            box-shadow: 0 0 24px rgba(147, 51, 234, 0.45);
+            transition: all 0.25s ease;
         }
 
-        .stage-box {
-            background: #1d2b4f;
-            border: 1px solid #334e8a;
-            border-radius: 10px;
-            padding: 14px;
-            text-align: center;
-            margin-bottom: 18px;
+        .btn-primary-voin:hover:not(:disabled) {
+            box-shadow: 0 0 34px rgba(56, 189, 248, 0.65);
+            transform: translateY(-1px);
         }
 
-        .stage-label {
-            font-size: 12px;
-            color: #cbd5e1;
-        }
-
-        .stage-value {
-            font-size: 20px;
-            font-weight: 800;
-            color: #ffffff;
-            margin-top: 4px;
-        }
-
-        .quota-box {
-            background: #0f1626;
-            border: 1px solid #222f4a;
-            border-radius: 10px;
-            padding: 14px 16px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .quota-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 6px 0;
-        }
-
-        .quota-row span:first-child {
-            color: #94a3b8;
-        }
-
-        .quota-row span:last-child {
-            font-weight: 700;
-        }
-
-        .field {
-            margin-bottom: 16px;
-        }
-
-        .field-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 6px;
-            font-size: 13px;
-            color: #cbd5e1;
-        }
-
-        .link-action {
-            background: none;
-            border: none;
-            color: #60a5fa;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            padding: 0;
-            text-decoration: underline;
-        }
-
-        .input {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 8px;
-            border: 1px solid #334155;
-            background: #243049;
-            color: #f8fafc;
-            font-size: 14px;
-        }
-
-        .input:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-
-        .preview-text {
-            margin-top: 6px;
-            font-size: 12px;
-            color: #93c5fd;
-        }
-
-        .btn-buy {
-            width: 100%;
-            padding: 13px;
-            border-radius: 8px;
-            border: none;
-            background: #2563eb;
-            color: #ffffff;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 4px;
-        }
-
-        .btn-buy:hover:not(:disabled) {
-            background: #1d4ed8;
-        }
-
-        .btn-buy:disabled {
+        .btn-primary-voin:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
 
-        .schedule-note {
-            text-align: center;
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 16px;
+        .voin-coin-mask {
+            mix-blend-mode: lighten;
+            -webkit-mask-image: radial-gradient(circle at 50% 42%, #000 58%, rgba(0,0,0,0.45) 72%, transparent 86%);
+            mask-image: radial-gradient(circle at 50% 42%, #000 58%, rgba(0,0,0,0.45) 72%, transparent 86%);
         }
 
-        .msg {
-            margin-top: 14px;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            line-height: 1.5;
-            display: none;
-            word-break: break-word;
-        }
-
-        .msg.show { display: block; }
-        .msg.ok { background: #064e3b; border: 1px solid #10b981; color: #d1fae5; }
-        .msg.err { background: #7f1d1d; border: 1px solid #ef4444; color: #fee2e2; }
-        .msg.info { background: #1e3a8a; border: 1px solid #3b82f6; color: #dbeafe; }
-
-        /* Modal Wallet */
-        .modal-bg {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.75);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            z-index: 999;
-        }
-
-        .modal-bg.open { display: flex; }
-
-        .modal-box {
-            width: 100%;
-            max-width: 420px;
-            background: #141b2d;
-            border: 1px solid #334155;
-            border-radius: 14px;
-            padding: 20px;
-            position: relative;
-        }
-
-        .modal-x {
-            position: absolute;
-            top: 12px;
-            right: 14px;
-            background: none;
-            border: none;
-            color: #94a3b8;
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        .wallet-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .wallet-item {
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #334155;
-            background: #0f1626;
-            color: #f8fafc;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            text-align: left;
-        }
-
-        .wallet-item:hover {
-            border-color: #60a5fa;
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body>
-    <header class="topbar">
-        <a href="#" class="brand">VOIN MAINNET</a>
-        <div class="top-actions">
-            <a href="dashboard.html" class="btn-top">Dashboard</a>
-            <button type="button" id="topWalletBtn" class="btn-top primary" onclick="openWalletModal()">Connect Wallet</button>
-            <button type="button" id="topDisconnectBtn" class="btn-top danger" style="display:none;" onclick="disconnectWallet()">Disconnect</button>
+<body class="cyber-grid selection:bg-purple-500 selection:text-white">
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="sticky top-0 z-40 border-b border-purple-500/20 bg-[#050818]/90 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+            <a href="#home" class="flex items-center gap-2.5 shrink-0">
+                <div class="w-10 h-10 rounded-full overflow-hidden border border-purple-400/60 bg-[#080c24] flex items-center justify-center p-0.5 shadow-[0_0_16px_rgba(168,85,247,0.5)]">
+                    <img src="voin-logo.jpg?v=5" alt="VOIN Wallet" class="w-full h-full object-contain scale-110 rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="hidden w-full h-full items-center justify-center font-display font-bold text-base">V</span>
+                </div>
+                <div class="leading-tight">
+                    <span class="font-display font-extrabold text-base sm:text-lg tracking-wider text-white block">VOIN</span>
+                    <span class="text-[10px] tracking-widest text-purple-300 uppercase block">WALLET</span>
+                </div>
+            </a>
+
+            <nav class="hidden lg:flex items-center gap-1 text-sm font-medium text-slate-300">
+                <a href="#home" class="px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-400/35 text-white">Home</a>
+                <a href="#about" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">About</a>
+                <a href="#technology" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Technology</a>
+                <a href="#tokenomics" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Tokenomics</a>
+                <a href="#roadmap" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Roadmap</a>
+                <a href="#presale" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Presale</a>
+                <a href="#whitepaper" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Whitepaper</a>
+                <a href="#community" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Community</a>
+                <a href="#faq" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">FAQ</a>
+            </nav>
+
+            <div class="flex items-center gap-2 shrink-0">
+                <a href="dashboard.html" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-purple-400/45 bg-purple-950/50 hover:border-cyan-300 text-cyan-200 transition">
+                    Dashboard
+                </a>
+                <button type="button" onclick="openWalletModal()" id="navWalletBtn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-cyan-400/50 bg-indigo-950/80 hover:border-cyan-300 text-cyan-100 transition flex items-center gap-2 cursor-pointer">
+                    <span id="navWalletDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+                    <span id="navWalletText">Connect Wallet</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="lg:hidden border-t border-purple-500/15 bg-[#070b1f]/95 px-4 py-2">
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar text-xs sm:text-sm font-medium text-slate-300 whitespace-nowrap">
+                <a href="#home" class="px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-400/35 text-white shrink-0">Home</a>
+                <a href="#about" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">About</a>
+                <a href="#technology" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Technology</a>
+                <a href="#tokenomics" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Tokenomics</a>
+                <a href="#roadmap" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Roadmap</a>
+                <a href="#presale" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Presale</a>
+                <a href="#whitepaper" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Whitepaper</a>
+                <a href="#community" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Community</a>
+                <a href="#faq" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">FAQ</a>
+                <a href="dashboard.html" class="px-3 py-1.5 rounded-lg text-cyan-300 hover:bg-white/5 shrink-0">Dashboard</a>
+            </div>
         </div>
     </header>
 
-    <main class="wrap">
-        <div class="card">
-            <h1 class="title">VOIN COIN</h1>
-            <div class="subtitle">Presale Mainnet (Des 2026 - Des 2028)</div>
-            <div id="serverStatus" class="server-status">Terhubung ke server presale</div>
+    <!-- ================= HERO SECTION ================= -->
+    <section id="home" class="max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div class="lg:col-span-7 space-y-5">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/80 border border-purple-500/40 text-xs sm:text-sm text-cyan-200 font-medium">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                    + VOIN Ecosystem &bull; Official Presale Dec 2026 - Dec 2028
+                </div>
 
-            <div class="stage-box">
-                <div class="stage-label">Saat ini masuk dalam:</div>
-                <div class="stage-value">BATCH <span id="currentBatch">1</span> / 10</div>
+                <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.12]">
+                    Build. Play. Earn.<br>
+                    <span class="bg-gradient-to-r from-cyan-300 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">with VOIN.</span>
+                </h1>
+
+                <p class="text-slate-300 text-base sm:text-lg max-w-xl leading-relaxed">
+                    Next-generation blockchain ecosystem with <span class="text-white font-semibold">260,000,000 VOIN</span> total supply and <span class="text-cyan-300 font-semibold">10 batches &times; 15,600,000 VOIN</span> (156,000,000 VOIN) structured for community growth and real utility.
+                </p>
+
+                <div class="flex flex-wrap items-center gap-3.5 pt-1">
+                    <a href="#presale" class="btn-primary-voin px-6 py-3.5 rounded-xl font-semibold text-sm sm:text-base text-white">
+                        Join Presale &rarr;
+                    </a>
+                    <button type="button" onclick="openWalletModal()" class="px-6 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-cyan-400/50 bg-indigo-950/70 hover:border-cyan-300 text-cyan-100 transition cursor-pointer">
+                        Connect Wallet
+                    </button>
+                    <a href="dashboard.html" class="px-5 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-slate-600/80 bg-white/5 hover:border-purple-400 text-slate-200 transition">
+                        Open Dashboard
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3 pt-2 max-w-xl">
+                    <div class="glass-tile p-3.5 rounded-2xl">
+                        <p class="font-display text-base sm:text-xl font-extrabold text-white">260,000,000</p>
+                        <p class="text-xs text-slate-300">Total Supply</p>
+                    </div>
+                    <div class="glass-tile p-3.5 rounded-2xl">
+                        <p class="font-display text-base sm:text-xl font-extrabold text-cyan-300">10 Batches</p>
+                        <p class="text-xs text-slate-300">15,600,000 / Batch</p>
+                    </div>
+                    <div class="glass-tile p-3.5 rounded-2xl">
+                        <p class="font-display text-base sm:text-xl font-extrabold text-purple-300">60%</p>
+                        <p class="text-xs text-slate-300">Presale Allocation</p>
+                    </div>
+                </div>
             </div>
 
-            <div class="quota-box">
-                <div class="quota-row">
-                    <span>Total Terjual:</span>
-                    <span id="totalSold" style="color:#34d399;">0 VOIN</span>
-                </div>
-                <div class="quota-row">
-                    <span>Sisa Kuota (Total):</span>
-                    <span id="remainingTotal" style="color:#fbbf24;">156.000.000 VOIN</span>
-                </div>
-                <div class="quota-row">
-                    <span>Sisa Kuota Batch Ini:</span>
-                    <span id="remainingBatch" style="color:#60a5fa;">15.600.000 VOIN</span>
+            <div class="lg:col-span-5 flex items-center justify-center py-4 voin-3d-wrap">
+                <div class="relative w-72 sm:w-88 h-72 sm:h-88 flex items-center justify-center">
+                    <div class="absolute w-64 h-64 rounded-full bg-gradient-to-tr from-purple-600/35 via-indigo-500/20 to-cyan-400/30 blur-3xl pointer-events-none"></div>
+                    <div class="orbit-ring absolute w-64 sm:w-76 h-64 sm:h-76 rounded-full border border-dashed border-cyan-400/40 pointer-events-none"></div>
+                    <div class="absolute w-56 sm:w-68 h-56 sm:h-68 rounded-full border border-purple-400/35 rotate-12 pointer-events-none"></div>
+
+                    <div class="voin-tool-fly absolute top-2 right-6 w-5 h-5 rotate-45 rounded-sm bg-gradient-to-br from-purple-400 to-indigo-700 border border-purple-200/50 shadow-[0_0_14px_rgba(168,85,247,0.85)] pointer-events-none"></div>
+                    <div class="voin-tool-fly absolute bottom-4 left-6 w-4 h-4 rotate-45 rounded-sm bg-gradient-to-br from-cyan-300 to-purple-600 border border-cyan-100/50 shadow-[0_0_12px_rgba(56,189,248,0.85)] pointer-events-none"></div>
+
+                    <img id="heroCoinImg" src="voin-logo.jpg?v=5" alt="VOIN 3D Coin" class="relative z-10 w-60 sm:w-72 voin-coin-fly voin-coin-mask select-none" onerror="this.style.display='none'; document.getElementById('heroCoinFallback').style.display='flex';">
+
+                    <div id="heroCoinFallback" style="display:none;" class="relative z-10 w-52 h-52 rounded-full bg-gradient-to-br from-purple-700 via-indigo-900 to-cyan-700 border-2 border-purple-300/60 voin-coin-fly flex-col items-center justify-center text-center p-4 shadow-[0_0_40px_rgba(168,85,247,0.5)]">
+                        <span class="font-display text-5xl font-black text-white">V</span>
+                        <span class="font-display text-xs tracking-widest text-cyan-200 mt-1">VOIN WALLET</span>
+                    </div>
+
+                    <div class="voin-tool-fly absolute -left-2 top-8 z-20 glass-panel px-3.5 py-2 rounded-2xl flex items-center gap-2.5 text-xs sm:text-sm">
+                        <span class="text-cyan-300 text-lg">&#9889;</span>
+                        <div>
+                            <p class="font-bold text-white leading-tight">Ultra Fast</p>
+                            <p class="text-xs text-slate-300">Instant Settlement</p>
+                        </div>
+                    </div>
+
+                    <div class="voin-tool-fly absolute -right-2 bottom-8 z-20 glass-panel px-3.5 py-2 rounded-2xl flex items-center gap-2.5 text-xs sm:text-sm">
+                        <span class="text-purple-300 text-lg">&#128737;</span>
+                        <div>
+                            <p class="font-bold text-white leading-tight">VOIN Vault</p>
+                            <p class="text-xs text-slate-300">Web3 Security</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div class="field">
-                <div class="field-header">
-                    <label for="walletAddress">Alamat Wallet VOIN Anda</label>
-                    <button type="button" class="link-action" onclick="openWalletModal()">Hubungkan Wallet</button>
-                </div>
-                <input type="text" id="walletAddress" class="input" placeholder="0x..." autocomplete="off" oninput="onWalletInput(this.value)">
-            </div>
-
-            <div class="field">
-                <div class="field-header">
-                    <label for="amountPaid">Jumlah Pembayaran (USD/USDT/IDR)</label>
-                    <span style="color:#60a5fa;font-size:12px;">Min: $10</span>
-                </div>
-                <input type="number" id="amountPaid" class="input" min="10" step="any" placeholder="100" oninput="updatePreview()">
-                <div id="voinPreview" class="preview-text">Estimasi VOIN: 10.000 VOIN (Batch 1 @ $0.01)</div>
-            </div>
-
-            <button type="button" id="buyBtn" class="btn-buy" onclick="submitBuy()">Beli VOIN</button>
-
-            <div id="feedbackBox" class="msg"></div>
-
-            <div class="schedule-note">Jadwal: Desember 2026 - Desember 2028</div>
         </div>
-    </main>
 
-    <!-- Modal Koneksi Wallet -->
-    <div id="walletModal" class="modal-bg" onclick="if(event.target===this)closeWalletModal()">
-        <div class="modal-box" onclick="event.stopPropagation()">
-            <button type="button" class="modal-x" onclick="closeWalletModal()">&times;</button>
-            <h3 style="margin:0 0 6px;font-size:18px;">Hubungkan Wallet Investor</h3>
-            <p style="margin:0 0 12px;font-size:13px;color:#94a3b8;">
-                Masukkan alamat wallet <code>0x...</code> atau deteksi dari browser wallet Anda.
-            </p>
-
-            <div class="field">
-                <div class="field-header">
-                    <label for="modalAddressInput">Alamat Wallet (0x...)</label>
-                    <button type="button" class="link-action" onclick="detectBrowserWallet()">Deteksi Browser</button>
+        <!-- Why VOIN? -->
+        <div class="mt-8 glass-panel p-5 sm:p-6 rounded-3xl">
+            <div class="mb-4">
+                <h2 class="font-display text-lg sm:text-xl font-extrabold text-white">Why VOIN?</h2>
+                <p class="text-xs sm:text-sm text-slate-300">More than a token &mdash; a gateway to interactive gaming, rewards, and real utility.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="glass-tile p-4 rounded-2xl flex items-start gap-3.5">
+                    <span class="voin-tool-fly text-2xl text-cyan-300">&#127918;</span>
+                    <div>
+                        <h3 class="font-bold text-white text-sm sm:text-base">Play &amp; Earn</h3>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Engage in ecosystem activities and earn VOIN rewards.</p>
+                    </div>
                 </div>
-                <input type="text" id="modalAddressInput" class="input" placeholder="0x..." autocomplete="off">
+                <div class="glass-tile p-4 rounded-2xl flex items-start gap-3.5">
+                    <span class="voin-tool-fly text-2xl text-purple-300">&#128142;</span>
+                    <div>
+                        <h3 class="font-bold text-white text-sm sm:text-base">Real Utility</h3>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Use VOIN across wallet features, presale batches, and ecosystem tools.</p>
+                    </div>
+                </div>
+                <div class="glass-tile p-4 rounded-2xl flex items-start gap-3.5">
+                    <span class="voin-tool-fly text-2xl text-emerald-300">&#129309;</span>
+                    <div>
+                        <h3 class="font-bold text-white text-sm sm:text-base">Grow Together</h3>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Build alongside early participants across 10 structured presale batches.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= TOKENOMICS (60%, 15%, 15%, 10%) ================= -->
+    <section id="tokenomics" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+        <div class="glass-panel p-6 sm:p-8 rounded-3xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+                <div>
+                    <h2 class="font-display text-2xl sm:text-3xl font-extrabold">Tokenomics</h2>
+                    <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Transparent allocation designed for sustainable ecosystem growth.</p>
+                </div>
+                <span class="font-display text-base sm:text-lg font-bold text-cyan-300">Total Supply: 260,000,000 VOIN</span>
             </div>
 
-            <button type="button" class="btn-buy" onclick="confirmWalletAddress()">Simpan &amp; Hubungkan Wallet</button>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                <div class="lg:col-span-5 glass-tile p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-5">
+                    <div class="relative w-36 h-36 rounded-full shrink-0 flex items-center justify-center shadow-[0_0_28px_rgba(168,85,247,0.35)]" style="background: conic-gradient(#a855f7 0% 60%, #38bdf8 60% 75%, #6366f1 75% 90%, #ec4899 90% 100%);">
+                        <div class="w-24 h-24 rounded-full bg-[#0b1028] flex flex-col items-center justify-center text-center">
+                            <span class="font-display text-xl font-extrabold text-white">60%</span>
+                            <span class="text-[10px] text-purple-200">Presale</span>
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-xs sm:text-sm w-full">
+                        <div class="flex items-center justify-between">
+                            <span class="flex items-center gap-2 text-slate-200"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>Presale (10 Batches)</span>
+                            <span class="font-bold text-purple-300">60%</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="flex items-center gap-2 text-slate-200"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>Liquidity</span>
+                            <span class="font-bold text-cyan-300">15%</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="flex items-center gap-2 text-slate-200"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>Ecosystem &amp; Rewards</span>
+                            <span class="font-bold text-indigo-300">15%</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="flex items-center gap-2 text-slate-200"><span class="w-2.5 h-2.5 rounded-full bg-pink-500"></span>Team &amp; Development</span>
+                            <span class="font-bold text-pink-300">10%</span>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="wallet-grid">
-                <button type="button" class="wallet-item" onclick="connectProviderWallet('MetaMask')">MetaMask</button>
-                <button type="button" class="wallet-item" onclick="connectProviderWallet('Trust Wallet')">Trust Wallet</button>
-                <button type="button" class="wallet-item" onclick="connectProviderWallet('Coinbase Wallet')">Coinbase Wallet</button>
-                <button type="button" class="wallet-item" onclick="connectProviderWallet('OKX Wallet')">OKX Wallet</button>
+                <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm sm:text-base">
+                    <div class="glass-tile p-4 rounded-2xl border-l-4 border-l-purple-500">
+                        <p class="font-display text-xl font-extrabold text-purple-300">60%</p>
+                        <p class="font-semibold text-white mt-1">Presale (156,000,000)</p>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">10 Batches &times; 15,600,000 VOIN</p>
+                    </div>
+                    <div class="glass-tile p-4 rounded-2xl border-l-4 border-l-cyan-400">
+                        <p class="font-display text-xl font-extrabold text-cyan-300">15%</p>
+                        <p class="font-semibold text-white mt-1">Liquidity</p>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">39,000,000 VOIN</p>
+                    </div>
+                    <div class="glass-tile p-4 rounded-2xl border-l-4 border-l-indigo-400">
+                        <p class="font-display text-xl font-extrabold text-indigo-300">15%</p>
+                        <p class="font-semibold text-white mt-1">Ecosystem &amp; Rewards</p>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">39,000,000 VOIN</p>
+                    </div>
+                    <div class="glass-tile p-4 rounded-2xl border-l-4 border-l-fuchsia-400">
+                        <p class="font-display text-xl font-extrabold text-fuchsia-300">10%</p>
+                        <p class="font-semibold text-white mt-1">Team &amp; Development</p>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">26,000,000 VOIN</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= ROADMAP 2026 - 2028 ================= -->
+    <section id="roadmap" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5">Roadmap (2026 - 2028)</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm sm:text-base">
+            <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-emerald-400">
+                <p class="text-xs font-display font-bold text-emerald-400">DECEMBER 2026</p>
+                <h3 class="font-bold text-white mt-1">Presale Launch</h3>
+                <p class="text-xs sm:text-sm text-slate-300 mt-1">Presale portal opening and initial batch rollout.</p>
+            </div>
+            <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-cyan-400">
+                <p class="text-xs font-display font-bold text-cyan-300">2027</p>
+                <h3 class="font-bold text-white mt-1">Wallet &amp; Utility</h3>
+                <p class="text-xs sm:text-sm text-slate-300 mt-1">VOIN Wallet expansion and ecosystem utility integration.</p>
+            </div>
+            <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-purple-400">
+                <p class="text-xs font-display font-bold text-purple-300">H1 2028</p>
+                <h3 class="font-bold text-white mt-1">Batch Progression</h3>
+                <p class="text-xs sm:text-sm text-slate-300 mt-1">Continued presale batches and community expansion.</p>
+            </div>
+            <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-fuchsia-400">
+                <p class="text-xs font-display font-bold text-fuchsia-300">DECEMBER 2028</p>
+                <h3 class="font-bold text-white mt-1">Mainnet Milestone</h3>
+                <p class="text-xs sm:text-sm text-slate-300 mt-1">Presale schedule completion and full ecosystem activation.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= PRESALE SECTION ================= -->
+    <section id="presale" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+        <div class="mb-7">
+            <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-white">Presale VOIN</h2>
+            <p class="text-slate-300 text-sm sm:text-base mt-1">Secure. Transparent. Fair. Official Presale (Dec 2026 - Dec 2028).</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div class="lg:col-span-7 glass-panel p-5 sm:p-7 rounded-3xl">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+                    <div>
+                        <h3 class="font-display text-lg sm:text-xl font-bold text-white">Select Batch (1 - 10)</h3>
+                        <p class="text-xs sm:text-sm text-slate-300">Locked USD price per batch &bull; 6% (15,600,000 VOIN) per batch</p>
+                    </div>
+                    <span class="px-3.5 py-1 rounded-full text-xs sm:text-sm bg-purple-950/80 border border-purple-400/35 text-cyan-200 font-medium">
+                        Total Presale: 156,000,000 VOIN
+                    </span>
+                </div>
+
+                <div id="batchGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3"></div>
+
+                <div class="mt-5 p-4 rounded-2xl bg-gradient-to-r from-indigo-950/85 via-purple-950/75 to-indigo-950/85 border border-purple-400/35 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                        <p class="text-xs text-purple-200 uppercase tracking-wider">Purchase Rules</p>
+                        <p class="font-display text-sm sm:text-base font-bold text-white mt-0.5">Min: $10 &bull; Max: Unlimited (Within Batch Quota)</p>
+                    </div>
+                    <div class="flex items-center gap-5 text-left sm:text-right">
+                        <div>
+                            <p class="text-xs text-slate-300">Batch Quota</p>
+                            <p class="font-display text-sm sm:text-base font-extrabold text-cyan-300">15,600,000 VOIN</p>
+                        </div>
+                        <a href="dashboard.html" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-cyan-400/40 bg-white/5 hover:border-cyan-300 text-cyan-200 transition">
+                            View Dashboard &rarr;
+                        </a>
+                    </div>
+                </div>
             </div>
 
-            <div id="modalMsg" class="msg"></div>
+            <div class="lg:col-span-5 glass-panel p-6 sm:p-7 rounded-3xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-fuchsia-500"></div>
+
+                <div class="text-center mb-5">
+                    <h3 class="font-display text-2xl font-extrabold text-cyan-300">VOIN COIN</h3>
+                    <p class="text-slate-300 text-sm mt-1">Presale Schedule (Dec 2026 - Dec 2028)</p>
+                    <p id="connectionStatus" class="text-xs sm:text-sm text-yellow-400 mt-1.5 font-semibold">Connecting to presale server...</p>
+                </div>
+
+                <div class="bg-blue-950/60 border border-blue-400/50 rounded-2xl p-3.5 text-center mb-5">
+                    <p class="text-xs sm:text-sm text-blue-200">Current Active Stage:</p>
+                    <p class="font-display text-xl sm:text-2xl font-extrabold text-white mt-0.5">
+                        BATCH <span id="currentBatch" class="text-cyan-300">1</span> / 10
+                    </p>
+                    <p class="text-xs sm:text-sm text-cyan-200 mt-1">
+                        Locked Batch Price: <span id="activeBatchPrice" class="font-display font-bold text-emerald-300">$0.01 / VOIN (100 VOIN/$1)</span>
+                    </p>
+                </div>
+
+                <div class="glass-tile rounded-2xl p-4 mb-5 space-y-2.5 text-sm sm:text-base">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-300">Tokens Sold:</span>
+                        <span id="tokensSold" class="font-bold text-emerald-400">Loading...</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-300">Remaining Quota (Total):</span>
+                        <span id="tokensRemaining" class="font-bold text-amber-300">Loading...</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-300">Remaining Quota (Current Batch):</span>
+                        <span id="batchRemaining" class="font-bold text-purple-300">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="walletAddress" class="block text-sm font-medium text-slate-200">Your VOIN Wallet Address</label>
+                            <button type="button" onclick="openWalletModal()" class="text-xs sm:text-sm text-cyan-300 hover:underline font-medium cursor-pointer">Select Wallet</button>
+                        </div>
+                        <input type="text" id="walletAddress" placeholder="0x..." class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="amountPaid" class="block text-sm font-medium text-slate-200">Payment Amount (USD)</label>
+                            <span class="text-xs text-cyan-300 font-medium">Min: $10 &bull; Max: Batch Quota</span>
+                        </div>
+                        <input type="number" id="amountPaid" min="10" step="any" placeholder="Minimum 10 (e.g. 10, 100, 1000)" oninput="updateEstimatedVoin()" class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-purple-400">
+                        <p id="estimatedVoinPreview" class="text-xs text-purple-200 mt-1.5">Estimated VOIN: 0 VOIN &bull; Min: $10 &bull; Max: Unlimited (within batch quota)</p>
+                    </div>
+                    <button type="button" id="buyBtn" onclick="buyTokens()" class="w-full btn-primary-voin text-white font-bold text-sm sm:text-base py-3.5 rounded-xl cursor-pointer">
+                        Buy VOIN
+                    </button>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <p class="text-xs sm:text-sm text-slate-400">Schedule: December 2026 - December 2028</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= ABOUT, TECHNOLOGY, WHITEPAPER, COMMUNITY & FAQ ================= -->
+    <section id="about" class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div class="glass-panel rounded-3xl p-6 sm:p-8">
+            <span class="text-xs sm:text-sm font-display uppercase tracking-wider text-purple-300">About</span>
+            <h2 class="font-display text-2xl sm:text-3xl font-extrabold mt-1">About VOIN Wallet &amp; Ecosystem</h2>
+            <p class="text-slate-300 text-sm sm:text-base mt-3 leading-relaxed max-w-3xl">
+                <strong>VOIN</strong> connects the presale interface with <code>node.py</code> and <code>presale_contract.py</code> services, while providing account tracking and wallet history inside <code>dashboard.html</code>.
+            </p>
+        </div>
+    </section>
+
+    <section id="technology" class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5">Technology</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="glass-tile p-5 rounded-2xl">
+                <h3 class="font-display text-base sm:text-lg font-bold text-cyan-300">Node &amp; API Gateway</h3>
+                <p class="text-sm text-slate-300 mt-1.5">Connected to <code>/api/presale-stats</code> and <code>/api/buy</code> for live batch updates.</p>
+            </div>
+            <div class="glass-tile p-5 rounded-2xl">
+                <h3 class="font-display text-base sm:text-lg font-bold text-purple-300">10-Batch Presale Engine</h3>
+                <p class="text-sm text-slate-300 mt-1.5">Manages 10 batches of 15,600,000 VOIN each out of 260,000,000 VOIN total supply.</p>
+            </div>
+            <div class="glass-tile p-5 rounded-2xl">
+                <h3 class="font-display text-base sm:text-lg font-bold text-indigo-300">Wallet History &amp; Dashboard</h3>
+                <p class="text-sm text-slate-300 mt-1.5">Records buy results, exact timestamps, and sales rank inside <code>dashboard.html</code>.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="whitepaper" class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="glass-panel p-6 rounded-3xl">
+                <h2 class="font-display text-xl sm:text-2xl font-extrabold">Whitepaper</h2>
+                <p class="text-sm sm:text-base text-slate-300 mt-2">Summary of the 260,000,000 VOIN supply, 156,000,000 VOIN presale allocation (10 batches), and Dec 2026 - Dec 2028 timeline.</p>
+                <button type="button" onclick="openWhitepaperSummary()" class="btn-primary-voin mt-4 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer">
+                    View Whitepaper Summary
+                </button>
+            </div>
+
+            <div id="community" class="glass-panel p-6 rounded-3xl">
+                <h2 class="font-display text-xl sm:text-2xl font-extrabold">Community</h2>
+                <p class="text-sm sm:text-base text-slate-300 mt-2">Follow official VOIN ecosystem channels.</p>
+                <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs sm:text-sm font-semibold">
+                    <a href="#presale" class="glass-tile py-2.5 px-3 rounded-xl text-center hover:text-cyan-300">Telegram</a>
+                    <a href="#presale" class="glass-tile py-2.5 px-3 rounded-xl text-center hover:text-cyan-300">X / Twitter</a>
+                    <a href="#presale" class="glass-tile py-2.5 px-3 rounded-xl text-center hover:text-purple-300">Discord</a>
+                    <a href="https://github.com/HobbiGo/VOIN" target="_blank" rel="noopener noreferrer" class="glass-tile py-2.5 px-3 rounded-xl text-center hover:text-purple-300">GitHub</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="faq" class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5">FAQ</h2>
+        <div class="space-y-3 text-sm sm:text-base">
+            <details class="glass-panel rounded-2xl p-4 sm:p-5" open>
+                <summary class="font-semibold cursor-pointer text-white">How do I buy VOIN tokens?</summary>
+                <p class="text-slate-300 mt-2">Connect or enter your wallet address (<code>0x...</code>) and payment amount (minimum $10) in the Presale section, then click <strong>Buy VOIN</strong>.</p>
+            </details>
+            <details class="glass-panel rounded-2xl p-4 sm:p-5">
+                <summary class="font-semibold cursor-pointer text-white">What is the minimum and maximum purchase per batch?</summary>
+                <p class="text-slate-300 mt-2">Minimum purchase is <strong>$10</strong>, and maximum purchase per batch is <strong>unlimited</strong> as long as it does not exceed the remaining 15,600,000 VOIN quota in the active batch.</p>
+            </details>
+            <details class="glass-panel rounded-2xl p-4 sm:p-5">
+                <summary class="font-semibold cursor-pointer text-white">When does the presale run?</summary>
+                <p class="text-slate-300 mt-2">The official presale schedule runs from December 2026 to December 2028.</p>
+            </details>
+        </div>
+    </section>
+
+    <footer class="border-t border-purple-500/20 bg-[#040714] mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm text-slate-400">
+            <span class="font-display font-bold text-white">VOIN WALLET</span>
+            <span>Presale Mainnet &bull; Dec 2026 - Dec 2028</span>
+        </div>
+    </footer>
+
+    <!-- ================= WALLET SELECTION MODAL ================= -->
+    <div id="walletModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+        <div class="glass-panel max-w-md w-full rounded-3xl p-6 relative">
+            <button type="button" onclick="closeWalletModal()" class="absolute top-4 right-4 text-slate-300 hover:text-white text-xl cursor-pointer">&times;</button>
+            <h3 class="font-display text-lg sm:text-xl font-bold text-white">Connect Your Wallet</h3>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1 mb-4">Choose a wallet provider or enter a VOIN address to continue to Presale &amp; Dashboard.</p>
+
+            <div class="space-y-2.5 text-sm mb-4">
+                <button type="button" onclick="selectWalletProvider('MetaMask')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
+                    <span>MetaMask</span><span class="text-cyan-300">Connect &rarr;</span>
+                </button>
+                <button type="button" onclick="selectWalletProvider('Trust Wallet')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
+                    <span>Trust Wallet</span><span class="text-cyan-300">Connect &rarr;</span>
+                </button>
+                <button type="button" onclick="selectWalletProvider('Coinbase Wallet')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
+                    <span>Coinbase Wallet</span><span class="text-cyan-300">Connect &rarr;</span>
+                </button>
+                <button type="button" onclick="selectWalletProvider('WalletConnect')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
+                    <span>WalletConnect</span><span class="text-cyan-300">Connect &rarr;</span>
+                </button>
+            </div>
+
+            <div class="border-t border-purple-500/20 pt-4">
+                <label for="modalManualAddress" class="block text-xs font-semibold text-slate-200 mb-1.5">Or Enter Wallet Address Directly</label>
+                <div class="flex gap-2">
+                    <input type="text" id="modalManualAddress" placeholder="0x..." class="flex-1 bg-[#070b1f] border border-slate-600/80 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400">
+                    <button type="button" onclick="saveManualWallet()" class="btn-primary-voin px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white cursor-pointer shrink-0">
+                        Use Wallet
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- ================= PRESALE & WALLET LOGIC ================= -->
     <script>
-        // Isi URL backend/node/tunnel presale Anda (tanpa slash di akhir), atau biarkan kosong untuk origin saat ini
         const CONFIGURED_API_URL = "";
         const API_URL = (CONFIGURED_API_URL || window.location.origin).replace(/\/+$/, "");
+        const MAX_PER_BATCH = 15600000;
+        const MIN_PURCHASE_USD = 10;
+        const STORAGE_WALLET_KEY = "voin_wallet_address";
+        const STORAGE_PROVIDER_KEY = "voin_wallet_provider";
+        const STORAGE_HISTORY_KEY = "voin_wallet_history";
 
-        const RECEIVING_WALLET_ADDRESS = "0xAEb22359588A50e6F746004E66418Eb2c978dAA2";
-        const PRESALE_CAP = 156000000;
-        const BATCH_CAP = 15600000;
-        const MIN_USD = 10;
-
-        const WALLET_KEY = "voin_wallet_address";
-        const PROVIDER_KEY = "voin_wallet_provider";
-        const HISTORY_KEY = "voin_wallet_history";
-
-        const BATCH_PRICES = {
-            1: 0.01, 2: 0.02, 3: 0.03, 4: 0.04, 5: 0.05,
-            6: 0.06, 7: 0.07, 8: 0.08, 9: 0.09, 10: 0.10
+        // Locked USD price per 1 VOIN for each batch (1 - 10)
+        const LOCKED_BATCH_PRICES_USD = {
+            1: 0.01,
+            2: 0.02,
+            3: 0.03,
+            4: 0.04,
+            5: 0.05,
+            6: 0.06,
+            7: 0.07,
+            8: 0.08,
+            9: 0.09,
+            10: 0.10
         };
 
-        let activeBatch = 1;
+        let currentBatchPricesUsd = { ...LOCKED_BATCH_PRICES_USD };
 
-        function isValidEvm(addr) {
-            return /^0x[a-fA-F0-9]{40}$/.test((addr || "").trim());
+        const swalTheme = {
+            background: "#0c122e",
+            color: "#ffffff",
+            confirmButtonColor: "#9333ea"
+        };
+
+        function getBatchPriceUsd(batchNum) {
+            const num = Number(batchNum) || 1;
+            return Number(currentBatchPricesUsd[num] ?? LOCKED_BATCH_PRICES_USD[num] ?? (num * 0.01));
         }
 
-        function shortWallet(addr) {
-            const a = (addr || "").trim();
-            if (a.length <= 12) return a;
-            return a.slice(0, 6) + "..." + a.slice(-4);
+        function getBatchVoinPerUsd(batchNum) {
+            const price = getBatchPriceUsd(batchNum);
+            return price > 0 ? (1 / price) : 100;
         }
 
-        function showFeedback(id, type, html) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.className = "msg show " + type;
-            el.innerHTML = html;
+        function formatRateLabel(voinPerUsd) {
+            const rounded = Number(voinPerUsd.toFixed(2));
+            return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(2);
         }
 
-        function formatIdNum(num) {
-            return Number(num || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
+        function updateEstimatedVoin() {
+            const activeBatch = Number(document.getElementById("currentBatch")?.innerText) || 1;
+            const priceUsd = getBatchPriceUsd(activeBatch);
+            const voinPerUsd = getBatchVoinPerUsd(activeBatch);
+            const amount = parseFloat(document.getElementById("amountPaid")?.value);
+
+            const activePriceEl = document.getElementById("activeBatchPrice");
+            if (activePriceEl) {
+                activePriceEl.innerText = `$${priceUsd.toFixed(2)} / VOIN (${formatRateLabel(voinPerUsd)} VOIN/$1)`;
+            }
+
+            const previewEl = document.getElementById("estimatedVoinPreview");
+            if (!previewEl) return;
+
+            if (Number.isNaN(amount) || amount <= 0) {
+                previewEl.innerText = `Estimated VOIN: 0 VOIN • Min: $${MIN_PURCHASE_USD} • Max: Unlimited (within batch quota)`;
+                return;
+            }
+
+            const estVoin = amount / priceUsd;
+            previewEl.innerText = `Estimated VOIN: ${estVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN (Batch ${activeBatch} @ $${priceUsd.toFixed(2)}/VOIN)`;
         }
 
-        function setConnectedWallet(addr, provider) {
-            const clean = (addr || "").trim();
-            const topBtn = document.getElementById("topWalletBtn");
-            const discBtn = document.getElementById("topDisconnectBtn");
-            const inputEl = document.getElementById("walletAddress");
+        function formatTimestampParts(dateObj = new Date()) {
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const pad = (n) => String(n).padStart(2, "0");
+            const year = dateObj.getFullYear();
+            const monthName = months[dateObj.getMonth()];
+            const monthNum = pad(dateObj.getMonth() + 1);
+            const day = pad(dateObj.getDate());
+            const hours = pad(dateObj.getHours());
+            const minutes = pad(dateObj.getMinutes());
+            const seconds = pad(dateObj.getSeconds());
 
-            if (isValidEvm(clean)) {
-                if (inputEl) inputEl.value = clean;
-                if (topBtn) topBtn.textContent = shortWallet(clean);
-                if (discBtn) discBtn.style.display = "inline-block";
-                try {
-                    localStorage.setItem(WALLET_KEY, clean);
-                    if (provider) localStorage.setItem(PROVIDER_KEY, provider);
-                } catch (_) {}
-            } else {
-                if (topBtn) topBtn.textContent = "Connect Wallet";
-                if (discBtn) discBtn.style.display = "none";
-                try {
-                    localStorage.removeItem(WALLET_KEY);
-                    localStorage.removeItem(PROVIDER_KEY);
-                } catch (_) {}
+            return {
+                iso: dateObj.toISOString(),
+                dateStr: `${year}-${monthNum}-${day}`,
+                monthStr: `${monthName} (${monthNum})`,
+                dayStr: day,
+                timeStr: `${hours}:${minutes}:${seconds}`,
+                fullFormatted: `${day} ${monthName} ${year} • ${hours}:${minutes}:${seconds}`
+            };
+        }
+
+        function getWalletHistory() {
+            try {
+                const raw = localStorage.getItem(STORAGE_HISTORY_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (_) {
+                return [];
             }
         }
 
-        function onWalletInput(val) {
-            const clean = (val || "").trim();
-            if (isValidEvm(clean)) {
-                setConnectedWallet(clean, localStorage.getItem(PROVIDER_KEY) || "Wallet");
+        function appendWalletHistoryEntry(entry) {
+            const existing = getWalletHistory();
+            const fallbackRank = existing.length + 1;
+            const record = {
+                id: `VOIN-${Date.now()}`,
+                rank: entry.salesRank ?? fallbackRank,
+                ...entry
+            };
+            existing.unshift(record);
+            localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(existing));
+            return record;
+        }
+
+        function updateWalletUI(address, provider = "") {
+            const navText = document.getElementById("navWalletText");
+            const navDot = document.getElementById("navWalletDot");
+            const input = document.getElementById("walletAddress");
+
+            if (address) {
+                input.value = address;
+                navText.innerText = `${address.slice(0, 6)}...${address.slice(-4)}`;
+                navDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                localStorage.setItem(STORAGE_WALLET_KEY, address);
+                if (provider) localStorage.setItem(STORAGE_PROVIDER_KEY, provider);
+            } else {
+                navText.innerText = "Connect Wallet";
+                navDot.className = "w-2 h-2 rounded-full bg-slate-400";
             }
         }
 
         function openWalletModal() {
             const modal = document.getElementById("walletModal");
-            const modalInput = document.getElementById("modalAddressInput");
-            const current = (document.getElementById("walletAddress")?.value || "").trim()
-                || (localStorage.getItem(WALLET_KEY) || "").trim();
-            if (modalInput) modalInput.value = current;
-            const msg = document.getElementById("modalMsg");
-            if (msg) msg.className = "msg";
-            if (modal) modal.classList.add("open");
-            setTimeout(() => modalInput && modalInput.focus(), 40);
+            const currentVal = document.getElementById("walletAddress").value.trim() || localStorage.getItem(STORAGE_WALLET_KEY) || "";
+            document.getElementById("modalManualAddress").value = currentVal;
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
         }
 
         function closeWalletModal() {
             const modal = document.getElementById("walletModal");
-            if (modal) modal.classList.remove("open");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
         }
 
-        function confirmWalletAddress() {
-            const raw = (document.getElementById("modalAddressInput")?.value || "").trim();
-            if (!isValidEvm(raw)) {
-                showFeedback("modalMsg", "err", "Alamat wallet harus diawali <code>0x</code> diikuti 40 karakter hex.");
-                return;
-            }
-            setConnectedWallet(raw, "Investor Wallet");
-            closeWalletModal();
-            showFeedback("feedbackBox", "ok", "Wallet terhubung: <code>" + raw + "</code>");
-        }
+        async function selectWalletProvider(providerName) {
+            let selectedAddress = localStorage.getItem(STORAGE_WALLET_KEY) || "";
 
-        async function detectBrowserWallet() {
-            if (!window.ethereum || typeof window.ethereum.request !== "function") {
-                showFeedback("modalMsg", "info", "Wallet browser tidak terdeteksi di tab ini. Tempelkan alamat <code>0x...</code> secara manual.");
-                return;
-            }
-            try {
-                const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-                if (accounts && accounts[0] && isValidEvm(accounts[0])) {
-                    const acct = accounts[0].trim();
-                    document.getElementById("modalAddressInput").value = acct;
-                    showFeedback("modalMsg", "ok", "Wallet terdeteksi: <code>" + acct + "</code>. Klik Simpan &amp; Hubungkan Wallet.");
-                }
-            } catch (_) {
-                showFeedback("modalMsg", "info", "Permintaan wallet dibatalkan.");
-            }
-        }
-
-        async function connectProviderWallet(name) {
-            if (window.ethereum && typeof window.ethereum.request === "function") {
+            if (window.ethereum) {
                 try {
                     const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-                    if (accounts && accounts[0] && isValidEvm(accounts[0])) {
-                        const acct = accounts[0].trim();
-                        setConnectedWallet(acct, name);
-                        closeWalletModal();
-                        showFeedback("feedbackBox", "ok", "Terhubung lewat <strong>" + name + "</strong>: <code>" + acct + "</code>");
-                        return;
+                    if (accounts && accounts[0]) {
+                        selectedAddress = accounts[0];
                     }
-                } catch (_) {}
+                } catch (err) {
+                    console.warn("Provider request cancelled:", err);
+                }
             }
-            showFeedback("modalMsg", "info", "<strong>" + name + "</strong> dipilih. Masukkan alamat <code>0x...</code> Anda lalu klik Simpan &amp; Hubungkan Wallet.");
-            document.getElementById("modalAddressInput")?.focus();
+
+            if (!selectedAddress) {
+                const typed = document.getElementById("modalManualAddress").value.trim();
+                selectedAddress = typed || "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
+            }
+
+            updateWalletUI(selectedAddress, providerName);
+            closeWalletModal();
+
+            const result = await Swal.fire({
+                ...swalTheme,
+                title: `${providerName} Connected`,
+                html: `<p style="font-size:14px;color:#cbd5e1;">Active Wallet: <strong style="color:#67e8f9;">${selectedAddress}</strong></p>`,
+                icon: "success",
+                showCancelButton: true,
+                confirmButtonText: "Go to Dashboard",
+                cancelButtonText: "Stay on Presale"
+            });
+
+            if (result.isConfirmed) {
+                window.location.href = "dashboard.html";
+            } else {
+                document.getElementById("amountPaid").focus();
+            }
         }
 
-        function disconnectWallet() {
-            const inputEl = document.getElementById("walletAddress");
-            if (inputEl) inputEl.value = "";
-            setConnectedWallet("", "");
-            showFeedback("feedbackBox", "info", "Wallet terputus.");
-        }
-
-        function updatePreview() {
-            const price = BATCH_PRICES[activeBatch] || 0.01;
-            const rawVal = document.getElementById("amountPaid")?.value;
-            const amount = rawVal === "" ? 100 : parseFloat(rawVal);
-            const preview = document.getElementById("voinPreview");
-            if (!preview) return;
-            if (Number.isNaN(amount) || amount <= 0) {
-                preview.textContent = "Estimasi VOIN: 0 VOIN";
+        function saveManualWallet() {
+            const addr = document.getElementById("modalManualAddress").value.trim();
+            if (!addr) {
+                Swal.fire({ ...swalTheme, title: "Invalid Address", text: "Please enter a valid VOIN wallet address.", icon: "error" });
                 return;
             }
-            const voin = amount / price;
-            preview.textContent = "Estimasi VOIN: " + formatIdNum(voin) + " VOIN (Batch " + activeBatch + " @ $" + price.toFixed(2) + ")";
+            updateWalletUI(addr, "Manual Wallet");
+            closeWalletModal();
+            Swal.fire({ ...swalTheme, title: "Wallet Set", text: `Active wallet set to ${addr}.`, icon: "success" });
         }
 
-        function saveLocalTx(entry) {
+        function openWhitepaperSummary() {
+            Swal.fire({
+                ...swalTheme,
+                title: "VOIN Whitepaper Summary",
+                html: `
+                    <div style="text-align:left;font-size:14px;line-height:1.7;color:#e2e8f0;">
+                        <p><strong style="color:#c084fc;">Token Name:</strong> VOIN ($VOIN)</p>
+                        <p><strong style="color:#67e8f9;">Total Supply:</strong> 260,000,000 VOIN</p>
+                        <p><strong style="color:#c084fc;">Presale Allocation:</strong> 156,000,000 VOIN (60%)</p>
+                        <p><strong style="color:#67e8f9;">Batch Structure:</strong> 10 Batches &times; 15,600,000 VOIN</p>
+                        <p><strong style="color:#c084fc;">Purchase Rule:</strong> Min $10 &bull; Max Unlimited (Within Batch Quota)</p>
+                        <p><strong style="color:#c084fc;">Presale Schedule:</strong> December 2026 - December 2028</p>
+                    </div>
+                `,
+                confirmButtonText: "Got It"
+            });
+        }
+
+        function renderBatchGrid(activeBatch, batchDetails = {}, contractPrices = null) {
+            const grid = document.getElementById("batchGrid");
+            if (!grid) return;
+
+            currentBatchPricesUsd = { ...LOCKED_BATCH_PRICES_USD };
+            if (contractPrices && typeof contractPrices === "object") {
+                for (let b = 1; b <= 10; b++) {
+                    const val = contractPrices[b] ?? contractPrices[String(b)];
+                    if (val !== undefined && val !== null && !Number.isNaN(Number(val)) && Number(val) > 0) {
+                        currentBatchPricesUsd[b] = Number(val);
+                    }
+                }
+            }
+
+            updateEstimatedVoin();
+
+            let html = "";
+            for (let i = 1; i <= 10; i++) {
+                const isActive = i === activeBatch;
+                const isDone = i < activeBatch;
+                const sold = Number(batchDetails[i] || 0);
+                const priceUsd = getBatchPriceUsd(i);
+                const rateText = formatRateLabel(getBatchVoinPerUsd(i));
+
+                let badgeText = "Locked";
+                let cardStyle = "glass-tile opacity-85";
+                let titleColor = "text-slate-200";
+
+                if (isActive) {
+                    badgeText = "LIVE";
+                    cardStyle = "bg-gradient-to-b from-purple-600/35 to-indigo-950/90 border-2 border-cyan-400 shadow-[0_0_20px_rgba(56,189,248,0.3)]";
+                    titleColor = "text-cyan-300";
+                } else if (isDone) {
+                    badgeText = "Completed";
+                    cardStyle = "bg-emerald-950/35 border border-emerald-500/40 opacity-85";
+                    titleColor = "text-emerald-300";
+                }
+
+                html += `
+                    <div class="${cardStyle} p-3 rounded-2xl text-center transition">
+                        <div class="flex items-center justify-between text-xs mb-1">
+                            <span class="font-display font-bold ${titleColor}">Batch ${i}</span>
+                            <span class="px-1.5 py-0.5 rounded bg-black/45 text-[10px] ${isActive ? 'text-emerald-300 font-semibold' : 'text-slate-300'}">${badgeText}</span>
+                        </div>
+                        <p class="font-display text-sm sm:text-base font-extrabold text-emerald-300">$${priceUsd.toFixed(2)}</p>
+                        <p class="text-[10px] text-cyan-200">${rateText} VOIN / $1</p>
+                        <p class="text-[10px] text-slate-300 mt-0.5">6% &bull; 15.6M VOIN</p>
+                        ${isActive ? `<p class="text-[11px] text-purple-200 mt-1">Sold: ${sold.toLocaleString("en-US")}</p>` : ""}
+                    </div>
+                `;
+            }
+            grid.innerHTML = html;
+        }
+
+        function setStatus(text, colorClass = "text-yellow-400") {
+            const el = document.getElementById("connectionStatus");
+            el.innerText = text;
+            el.className = `text-xs sm:text-sm mt-1.5 font-semibold ${colorClass}`;
+        }
+
+        async function loadStats() {
+            renderBatchGrid(1, {});
             try {
-                const raw = localStorage.getItem(HISTORY_KEY);
-                const list = raw ? JSON.parse(raw) : [];
-                list.unshift(entry);
-                localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
-            } catch (_) {}
+                const res = await fetch(`${API_URL}/api/presale-stats`, {
+                    method: "GET",
+                    headers: { "Accept": "application/json" }
+                });
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
+                const data = await res.json();
+                const currentBatch = Number(data.current_batch) || 1;
+                const tokensSold = Number(data.tokens_sold) || 0;
+                const tokensRemaining = Number(data.tokens_remaining) || 0;
+                const soldInBatch = Number((data.batch_details && data.batch_details[currentBatch]) || 0);
+                const remainingInBatch = Math.max(0, MAX_PER_BATCH - soldInBatch);
+
+                document.getElementById("currentBatch").innerText = currentBatch;
+                document.getElementById("tokensSold").innerText = tokensSold.toLocaleString("en-US") + " VOIN";
+                document.getElementById("tokensRemaining").innerText = tokensRemaining.toLocaleString("en-US") + " VOIN";
+                document.getElementById("batchRemaining").innerText = remainingInBatch.toLocaleString("en-US") + " VOIN";
+
+                const contractPrices = data.batch_prices_usd || data.batch_prices || data.prices || null;
+                renderBatchGrid(currentBatch, data.batch_details || {}, contractPrices);
+                setStatus("Connected to presale server", "text-green-400");
+            } catch (e) {
+                console.warn("Presale API unreachable:", e);
+                setStatus("Presale server offline (local history active)", "text-amber-300");
+                document.getElementById("tokensSold").innerText = "-";
+                document.getElementById("tokensRemaining").innerText = "-";
+                document.getElementById("batchRemaining").innerText = "-";
+            }
         }
 
-        async function submitBuy() {
-            const wallet = (document.getElementById("walletAddress")?.value || "").trim();
-            const amount = parseFloat(document.getElementById("amountPaid")?.value);
-            const btn = document.getElementById("buyBtn");
+        async function buyTokens() {
+            const address = document.getElementById("walletAddress").value.trim();
+            const amount = parseFloat(document.getElementById("amountPaid").value);
+            const buyBtn = document.getElementById("buyBtn");
+            const activeBatch = Number(document.getElementById("currentBatch").innerText) || 1;
 
-            if (!isValidEvm(wallet)) {
-                showFeedback("feedbackBox", "err", "Masukkan atau hubungkan alamat wallet VOIN yang valid (<code>0x...</code>).");
+            if (!address || Number.isNaN(amount) || amount < MIN_PURCHASE_USD) {
+                Swal.fire({
+                    ...swalTheme,
+                    title: "Minimum Purchase $10",
+                    text: "Please enter a valid wallet address and payment amount of at least $10.",
+                    icon: "error"
+                });
                 return;
             }
-            if (Number.isNaN(amount) || amount < MIN_USD) {
-                showFeedback("feedbackBox", "err", "Minimal pembelian adalah <strong>$10</strong>.");
-                return;
-            }
 
-            setConnectedWallet(wallet, localStorage.getItem(PROVIDER_KEY) || "Investor Wallet");
-            const price = BATCH_PRICES[activeBatch] || 0.01;
-            const estimatedVoin = amount / price;
-            const now = new Date();
-            const pad = (n) => String(n).padStart(2, "0");
+            updateWalletUI(address);
+            buyBtn.disabled = true;
 
-            if (btn) btn.disabled = true;
-            showFeedback("feedbackBox", "info", "Memproses transaksi pembelian VOIN...");
+            Swal.fire({
+                ...swalTheme,
+                title: "Processing...",
+                text: "Submitting VOIN presale order",
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            const ts = formatTimestampParts(new Date());
+            const activePriceUsd = getBatchPriceUsd(activeBatch);
+            const estimatedVoin = amount / activePriceUsd;
 
             try {
-                const res = await fetch(API_URL + "/api/buy", {
+                const response = await fetch(`${API_URL}/api/buy`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
                     body: JSON.stringify({
-                        wallet_address: wallet,
-                        receiver_wallet: RECEIVING_WALLET_ADDRESS,
+                        wallet_address: address,
                         amount_paid: amount
                     })
                 });
-                const data = await res.json().catch(() => ({}));
-                const received = res.ok && data.tokens_received !== undefined ? Number(data.tokens_received) : estimatedVoin;
-                const txHash = data.tx_hash || data.txHash || "";
 
-                saveLocalTx({
-                    id: "VOIN-" + Date.now(),
-                    wallet: wallet,
-                    receiverWallet: RECEIVING_WALLET_ADDRESS,
-                    batch: Number(data.batch) || activeBatch,
-                    amountPaid: amount,
-                    buyResultVoin: received,
-                    txHash: txHash,
-                    dateStr: now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()),
-                    timeStr: pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds()),
-                    status: res.ok && data.status === "success" ? "Confirmed" : "Recorded"
-                });
+                const result = await response.json().catch(() => ({}));
 
-                showFeedback(
-                    "feedbackBox",
-                    "ok",
-                    "Transaksi tercatat: <strong>" + formatIdNum(received) + " VOIN</strong> untuk wallet <code>" + wallet + "</code>." +
-                    (txHash ? "<br>Tx Hash: <code>" + txHash + "</code>" : "") +
-                    " <a href='dashboard.html' style='color:#fff;text-decoration:underline;font-weight:700;'>Lihat di Dashboard</a>"
-                );
-                await loadPresaleStats();
-            } catch (_) {
-                saveLocalTx({
-                    id: "VOIN-" + Date.now(),
-                    wallet: wallet,
-                    receiverWallet: RECEIVING_WALLET_ADDRESS,
+                if (response.ok && result.status === "success") {
+                    const voinReceived = Number(result.tokens_received ?? result.voin_amount ?? estimatedVoin);
+                    const salesRank = result.sales_rank ?? result.rank ?? null;
+
+                    const savedEntry = appendWalletHistoryEntry({
+                        wallet: address,
+                        provider: localStorage.getItem(STORAGE_PROVIDER_KEY) || "Wallet",
+                        batch: Number(result.batch) || activeBatch,
+                        pricePerVoinUsd: Number(result.price_per_voin_usd) || activePriceUsd,
+                        amountPaid: amount,
+                        buyResultVoin: voinReceived,
+                        salesRank: salesRank,
+                        status: "Confirmed",
+                        ...ts
+                    });
+
+                    document.getElementById("amountPaid").value = "";
+                    updateEstimatedVoin();
+                    await loadStats();
+
+                    const navAction = await Swal.fire({
+                        ...swalTheme,
+                        title: "Purchase Recorded!",
+                        html: `
+                            <div style="text-align:left;font-size:14px;line-height:1.7;color:#e2e8f0;">
+                                <p><strong>Buy Result:</strong> <span style="color:#34d399;">${savedEntry.buyResultVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN</span></p>
+                                <p><strong>Batch &amp; Price:</strong> Batch ${savedEntry.batch} ($${savedEntry.pricePerVoinUsd.toFixed(2)}/VOIN)</p>
+                                <p><strong>Sales Rank:</strong> <span style="color:#67e8f9;">#${savedEntry.rank}</span></p>
+                                <p><strong>Timestamp:</strong> ${savedEntry.fullFormatted}</p>
+                            </div>
+                        `,
+                        icon: "success",
+                        showCancelButton: true,
+                        confirmButtonText: "Open Dashboard",
+                        cancelButtonText: "Close"
+                    });
+
+                    if (navAction.isConfirmed) {
+                        window.location.href = "dashboard.html";
+                    }
+                } else {
+                    const errMsg = result.reason || result.message || "Transaction could not be completed.";
+                    Swal.fire({ ...swalTheme, title: "Transaction Failed", text: errMsg, icon: "error" });
+                }
+            } catch (error) {
+                console.warn("API unavailable, logging local test record:", error);
+                const savedEntry = appendWalletHistoryEntry({
+                    wallet: address,
+                    provider: localStorage.getItem(STORAGE_PROVIDER_KEY) || "Wallet",
                     batch: activeBatch,
+                    pricePerVoinUsd: activePriceUsd,
                     amountPaid: amount,
                     buyResultVoin: estimatedVoin,
-                    txHash: "",
-                    dateStr: now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()),
-                    timeStr: pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds()),
-                    status: "Recorded"
+                    salesRank: null,
+                    status: "Local Test Record",
+                    ...ts
                 });
-                showFeedback(
-                    "feedbackBox",
-                    "ok",
-                    "Pembelian dicatat: <strong>" + formatIdNum(estimatedVoin) + " VOIN</strong> untuk wallet <code>" + wallet + "</code>. <a href='dashboard.html' style='color:#fff;text-decoration:underline;font-weight:700;'>Lihat di Dashboard</a>"
-                );
-            } finally {
-                if (btn) btn.disabled = false;
+
                 document.getElementById("amountPaid").value = "";
-                updatePreview();
+                updateEstimatedVoin();
+
+                const navAction = await Swal.fire({
+                    ...swalTheme,
+                    title: "Logged to Wallet History",
+                    html: `
+                        <div style="text-align:left;font-size:14px;line-height:1.7;color:#e2e8f0;">
+                            <p style="color:#fcd34d;font-size:12px;">Backend API not reached; saved to local history for testing.</p>
+                            <p><strong>Buy Result:</strong> <span style="color:#34d399;">${savedEntry.buyResultVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN</span></p>
+                            <p><strong>Batch &amp; Price:</strong> Batch ${savedEntry.batch} ($${savedEntry.pricePerVoinUsd.toFixed(2)}/VOIN)</p>
+                            <p><strong>Sales Rank:</strong> <span style="color:#67e8f9;">#${savedEntry.rank}</span></p>
+                            <p><strong>Timestamp:</strong> ${savedEntry.fullFormatted}</p>
+                        </div>
+                    `,
+                    icon: "info",
+                    showCancelButton: true,
+                    confirmButtonText: "Open Dashboard",
+                    cancelButtonText: "Close"
+                });
+
+                if (navAction.isConfirmed) {
+                    window.location.href = "dashboard.html";
+                }
+            } finally {
+                buyBtn.disabled = false;
             }
         }
 
-        async function loadPresaleStats() {
-            const statusEl = document.getElementById("serverStatus");
-            try {
-                const res = await fetch(API_URL + "/api/presale-stats", { headers: { "Accept": "application/json" } });
-                if (!res.ok) throw new Error("HTTP");
-                const data = await res.json();
-
-                activeBatch = Number(data.current_batch) || 1;
-                const sold = Number(data.tokens_sold) || 0;
-                const remainingTotal = Math.max(0, PRESALE_CAP - sold);
-                const soldInBatch = sold % BATCH_CAP;
-                const remainingBatch = sold === 0 ? BATCH_CAP : Math.max(0, BATCH_CAP - soldInBatch);
-
-                document.getElementById("currentBatch").textContent = String(activeBatch);
-                document.getElementById("totalSold").textContent = formatIdNum(sold) + " VOIN";
-                document.getElementById("remainingTotal").textContent = formatIdNum(remainingTotal) + " VOIN";
-                document.getElementById("remainingBatch").textContent = formatIdNum(remainingBatch) + " VOIN";
-                updatePreview();
-
-                if (statusEl) {
-                    statusEl.textContent = "Terhubung ke server presale";
-                    statusEl.style.color = "#34d399";
-                }
-            } catch (_) {
-                if (statusEl) {
-                    statusEl.textContent = "Mode siap transaksi (menunggu koneksi server)";
-                    statusEl.style.color = "#fbbf24";
-                }
-            }
+        const savedWallet = localStorage.getItem(STORAGE_WALLET_KEY);
+        const savedProvider = localStorage.getItem(STORAGE_PROVIDER_KEY) || "";
+        if (savedWallet) {
+            updateWalletUI(savedWallet, savedProvider);
         }
 
-        (function init() {
-            updatePreview();
-            try {
-                const saved = (localStorage.getItem(WALLET_KEY) || "").trim();
-                const savedProv = localStorage.getItem(PROVIDER_KEY) || "";
-                if (isValidEvm(saved)) setConnectedWallet(saved, savedProv);
-            } catch (_) {}
-            loadPresaleStats();
-        })();
+        updateEstimatedVoin();
+        loadStats();
     </script>
 </body>
 </html>
