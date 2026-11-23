@@ -12,7 +12,7 @@
             --neon-purple: #a855f7;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; touch-action: manipulation; }
 
         body {
             margin: 0;
@@ -41,7 +41,7 @@
             top: 0;
             z-index: 40;
             border-bottom: 1px solid rgba(168, 85, 247, 0.22);
-            background: rgba(5, 8, 24, 0.92);
+            background: rgba(5, 8, 24, 0.94);
             backdrop-filter: blur(14px);
         }
 
@@ -86,20 +86,14 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 10px 16px;
+            padding: 11px 16px;
             border-radius: 12px;
             font-size: 14px;
             font-weight: 700;
             border: 1px solid rgba(148, 163, 184, 0.35);
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15, 23, 42, 0.85);
             color: #ffffff;
             cursor: pointer;
-            transition: 0.2s ease;
-        }
-
-        .btn:hover:not(:disabled) {
-            border-color: #38bdf8;
-            transform: translateY(-1px);
         }
 
         .btn:disabled {
@@ -114,7 +108,7 @@
         }
 
         .btn-danger {
-            background: rgba(127, 29, 29, 0.55);
+            background: rgba(127, 29, 29, 0.65);
             border-color: rgba(248, 113, 113, 0.55);
             color: #fecaca;
         }
@@ -133,12 +127,12 @@
         }
 
         .hero {
-            padding: 40px 0 24px;
+            padding: 36px 0 20px;
         }
 
         .hero-title {
             margin: 12px 0;
-            font-size: clamp(32px, 5vw, 52px);
+            font-size: clamp(30px, 5vw, 50px);
             line-height: 1.12;
             font-weight: 900;
         }
@@ -158,27 +152,27 @@
         }
 
         .presale-section {
-            padding: 20px 0 60px;
+            padding: 16px 0 60px;
         }
 
         .grid-presale {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             align-items: start;
         }
 
         .panel {
-            background: rgba(15, 21, 50, 0.84);
+            background: rgba(15, 21, 50, 0.86);
             border: 1px solid rgba(168, 85, 247, 0.3);
             border-radius: 22px;
-            padding: 22px;
+            padding: 20px;
             box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
         }
 
         .batch-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
             gap: 10px;
             margin-top: 14px;
         }
@@ -216,7 +210,7 @@
             font-weight: 700;
             font-size: 12px;
             cursor: pointer;
-            padding: 0;
+            padding: 4px 0;
             text-decoration: underline;
         }
 
@@ -236,7 +230,7 @@
         }
 
         .stats-box {
-            background: rgba(11, 16, 40, 0.9);
+            background: rgba(11, 16, 40, 0.92);
             border: 1px solid rgba(129, 140, 248, 0.25);
             border-radius: 14px;
             padding: 14px;
@@ -258,31 +252,31 @@
             font-size: 13px;
             line-height: 1.5;
             display: none;
+            word-break: break-all;
         }
 
         .feedback-box.show { display: block; }
         .feedback-box.ok {
-            background: rgba(6, 78, 59, 0.55);
-            border: 1px solid rgba(52, 211, 153, 0.55);
+            background: rgba(6, 78, 59, 0.6);
+            border: 1px solid rgba(52, 211, 153, 0.6);
             color: #d1fae5;
         }
         .feedback-box.err {
-            background: rgba(127, 29, 29, 0.55);
-            border: 1px solid rgba(248, 113, 113, 0.55);
+            background: rgba(127, 29, 29, 0.6);
+            border: 1px solid rgba(248, 113, 113, 0.6);
             color: #fee2e2;
         }
         .feedback-box.info {
-            background: rgba(30, 58, 138, 0.55);
-            border: 1px solid rgba(96, 165, 250, 0.55);
+            background: rgba(30, 58, 138, 0.6);
+            border: 1px solid rgba(96, 165, 250, 0.6);
             color: #dbeafe;
         }
 
-        /* Modal */
         .modal-backdrop {
             position: fixed;
             inset: 0;
-            z-index: 999;
-            background: rgba(0, 0, 0, 0.78);
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.82);
             backdrop-filter: blur(6px);
             display: none;
             align-items: center;
@@ -304,18 +298,17 @@
             border-radius: 22px;
             padding: 22px;
             position: relative;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
         }
 
         .modal-close {
             position: absolute;
             top: 14px;
             right: 16px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(148, 163, 184, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(148, 163, 184, 0.35);
             color: #ffffff;
-            width: 32px;
-            height: 32px;
+            width: 34px;
+            height: 34px;
             border-radius: 999px;
             font-size: 18px;
             line-height: 1;
@@ -333,7 +326,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 12px;
+            padding: 11px 12px;
             border-radius: 12px;
             background: rgba(11, 16, 40, 0.92);
             border: 1px solid rgba(129, 140, 248, 0.28);
@@ -343,9 +336,9 @@
             cursor: pointer;
         }
 
-        .wallet-option:hover, .wallet-option.selected {
+        .wallet-option.selected {
             border-color: #38bdf8;
-            background: rgba(30, 41, 99, 0.85);
+            background: rgba(30, 41, 99, 0.9);
         }
     </style>
 </head>
@@ -359,11 +352,11 @@
 
             <div class="nav-actions">
                 <a href="dashboard.html" class="btn">Dashboard</a>
-                <button type="button" id="navWalletBtn" class="btn btn-primary">
+                <button type="button" id="navWalletBtn" class="btn btn-primary" onclick="window.__voinOpenModal()">
                     <span id="navWalletDot" class="wallet-dot"></span>
                     <span id="navWalletText">Connect Wallet</span>
                 </button>
-                <button type="button" id="navDisconnectBtn" class="btn btn-danger" style="display:none;">
+                <button type="button" id="navDisconnectBtn" class="btn btn-danger" style="display:none;" onclick="window.__voinDisconnect()">
                     Disconnect
                 </button>
             </div>
@@ -379,7 +372,7 @@
             </p>
             <div class="nav-actions">
                 <a href="#presale" class="btn btn-primary">Join Presale &rarr;</a>
-                <button type="button" id="heroConnectBtn" class="btn">Connect Investor Wallet</button>
+                <button type="button" id="heroConnectBtn" class="btn" onclick="window.__voinOpenModal()">Connect Investor Wallet</button>
             </div>
         </div>
     </section>
@@ -395,7 +388,7 @@
             <div class="panel">
                 <div style="text-align:center;margin-bottom:14px;">
                     <h2 style="margin:0;font-size:22px;color:#67e8f9;">VOIN COIN</h2>
-                    <div id="connectionStatus" style="font-size:13px;color:#fbbf24;margin-top:4px;font-weight:700;">Checking presale server...</div>
+                    <div id="connectionStatus" style="font-size:13px;color:#67e8f9;margin-top:4px;font-weight:700;">Ready for investor wallet</div>
                 </div>
 
                 <div class="stats-box">
@@ -405,7 +398,7 @@
                     </div>
                     <div class="stat-row">
                         <span>Batch Price:</span>
-                        <strong id="activeBatchPrice" style="color:#34d399;">$0.01 / VOIN</strong>
+                        <strong id="activeBatchPrice" style="color:#34d399;">$0.01 / VOIN (100 VOIN/$1)</strong>
                     </div>
                     <div class="stat-row">
                         <span>Connected Investor Wallet:</span>
@@ -420,9 +413,9 @@
                 <div class="field">
                     <div class="field-top">
                         <label for="walletAddress"><strong>Investor Wallet Address</strong></label>
-                        <button type="button" id="openModalFromFieldBtn" class="link-btn">Connect / Select Wallet</button>
+                        <button type="button" class="link-btn" onclick="window.__voinOpenModal()">Connect / Select Wallet</button>
                     </div>
-                    <input type="text" id="walletAddress" class="input" placeholder="0x..." autocomplete="off">
+                    <input type="text" id="walletAddress" class="input" placeholder="0x..." autocomplete="off" oninput="window.__voinSyncInput(this.value)">
                 </div>
 
                 <div class="field">
@@ -430,11 +423,11 @@
                         <label for="amountPaid"><strong>Payment Amount (USD)</strong></label>
                         <span style="font-size:12px;color:#67e8f9;">Min: $10</span>
                     </div>
-                    <input type="number" id="amountPaid" class="input" min="10" step="any" placeholder="Minimum 10 (e.g. 10, 50, 100)">
+                    <input type="number" id="amountPaid" class="input" min="10" step="any" placeholder="Minimum 10 (e.g. 10, 50, 100)" oninput="window.__voinUpdatePreview()">
                     <div id="estimatedVoinPreview" style="font-size:12px;color:#d8b4fe;margin-top:6px;">Converted VOIN: 0 VOIN</div>
                 </div>
 
-                <button type="button" id="buyBtn" class="btn btn-primary" style="width:100%;padding:13px;">
+                <button type="button" id="buyBtn" class="btn btn-primary" style="width:100%;padding:13px;" onclick="window.__voinBuy()">
                     Buy VOIN &amp; Convert
                 </button>
 
@@ -443,22 +436,21 @@
         </div>
     </section>
 
-    <!-- WALLET MODAL -->
-    <div id="walletModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="walletModalTitle">
-        <div class="modal-card">
-            <button type="button" id="closeWalletModalBtn" class="modal-close" aria-label="Close">&times;</button>
+    <div id="walletModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="walletModalTitle" onclick="if(event.target===this)window.__voinCloseModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <button type="button" class="modal-close" aria-label="Close" onclick="window.__voinCloseModal()">&times;</button>
             <h3 id="walletModalTitle" style="margin:0 0 6px;font-size:19px;">Investor Wallet Connection</h3>
             <p id="modalHint" style="margin:0 0 14px;font-size:13px;color:#cbd5e1;line-height:1.5;">
-                Enter your investor wallet address (<code>0x...</code>) or pick a wallet below, then click <strong>2. Connect Wallet</strong>.
+                Paste or type your test wallet address (<code>0x...</code>) and click <strong>2. Connect Wallet</strong>.
             </p>
 
             <div class="stats-box" style="margin-bottom:14px;">
                 <div class="field-top" style="margin-bottom:8px;">
                     <label for="modalWalletInput"><strong>1. Investor Wallet Address</strong></label>
-                    <button type="button" id="detectBrowserWalletBtn" class="link-btn">Detect Browser Wallet</button>
+                    <button type="button" class="link-btn" onclick="window.__voinDetectWallet()">Detect Wallet</button>
                 </div>
                 <input type="text" id="modalWalletInput" class="input" placeholder="0x..." autocomplete="off" style="margin-bottom:10px;">
-                <button type="button" id="confirmConnectBtn" class="btn btn-primary" style="width:100%;">
+                <button type="button" id="confirmConnectBtn" class="btn btn-primary" style="width:100%;" onclick="window.__voinConnectSubmit()">
                     2. Connect Wallet
                 </button>
             </div>
@@ -467,12 +459,12 @@
                 Available Common Wallets
             </div>
             <div id="walletProviderList" class="wallet-list">
-                <button type="button" class="wallet-option" data-provider="MetaMask"><span>MetaMask</span><span style="color:#67e8f9;">Connect</span></button>
-                <button type="button" class="wallet-option" data-provider="Trust Wallet"><span>Trust Wallet</span><span style="color:#67e8f9;">Connect</span></button>
-                <button type="button" class="wallet-option" data-provider="Coinbase Wallet"><span>Coinbase Wallet</span><span style="color:#67e8f9;">Connect</span></button>
-                <button type="button" class="wallet-option" data-provider="WalletConnect"><span>WalletConnect</span><span style="color:#67e8f9;">Connect</span></button>
-                <button type="button" class="wallet-option" data-provider="Rabby Wallet"><span>Rabby Wallet</span><span style="color:#67e8f9;">Connect</span></button>
-                <button type="button" class="wallet-option" data-provider="OKX Wallet"><span>OKX Wallet</span><span style="color:#67e8f9;">Connect</span></button>
+                <button type="button" class="wallet-option" data-provider="MetaMask" onclick="window.__voinPickProvider('MetaMask')"><span>MetaMask</span><span style="color:#67e8f9;">Select</span></button>
+                <button type="button" class="wallet-option" data-provider="Trust Wallet" onclick="window.__voinPickProvider('Trust Wallet')"><span>Trust Wallet</span><span style="color:#67e8f9;">Select</span></button>
+                <button type="button" class="wallet-option" data-provider="Coinbase Wallet" onclick="window.__voinPickProvider('Coinbase Wallet')"><span>Coinbase Wallet</span><span style="color:#67e8f9;">Select</span></button>
+                <button type="button" class="wallet-option" data-provider="WalletConnect" onclick="window.__voinPickProvider('WalletConnect')"><span>WalletConnect</span><span style="color:#67e8f9;">Select</span></button>
+                <button type="button" class="wallet-option" data-provider="Rabby Wallet" onclick="window.__voinPickProvider('Rabby Wallet')"><span>Rabby Wallet</span><span style="color:#67e8f9;">Select</span></button>
+                <button type="button" class="wallet-option" data-provider="OKX Wallet" onclick="window.__voinPickProvider('OKX Wallet')"><span>OKX Wallet</span><span style="color:#67e8f9;">Select</span></button>
             </div>
 
             <div id="modalFeedback" class="feedback-box"></div>
@@ -498,24 +490,25 @@
             let selectedProvider = "";
             let activeBatchNum = 1;
 
-            function isValidEvm(addr) {
-                return /^0x[a-fA-F0-9]{40}$/.test((addr || "").trim());
+            function cleanAddress(val) {
+                return (val || "").trim();
+            }
+
+            function isHexWallet(addr) {
+                return /^0x[a-fA-F0-9]{40}$/.test(cleanAddress(addr));
+            }
+
+            function shortAddr(addr) {
+                const a = cleanAddress(addr);
+                if (a.length <= 12) return a;
+                return a.slice(0, 6) + "..." + a.slice(-4);
             }
 
             function showBox(elId, type, htmlMessage) {
                 const box = document.getElementById(elId);
                 if (!box) return;
-                box.className = `feedback-box show ${type}`;
+                box.className = "feedback-box show " + type;
                 box.innerHTML = htmlMessage;
-            }
-
-            function getProviderObj(name) {
-                const p = (name || "").toLowerCase();
-                if (p.includes("okx") && window.okxwallet) return window.okxwallet;
-                if (p.includes("rabby") && window.rabbyEthereum) return window.rabbyEthereum;
-                if (p.includes("coinbase") && window.coinbaseWalletExtension) return window.coinbaseWalletExtension;
-                if (window.ethereum) return window.ethereum;
-                return null;
             }
 
             function getHistory() {
@@ -530,155 +523,194 @@
             function saveHistoryEntry(entry) {
                 const list = getHistory();
                 list.unshift(entry);
-                localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(list));
+                try {
+                    localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(list));
+                } catch (_) {}
             }
 
             function updateWalletSummaryUI(addr) {
                 const displayEl = document.getElementById("activeInvestorDisplay");
                 const totalEl = document.getElementById("walletConvertedTotal");
+                const clean = cleanAddress(addr);
                 if (!displayEl || !totalEl) return;
 
-                if (!isValidEvm(addr)) {
+                if (!clean) {
                     displayEl.textContent = "Not Connected";
                     totalEl.textContent = "0 VOIN ($0.00)";
                     return;
                 }
 
-                displayEl.textContent = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-                const entries = getHistory().filter((item) => (item.wallet || "").toLowerCase() === addr.toLowerCase());
-                const totalUsd = entries.reduce((acc, item) => acc + Number(item.amountPaid || 0), 0);
-                const totalVoin = entries.reduce((acc, item) => acc + Number(item.buyResultVoin || 0), 0);
-                totalEl.textContent = `${totalVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN ($${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+                displayEl.textContent = shortAddr(clean);
+                const entries = getHistory().filter(function (item) {
+                    return (item.wallet || "").toLowerCase() === clean.toLowerCase();
+                });
+                const totalUsd = entries.reduce(function (acc, item) {
+                    return acc + Number(item.amountPaid || 0);
+                }, 0);
+                const totalVoin = entries.reduce(function (acc, item) {
+                    return acc + Number(item.buyResultVoin || 0);
+                }, 0);
+                totalEl.textContent =
+                    totalVoin.toLocaleString("en-US", { maximumFractionDigits: 2 }) +
+                    " VOIN ($" +
+                    totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+                    ")";
             }
 
             function applyWalletSession(address, providerName) {
-                const clean = (address || "").trim();
+                const clean = cleanAddress(address);
                 const navText = document.getElementById("navWalletText");
                 const navDot = document.getElementById("navWalletDot");
                 const navDisc = document.getElementById("navDisconnectBtn");
                 const addrInput = document.getElementById("walletAddress");
 
-                if (clean && isValidEvm(clean)) {
+                if (clean) {
                     if (addrInput) addrInput.value = clean;
-                    if (navText) navText.textContent = `${clean.slice(0, 6)}...${clean.slice(-4)}`;
+                    if (navText) navText.textContent = shortAddr(clean);
                     if (navDot) navDot.classList.add("connected");
                     if (navDisc) navDisc.style.display = "inline-flex";
-                    localStorage.setItem(STORAGE_WALLET_KEY, clean);
-                    if (providerName) localStorage.setItem(STORAGE_PROVIDER_KEY, providerName);
+                    try {
+                        localStorage.setItem(STORAGE_WALLET_KEY, clean);
+                        if (providerName) localStorage.setItem(STORAGE_PROVIDER_KEY, providerName);
+                    } catch (_) {}
                     updateWalletSummaryUI(clean);
                 } else {
                     if (addrInput) addrInput.value = "";
                     if (navText) navText.textContent = "Connect Wallet";
                     if (navDot) navDot.classList.remove("connected");
                     if (navDisc) navDisc.style.display = "none";
-                    localStorage.removeItem(STORAGE_WALLET_KEY);
-                    localStorage.removeItem(STORAGE_PROVIDER_KEY);
+                    try {
+                        localStorage.removeItem(STORAGE_WALLET_KEY);
+                        localStorage.removeItem(STORAGE_PROVIDER_KEY);
+                    } catch (_) {}
                     updateWalletSummaryUI("");
                 }
             }
 
-            function openWalletModal() {
+            window.__voinOpenModal = function () {
                 const modal = document.getElementById("walletModal");
                 const modalInput = document.getElementById("modalWalletInput");
-                const currentAddr = (document.getElementById("walletAddress")?.value || "").trim()
-                    || localStorage.getItem(STORAGE_WALLET_KEY)
-                    || "";
-                if (modalInput) modalInput.value = currentAddr;
+                const current = cleanAddress(document.getElementById("walletAddress")?.value)
+                    || cleanAddress(localStorage.getItem(STORAGE_WALLET_KEY));
+                if (modalInput) modalInput.value = current;
                 const fb = document.getElementById("modalFeedback");
                 if (fb) fb.className = "feedback-box";
                 if (modal) modal.classList.add("open");
-                setTimeout(() => modalInput && modalInput.focus(), 40);
-            }
+                setTimeout(function () {
+                    if (modalInput) modalInput.focus();
+                }, 50);
+            };
 
-            function closeWalletModal() {
+            window.__voinCloseModal = function () {
                 const modal = document.getElementById("walletModal");
                 if (modal) modal.classList.remove("open");
-            }
+            };
 
-            function highlightSelectedProvider(name) {
-                document.querySelectorAll("#walletProviderList .wallet-option").forEach((btn) => {
-                    btn.classList.toggle("selected", btn.getAttribute("data-provider") === name);
-                });
-            }
-
-            async function handleProviderClick(providerName) {
+            window.__voinPickProvider = async function (providerName) {
                 selectedProvider = providerName;
-                highlightSelectedProvider(providerName);
-                const modalInput = document.getElementById("modalWalletInput");
+                document.querySelectorAll("#walletProviderList .wallet-option").forEach(function (btn) {
+                    btn.classList.toggle("selected", btn.getAttribute("data-provider") === providerName);
+                });
+
                 const hint = document.getElementById("modalHint");
                 if (hint) {
-                    hint.innerHTML = `Selected <strong>${providerName}</strong>. Enter or confirm your <code>0x...</code> wallet address above, then click <strong>2. Connect Wallet</strong>.`;
+                    hint.innerHTML = "Selected <strong>" + providerName + "</strong>. Paste or type your wallet address above and click <strong>2. Connect Wallet</strong>.";
                 }
 
-                const provider = getProviderObj(providerName);
+                const provider = window.ethereum;
                 if (provider && typeof provider.request === "function") {
                     try {
                         const accounts = await provider.request({ method: "eth_requestAccounts" });
-                        if (accounts && accounts[0] && isValidEvm(accounts[0])) {
-                            const acct = accounts[0].trim();
+                        if (accounts && accounts[0]) {
+                            const acct = cleanAddress(accounts[0]);
+                            const modalInput = document.getElementById("modalWalletInput");
                             if (modalInput) modalInput.value = acct;
                             applyWalletSession(acct, providerName);
-                            closeWalletModal();
-                            showBox("presaleFeedback", "ok", `Connected via <strong>${providerName}</strong>: <code>${acct}</code>`);
+                            window.__voinCloseModal();
+                            showBox("presaleFeedback", "ok", "Connected via <strong>" + providerName + "</strong>: <code>" + acct + "</code>");
                             return;
                         }
-                    } catch (err) {
-                        showBox("modalFeedback", "info", `${providerName} prompt closed or unavailable in this browser. Enter your <code>0x...</code> wallet address manually and click <strong>2. Connect Wallet</strong>.`);
-                    }
-                } else {
-                    showBox("modalFeedback", "info", `No browser extension for <strong>${providerName}</strong> detected here. Enter your <code>0x...</code> wallet address above and click <strong>2. Connect Wallet</strong>.`);
+                    } catch (_) {}
                 }
 
+                showBox("modalFeedback", "info", "Wallet <strong>" + providerName + "</strong> selected. Enter your wallet address above and tap <strong>2. Connect Wallet</strong>.");
+                const modalInput = document.getElementById("modalWalletInput");
                 if (modalInput) modalInput.focus();
-            }
+            };
 
-            async function handleDetectBrowserWallet() {
-                const provider = getProviderObj(selectedProvider);
+            window.__voinDetectWallet = async function () {
+                const provider = window.ethereum;
                 if (!provider || typeof provider.request !== "function") {
-                    showBox("modalFeedback", "info", "No injected browser wallet found. Enter your <code>0x...</code> address manually and click <strong>2. Connect Wallet</strong>.");
+                    showBox("modalFeedback", "info", "No browser wallet extension detected here. Paste your test wallet address above and tap <strong>2. Connect Wallet</strong>.");
                     return;
                 }
                 try {
                     const accounts = await provider.request({ method: "eth_requestAccounts" });
-                    if (accounts && accounts[0] && isValidEvm(accounts[0])) {
-                        const acct = accounts[0].trim();
+                    if (accounts && accounts[0]) {
+                        const acct = cleanAddress(accounts[0]);
                         const modalInput = document.getElementById("modalWalletInput");
                         if (modalInput) modalInput.value = acct;
-                        showBox("modalFeedback", "ok", `Detected address <code>${acct}</code>. Click <strong>2. Connect Wallet</strong> to finish.`);
-                    } else {
-                        showBox("modalFeedback", "err", "Wallet did not return a valid EVM (<code>0x...</code>) address.");
+                        showBox("modalFeedback", "ok", "Detected wallet: <code>" + acct + "</code>. Tap <strong>2. Connect Wallet</strong> to connect.");
                     }
                 } catch (_) {
-                    showBox("modalFeedback", "info", "Wallet detection cancelled. You can type your <code>0x...</code> address manually.");
+                    showBox("modalFeedback", "info", "Detection cancelled. You can enter your wallet address manually.");
                 }
-            }
+            };
 
-            function handleConfirmConnect() {
+            window.__voinConnectSubmit = function () {
                 const modalInput = document.getElementById("modalWalletInput");
-                const raw = (modalInput ? modalInput.value : "").trim();
-                if (!isValidEvm(raw)) {
-                    showBox("modalFeedback", "err", "Invalid address. Enter a valid <code>0x...</code> address (42 hex characters).");
+                const raw = cleanAddress(modalInput ? modalInput.value : "");
+                if (!raw) {
+                    showBox("modalFeedback", "err", "Please enter your test wallet address first.");
                     return;
                 }
+
                 const label = selectedProvider || "Investor Wallet";
                 applyWalletSession(raw, label);
-                closeWalletModal();
-                showBox("presaleFeedback", "ok", `Wallet connected (<strong>${label}</strong>): <code>${raw}</code>`);
-            }
+                window.__voinCloseModal();
 
-            function handleDisconnect() {
+                if (isHexWallet(raw)) {
+                    showBox("presaleFeedback", "ok", "Wallet connected (<strong>" + label + "</strong>): <code>" + raw + "</code>");
+                } else {
+                    showBox("presaleFeedback", "info", "Wallet connected (<strong>" + label + "</strong>): <code>" + raw + "</code> (note: standard EVM address is <code>0x</code> + 40 hex chars).");
+                }
+            };
+
+            window.__voinDisconnect = function () {
                 selectedProvider = "";
-                highlightSelectedProvider("");
+                document.querySelectorAll("#walletProviderList .wallet-option").forEach(function (btn) {
+                    btn.classList.remove("selected");
+                });
                 applyWalletSession("", "");
-                showBox("presaleFeedback", "info", "Investor wallet disconnected.");
-            }
+                showBox("presaleFeedback", "info", "Wallet disconnected.");
+            };
 
-            function updateConversionPreview() {
+            window.__voinSyncInput = function (val) {
+                const clean = cleanAddress(val);
+                const navText = document.getElementById("navWalletText");
+                const navDot = document.getElementById("navWalletDot");
+                const navDisc = document.getElementById("navDisconnectBtn");
+
+                if (clean) {
+                    if (navText) navText.textContent = shortAddr(clean);
+                    if (navDot) navDot.classList.add("connected");
+                    if (navDisc) navDisc.style.display = "inline-flex";
+                    try { localStorage.setItem(STORAGE_WALLET_KEY, clean); } catch (_) {}
+                } else {
+                    if (navText) navText.textContent = "Connect Wallet";
+                    if (navDot) navDot.classList.remove("connected");
+                    if (navDisc) navDisc.style.display = "none";
+                    try { localStorage.removeItem(STORAGE_WALLET_KEY); } catch (_) {}
+                }
+                updateWalletSummaryUI(clean);
+            };
+
+            window.__voinUpdatePreview = function () {
                 const price = BATCH_PRICES[activeBatchNum] || 0.01;
                 const amount = parseFloat(document.getElementById("amountPaid")?.value);
                 const preview = document.getElementById("estimatedVoinPreview");
                 const priceEl = document.getElementById("activeBatchPrice");
-                if (priceEl) priceEl.textContent = `$${price.toFixed(2)} / VOIN (${Math.round(1 / price)} VOIN/$1)`;
+                if (priceEl) priceEl.textContent = "$" + price.toFixed(2) + " / VOIN (" + Math.round(1 / price) + " VOIN/$1)";
                 if (!preview) return;
 
                 if (Number.isNaN(amount) || amount <= 0) {
@@ -686,38 +718,23 @@
                     return;
                 }
                 const voin = amount / price;
-                preview.textContent = `Converted VOIN: ${voin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN (Batch ${activeBatchNum} @ $${price.toFixed(2)})`;
-            }
+                preview.textContent =
+                    "Converted VOIN: " +
+                    voin.toLocaleString("en-US", { maximumFractionDigits: 2 }) +
+                    " VOIN (Batch " + activeBatchNum + " @ $" + price.toFixed(2) + ")";
+            };
 
-            function renderBatches() {
-                const grid = document.getElementById("batchGrid");
-                if (!grid) return;
-                let html = "";
-                for (let i = 1; i <= 10; i++) {
-                    const price = BATCH_PRICES[i];
-                    const isActive = i === activeBatchNum;
-                    html += `
-                        <div class="batch-card ${isActive ? "active" : ""}">
-                            <div style="font-size:12px;font-weight:800;color:${isActive ? "#67e8f9" : "#e2e8f0"};">Batch ${i}</div>
-                            <div style="font-size:14px;font-weight:800;color:#34d399;margin-top:4px;">$${price.toFixed(2)}</div>
-                            <div style="font-size:11px;color:#94a3b8;margin-top:2px;">15.6M VOIN</div>
-                        </div>
-                    `;
-                }
-                grid.innerHTML = html;
-            }
-
-            async function handleBuy() {
-                const address = (document.getElementById("walletAddress")?.value || "").trim();
+            window.__voinBuy = async function () {
+                const address = cleanAddress(document.getElementById("walletAddress")?.value);
                 const amount = parseFloat(document.getElementById("amountPaid")?.value);
                 const buyBtn = document.getElementById("buyBtn");
 
-                if (!isValidEvm(address)) {
-                    showBox("presaleFeedback", "err", "Please connect or enter a valid investor wallet address (<code>0x...</code>).");
+                if (!address) {
+                    showBox("presaleFeedback", "err", "Please connect or enter your wallet address first.");
                     return;
                 }
                 if (Number.isNaN(amount) || amount < MIN_PURCHASE_USD) {
-                    showBox("presaleFeedback", "err", "Minimum purchase amount is <strong>$10</strong>.");
+                    showBox("presaleFeedback", "err", "Minimum purchase is <strong>$10</strong>.");
                     return;
                 }
 
@@ -725,13 +742,13 @@
                 const price = BATCH_PRICES[activeBatchNum] || 0.01;
                 const convertedVoin = amount / price;
                 const now = new Date();
-                const pad = (n) => String(n).padStart(2, "0");
+                const pad = function (n) { return String(n).padStart(2, "0"); };
 
-                buyBtn.disabled = true;
-                showBox("presaleFeedback", "info", "Submitting VOIN purchase &amp; conversion...");
+                if (buyBtn) buyBtn.disabled = true;
+                showBox("presaleFeedback", "info", "Processing VOIN conversion...");
 
                 try {
-                    const res = await fetch(`${API_URL}/api/buy`, {
+                    const res = await fetch(API_URL + "/api/buy", {
                         method: "POST",
                         headers: { "Content-Type": "application/json", "Accept": "application/json" },
                         body: JSON.stringify({
@@ -740,114 +757,76 @@
                             amount_paid: amount
                         })
                     });
-                    const data = await res.json().catch(() => ({}));
+                    const data = await res.json().catch(function () { return {}; });
                     const finalVoin = res.ok && data.tokens_received !== undefined ? Number(data.tokens_received) : convertedVoin;
 
                     saveHistoryEntry({
-                        id: `VOIN-${Date.now()}`,
+                        id: "VOIN-" + Date.now(),
                         wallet: address,
                         receiverWallet: RECEIVING_WALLET_ADDRESS,
                         batch: Number(data.batch) || activeBatchNum,
                         amountPaid: amount,
                         buyResultVoin: finalVoin,
                         txHash: data.tx_hash || data.txHash || "",
-                        dateStr: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
-                        timeStr: `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`,
+                        dateStr: now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()),
+                        timeStr: pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds()),
                         status: res.ok && data.status === "success" ? "Confirmed" : "Recorded"
                     });
                 } catch (_) {
                     saveHistoryEntry({
-                        id: `VOIN-${Date.now()}`,
+                        id: "VOIN-" + Date.now(),
                         wallet: address,
                         receiverWallet: RECEIVING_WALLET_ADDRESS,
                         batch: activeBatchNum,
                         amountPaid: amount,
                         buyResultVoin: convertedVoin,
                         txHash: "",
-                        dateStr: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
-                        timeStr: `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`,
+                        dateStr: now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()),
+                        timeStr: pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds()),
                         status: "Recorded"
                     });
                 } finally {
-                    buyBtn.disabled = false;
-                    document.getElementById("amountPaid").value = "";
-                    updateConversionPreview();
+                    if (buyBtn) buyBtn.disabled = false;
+                    const amtInput = document.getElementById("amountPaid");
+                    if (amtInput) amtInput.value = "";
+                    window.__voinUpdatePreview();
                     updateWalletSummaryUI(address);
                     showBox(
                         "presaleFeedback",
                         "ok",
-                        `Converted <strong>${convertedVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN</strong> for wallet <code>${address}</code>. Open <a href="dashboard.html" style="text-decoration:underline;font-weight:700;">Dashboard</a> to view full history.`
+                        "Converted <strong>" +
+                        convertedVoin.toLocaleString("en-US", { maximumFractionDigits: 2 }) +
+                        " VOIN</strong> for wallet <code>" + address +
+                        "</code>. Open <a href='dashboard.html' style='text-decoration:underline;font-weight:700;'>Dashboard</a> to view history."
                     );
                 }
-            }
+            };
 
-            async function checkServerStats() {
-                const statusEl = document.getElementById("connectionStatus");
-                try {
-                    const res = await fetch(`${API_URL}/api/presale-stats`, { headers: { "Accept": "application/json" } });
-                    if (!res.ok) throw new Error("HTTP");
-                    const data = await res.json();
-                    activeBatchNum = Number(data.current_batch) || 1;
-                    document.getElementById("currentBatch").textContent = String(activeBatchNum);
-                    renderBatches();
-                    updateConversionPreview();
-                    if (statusEl) {
-                        statusEl.textContent = "Connected to presale server";
-                        statusEl.style.color = "#34d399";
-                    }
-                } catch (_) {
-                    renderBatches();
-                    updateConversionPreview();
-                    if (statusEl) {
-                        statusEl.textContent = "Wallet & local conversion active";
-                        statusEl.style.color = "#67e8f9";
-                    }
+            function renderBatches() {
+                const grid = document.getElementById("batchGrid");
+                if (!grid) return;
+                let html = "";
+                for (let i = 1; i <= 10; i++) {
+                    const price = BATCH_PRICES[i];
+                    const isActive = i === activeBatchNum;
+                    html +=
+                        "<div class='batch-card " + (isActive ? "active" : "") + "'>" +
+                        "<div style='font-size:12px;font-weight:800;color:" + (isActive ? "#67e8f9" : "#e2e8f0") + ";'>Batch " + i + "</div>" +
+                        "<div style='font-size:14px;font-weight:800;color:#34d399;margin-top:4px;'>$" + price.toFixed(2) + "</div>" +
+                        "<div style='font-size:11px;color:#94a3b8;margin-top:2px;'>15.6M VOIN</div>" +
+                        "</div>";
                 }
+                grid.innerHTML = html;
             }
 
-            function bindAllEvents() {
-                document.getElementById("navWalletBtn")?.addEventListener("click", openWalletModal);
-                document.getElementById("heroConnectBtn")?.addEventListener("click", openWalletModal);
-                document.getElementById("openModalFromFieldBtn")?.addEventListener("click", openWalletModal);
-                document.getElementById("closeWalletModalBtn")?.addEventListener("click", closeWalletModal);
-                document.getElementById("detectBrowserWalletBtn")?.addEventListener("click", handleDetectBrowserWallet);
-                document.getElementById("confirmConnectBtn")?.addEventListener("click", handleConfirmConnect);
-                document.getElementById("navDisconnectBtn")?.addEventListener("click", handleDisconnect);
-                document.getElementById("buyBtn")?.addEventListener("click", handleBuy);
-                document.getElementById("amountPaid")?.addEventListener("input", updateConversionPreview);
-
-                document.getElementById("walletAddress")?.addEventListener("input", (e) => {
-                    const v = e.target.value.trim();
-                    if (isValidEvm(v)) {
-                        localStorage.setItem(STORAGE_WALLET_KEY, v);
-                        updateWalletSummaryUI(v);
-                    } else {
-                        updateWalletSummaryUI("");
-                    }
-                });
-
-                document.getElementById("walletModal")?.addEventListener("click", (e) => {
-                    if (e.target.id === "walletModal") closeWalletModal();
-                });
-
-                document.getElementById("walletProviderList")?.addEventListener("click", (e) => {
-                    const option = e.target.closest(".wallet-option");
-                    if (!option) return;
-                    const providerName = option.getAttribute("data-provider") || "Wallet";
-                    handleProviderClick(providerName);
-                });
-            }
-
-            bindAllEvents();
             renderBatches();
-            updateConversionPreview();
+            window.__voinUpdatePreview();
 
-            const savedWallet = (localStorage.getItem(STORAGE_WALLET_KEY) || "").trim();
-            const savedProvider = localStorage.getItem(STORAGE_PROVIDER_KEY) || "";
-            if (savedWallet && isValidEvm(savedWallet)) {
-                applyWalletSession(savedWallet, savedProvider);
-            }
-            checkServerStats();
+            try {
+                const saved = cleanAddress(localStorage.getItem(STORAGE_WALLET_KEY));
+                const savedProv = localStorage.getItem(STORAGE_PROVIDER_KEY) || "";
+                if (saved) applyWalletSession(saved, savedProv);
+            } catch (_) {}
         })();
     </script>
 </body>
