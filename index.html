@@ -11,19 +11,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --midnight-navy: #040714;
-            --deep-space: #0b112b;
+            --midnight-navy: #050818;
+            --deep-space: #0c122e;
             --electric-blue: #38bdf8;
             --neon-purple: #a855f7;
         }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 16px;
             background-color: var(--midnight-navy);
             background-image:
-                radial-gradient(circle at 18% 18%, rgba(168, 85, 247, 0.22) 0%, transparent 42%),
-                radial-gradient(circle at 82% 25%, rgba(56, 189, 248, 0.18) 0%, transparent 45%),
-                linear-gradient(180deg, #03050f 0%, #090e26 55%, #040714 100%);
+                radial-gradient(circle at 18% 18%, rgba(168, 85, 247, 0.24) 0%, transparent 42%),
+                radial-gradient(circle at 80% 28%, rgba(56, 189, 248, 0.20) 0%, transparent 45%),
+                radial-gradient(circle at 50% 85%, rgba(124, 58, 237, 0.16) 0%, transparent 50%),
+                linear-gradient(180deg, #040714 0%, #0a0f29 50%, #050818 100%);
             color: #ffffff;
             overflow-x: hidden;
         }
@@ -39,38 +41,40 @@
                 linear-gradient(to bottom, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
         }
 
-        .glass-card {
-            background: rgba(13, 19, 44, 0.72);
+        /* Glassmorphism seperti referensi */
+        .glass-panel {
+            background: rgba(16, 22, 52, 0.72);
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
             border: 1px solid rgba(168, 85, 247, 0.28);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
-        .glass-subcard {
-            background: rgba(8, 12, 32, 0.82);
-            border: 1px solid rgba(99, 102, 241, 0.25);
+        .glass-tile {
+            background: rgba(11, 16, 40, 0.82);
+            border: 1px solid rgba(129, 140, 248, 0.25);
             transition: all 0.3s ease;
         }
 
-        .glass-subcard:hover {
-            border-color: rgba(168, 85, 247, 0.65);
+        .glass-tile:hover {
+            border-color: rgba(168, 85, 247, 0.7);
+            box-shadow: 0 10px 28px rgba(168, 85, 247, 0.2);
             transform: translateY(-3px);
         }
 
-        /* Efek FLY Logo Koin VOIN WALLET */
+        /* Animasi FLY Utama Logo Koin */
         @keyframes voinCoinFly {
             0%, 100% {
                 transform: translateY(0px) rotate(0deg) scale(1);
-                filter: drop-shadow(0 0 24px rgba(168, 85, 247, 0.55));
+                filter: drop-shadow(0 0 28px rgba(168, 85, 247, 0.55));
             }
             50% {
                 transform: translateY(-14px) rotate(2deg) scale(1.02);
-                filter: drop-shadow(0 16px 34px rgba(56, 189, 248, 0.65));
+                filter: drop-shadow(0 18px 38px rgba(56, 189, 248, 0.65));
             }
         }
 
-        /* Efek FLY Ikon Tool */
+        /* Animasi FLY Ikon Tool */
         @keyframes toolFlyA {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
             50% { transform: translateY(-8px) rotate(-2.5deg); }
@@ -105,20 +109,18 @@
             filter: drop-shadow(0 6px 14px rgba(56, 189, 248, 0.4));
         }
 
-        .btn-voin {
-            background: linear-gradient(135deg, #6366f1 0%, #9333ea 50%, #3b82f6 100%);
-            background-size: 200% auto;
+        .btn-primary-voin {
+            background: linear-gradient(135deg, #6366f1 0%, #9333ea 55%, #3b82f6 100%);
             box-shadow: 0 0 24px rgba(147, 51, 234, 0.45);
-            transition: all 0.35s ease;
+            transition: all 0.3s ease;
         }
 
-        .btn-voin:hover:not(:disabled) {
-            background-position: right center;
+        .btn-primary-voin:hover:not(:disabled) {
             box-shadow: 0 0 34px rgba(56, 189, 248, 0.65);
             transform: translateY(-2px);
         }
 
-        .btn-voin:disabled {
+        .btn-primary-voin:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
@@ -126,245 +128,234 @@
         .logo-blend {
             mix-blend-mode: lighten;
         }
+
+        /* Scrollbar halus untuk menu di layar kecil */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="cyber-grid selection:bg-purple-500 selection:text-white">
 
-    <!-- ================= NAVBAR ================= -->
-    <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-[#040714]/88 backdrop-blur-xl">
+    <!-- ================= HEADER + NAVIGASI 1 BARIS RAPI ================= -->
+    <header class="sticky top-0 z-50 border-b border-purple-500/20 bg-[#050818]/90 backdrop-blur-xl">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+            <!-- Brand VOIN -->
             <a href="#home" class="flex items-center gap-2.5 shrink-0">
-                <div class="w-9 h-9 rounded-full overflow-hidden border border-purple-400/60 bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center font-display font-bold text-sm">
-                    <img src="voin-logo.jpg" alt="VOIN" class="w-full h-full object-cover object-top" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <span class="hidden w-full h-full items-center justify-center">V</span>
+                <div class="w-10 h-10 rounded-full overflow-hidden border border-purple-400/60 bg-[#080c24] flex items-center justify-center p-0.5 shadow-[0_0_16px_rgba(168,85,247,0.5)]">
+                    <img src="voin-logo.jpg" alt="VOIN" class="w-full h-full object-contain scale-110 rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="hidden w-full h-full items-center justify-center font-display font-bold text-base">V</span>
                 </div>
-                <span class="font-display font-extrabold text-base sm:text-lg tracking-wider bg-gradient-to-r from-white via-purple-200 to-cyan-300 bg-clip-text text-transparent">VOIN</span>
+                <div class="leading-tight">
+                    <span class="font-display font-extrabold text-base sm:text-lg tracking-wider text-white block">VOIN</span>
+                    <span class="text-[10px] tracking-widest text-purple-300 uppercase block">WALLET</span>
+                </div>
             </a>
 
-            <!-- Navigasi Desktop -->
-            <nav class="hidden lg:flex items-center gap-1 text-xs font-medium text-slate-300">
-                <a href="#home" class="px-2.5 py-1.5 rounded-lg bg-purple-500/15 border border-purple-400/30 text-white">Home</a>
-                <a href="#about" class="px-2.5 py-1.5 rounded-lg hover:text-cyan-300 transition">About</a>
-                <a href="#technology" class="px-2.5 py-1.5 rounded-lg hover:text-cyan-300 transition">Technology</a>
-                <a href="#tokenomics" class="px-2.5 py-1.5 rounded-lg hover:text-cyan-300 transition">Tokenomics</a>
-                <a href="#roadmap" class="px-2.5 py-1.5 rounded-lg hover:text-cyan-300 transition">Roadmap</a>
-                <a href="#presale" class="px-2.5 py-1.5 rounded-lg hover:text-cyan-300 transition">Presale</a>
-                <a href="#whitepaper" class="px-2.5 py-1.5 rounded-lg hover:text-cyan-300 transition">Whitepaper</a>
-                <a href="#community" class="px-2.5 py-1.5 rounded-lg hover:text-cyan-300 transition">Community</a>
-                <a href="#faq" class="px-2.5 py-1.5 rounded-lg hover:text-cyan-300 transition">FAQ</a>
+            <!-- Menu Navigasi Desktop (1 Baris) -->
+            <nav class="hidden lg:flex items-center gap-1 text-sm font-medium text-slate-300">
+                <a href="#home" class="px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-400/35 text-white">Home</a>
+                <a href="#about" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">About</a>
+                <a href="#technology" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Technology</a>
+                <a href="#tokenomics" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Tokenomics</a>
+                <a href="#roadmap" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Roadmap</a>
+                <a href="#presale" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Presale</a>
+                <a href="#whitepaper" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Whitepaper</a>
+                <a href="#community" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Community</a>
+                <a href="#faq" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">FAQ</a>
             </nav>
 
-            <div class="flex items-center gap-2">
-                <button onclick="openWalletModal()" id="navWalletBtn" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-cyan-400/45 bg-gradient-to-r from-indigo-600/30 to-purple-600/30 hover:border-cyan-300 text-cyan-100 transition flex items-center gap-2 cursor-pointer">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span id="navWalletText">Connect Wallet</span>
-                </button>
-                <button onclick="toggleMobileMenu()" class="lg:hidden px-2.5 py-2 rounded-lg border border-slate-700 text-slate-300 hover:text-white text-xs cursor-pointer" aria-label="Menu">
-                    &#9776;
-                </button>
-            </div>
+            <!-- Tombol Connect Wallet -->
+            <button onclick="openWalletModal()" id="navWalletBtn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-cyan-400/50 bg-indigo-950/80 hover:border-cyan-300 text-cyan-100 transition flex items-center gap-2 shrink-0 cursor-pointer">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="navWalletText">Connect Wallet</span>
+            </button>
         </div>
 
-        <!-- Navigasi HP / Tablet -->
-        <div id="mobileMenu" class="hidden lg:hidden border-t border-purple-500/20 bg-[#050818]/95 px-4 py-3">
-            <div class="grid grid-cols-3 gap-2 text-xs text-slate-300">
-                <a href="#home" onclick="toggleMobileMenu()" class="px-2.5 py-2 rounded-lg bg-purple-500/15 text-white text-center">Home</a>
-                <a href="#about" onclick="toggleMobileMenu()" class="px-2.5 py-2 rounded-lg hover:bg-white/5 text-center">About</a>
-                <a href="#technology" onclick="toggleMobileMenu()" class="px-2.5 py-2 rounded-lg hover:bg-white/5 text-center">Technology</a>
-                <a href="#tokenomics" onclick="toggleMobileMenu()" class="px-2.5 py-2 rounded-lg hover:bg-white/5 text-center">Tokenomics</a>
-                <a href="#roadmap" onclick="toggleMobileMenu()" class="px-2.5 py-2 rounded-lg hover:bg-white/5 text-center">Roadmap</a>
-                <a href="#presale" onclick="toggleMobileMenu()" class="px-2.5 py-2 rounded-lg hover:bg-white/5 text-center">Presale</a>
-                <a href="#whitepaper" onclick="toggleMobileMenu()" class="px-2.5 py-2 rounded-lg hover:bg-white/5 text-center">Whitepaper</a>
-                <a href="#community" onclick="toggleMobileMenu()" class="px-2.5 py-2 rounded-lg hover:bg-white/5 text-center">Community</a>
-                <a href="#faq" onclick="toggleMobileMenu()" class="px-2.5 py-2 rounded-lg hover:bg-white/5 text-center">FAQ</a>
+        <!-- Bar Menu Horizontal 1 Baris di Layar Tablet / HP -->
+        <div class="lg:hidden border-t border-purple-500/15 bg-[#070b1f]/95 px-4 py-2">
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar text-xs sm:text-sm font-medium text-slate-300 whitespace-nowrap">
+                <a href="#home" class="px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-400/35 text-white shrink-0">Home</a>
+                <a href="#about" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">About</a>
+                <a href="#technology" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Technology</a>
+                <a href="#tokenomics" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Tokenomics</a>
+                <a href="#roadmap" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Roadmap</a>
+                <a href="#presale" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Presale</a>
+                <a href="#whitepaper" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Whitepaper</a>
+                <a href="#community" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Community</a>
+                <a href="#faq" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">FAQ</a>
             </div>
         </div>
     </header>
 
-    <!-- ================= 1. HERO SECTION ================= -->
+    <!-- ================= 1. HERO SECTION (MIRIP REFERENSI) ================= -->
     <section id="home" class="max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-12">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <!-- Kiri -->
             <div class="lg:col-span-7 space-y-5">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-950/75 border border-purple-500/40 text-[11px] text-cyan-200 tracking-wider uppercase">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                    Official Presale &bull; Dec 2026 - Dec 2028
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/80 border border-purple-500/40 text-xs sm:text-sm text-cyan-200 font-medium">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                    VOIN Presale is Live &bull; Dec 2026 - Dec 2028
                 </div>
 
-                <h1 class="font-display text-3xl sm:text-5xl font-black leading-tight">
+                <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.12]">
                     Build. Play. Earn.<br>
                     <span class="bg-gradient-to-r from-cyan-300 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">with VOIN.</span>
                 </h1>
 
-                <p class="text-slate-300 text-sm sm:text-base max-w-xl leading-relaxed">
-                    Alokasi token terstruktur dalam <span class="text-white font-semibold">10 Batch</span> dengan total <span class="text-cyan-300 font-semibold">156,000,000 VOIN</span> yang didedikasikan bagi partisipan awal di dalam ekosistem <span class="text-purple-300 font-semibold">VOIN Wallet &amp; Web3</span>.
+                <p class="text-slate-300 text-base sm:text-lg max-w-xl leading-relaxed">
+                    A next-gen ecosystem powered by community, innovation, and real utility. Terstruktur dalam <span class="text-white font-semibold">10 Batch</span> dengan total <span class="text-cyan-300 font-semibold">156,000,000 VOIN</span>.
                 </p>
 
-                <div class="flex flex-wrap items-center gap-3 pt-1">
-                    <a href="#presale" class="btn-voin px-5 py-3 rounded-xl font-display text-xs font-bold tracking-wider text-white">
-                        Connect &amp; Enter Presale &#8599;
+                <div class="flex flex-wrap items-center gap-3.5 pt-1">
+                    <a href="#presale" class="btn-primary-voin px-6 py-3.5 rounded-xl font-semibold text-sm sm:text-base text-white">
+                        Join Presale &rarr;
                     </a>
-                    <a href="#tokenomics" class="px-5 py-3 rounded-xl text-xs font-semibold border border-slate-700 bg-white/5 hover:border-purple-400/50 text-slate-200 transition">
-                        View Presale Details
+                    <a href="#tokenomics" class="px-6 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-slate-600/80 bg-white/5 hover:border-purple-400 text-slate-100 transition">
+                        Learn More
                     </a>
-                </div>
-
-                <!-- 3 Angka Utama (Jarak Diperlebar Agar Tidak Dempet) -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-800/80 max-w-xl">
-                    <div class="glass-subcard p-3.5 rounded-2xl">
-                        <p class="font-display text-base sm:text-lg font-extrabold text-white">156,000,000</p>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Presale allocation</p>
-                    </div>
-                    <div class="glass-subcard p-3.5 rounded-2xl">
-                        <p class="font-display text-base sm:text-lg font-extrabold text-cyan-300">10 Batches</p>
-                        <p class="text-[11px] text-slate-400 mt-0.5">15.6M VOIN per batch</p>
-                    </div>
-                    <div class="glass-subcard p-3.5 rounded-2xl">
-                        <p class="font-display text-base sm:text-lg font-extrabold text-purple-400">$VOIN</p>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Token symbol</p>
-                    </div>
                 </div>
             </div>
 
-            <!-- Kanan: Logo Koin VOIN WALLET Berefek FLY + Fallback Aman -->
+            <!-- Kanan: Logo Koin Melayang Bebas Tanpa Kotak Kaku -->
             <div class="lg:col-span-5 flex items-center justify-center py-4">
-                <div class="relative w-64 sm:w-76 flex flex-col items-center justify-center">
-                    <div class="absolute w-48 h-48 rounded-full bg-purple-600/30 blur-3xl"></div>
+                <div class="relative w-72 sm:w-84 flex items-center justify-center">
+                    <div class="absolute w-60 h-60 rounded-full bg-purple-600/30 blur-3xl pointer-events-none"></div>
 
-                    <!-- Gambar Logo Utama -->
-                    <img id="heroCoinImg" src="voin-logo.jpg" alt="VOIN Wallet" class="relative z-10 w-52 sm:w-64 rounded-3xl voin-coin-fly logo-blend select-none" onerror="this.style.display='none'; document.getElementById('heroCoinFallback').style.display='flex';">
+                    <img id="heroCoinImg" src="voin-logo.jpg" alt="VOIN Wallet" class="relative z-10 w-64 sm:w-76 voin-coin-fly logo-blend select-none" onerror="this.style.display='none'; document.getElementById('heroCoinFallback').style.display='flex';">
 
-                    <!-- Fallback Emblem Jika File voin-logo.jpg Belum Ada di Folder -->
-                    <div id="heroCoinFallback" style="display:none;" class="relative z-10 w-48 h-48 rounded-full bg-gradient-to-br from-purple-700 via-indigo-900 to-cyan-700 border-2 border-purple-300/60 voin-coin-fly flex-col items-center justify-center text-center p-4 shadow-[0_0_40px_rgba(168,85,247,0.5)]">
+                    <div id="heroCoinFallback" style="display:none;" class="relative z-10 w-52 h-52 rounded-full bg-gradient-to-br from-purple-700 via-indigo-900 to-cyan-700 border-2 border-purple-300/60 voin-coin-fly flex-col items-center justify-center text-center p-4 shadow-[0_0_40px_rgba(168,85,247,0.5)]">
                         <span class="font-display text-5xl font-black text-white">V</span>
-                        <span class="font-display text-[10px] tracking-widest text-cyan-200 mt-1">VOIN WALLET</span>
+                        <span class="font-display text-xs tracking-widest text-cyan-200 mt-1">VOIN WALLET</span>
                     </div>
 
-                    <!-- Floating Tool 1 -->
-                    <div class="voin-tool-fly absolute -left-2 top-4 z-20 glass-card px-3 py-2 rounded-xl flex items-center gap-2 text-xs">
-                        <span class="text-cyan-300 text-base">&#9889;</span>
+                    <!-- Tool Fly 1 -->
+                    <div class="voin-tool-fly absolute -left-2 top-6 z-20 glass-panel px-3.5 py-2 rounded-2xl flex items-center gap-2.5 text-xs sm:text-sm">
+                        <span class="text-cyan-300 text-lg">&#9889;</span>
                         <div>
-                            <p class="font-bold text-white">Ultra Fast</p>
-                            <p class="text-[10px] text-slate-400">Instant Settlement</p>
+                            <p class="font-bold text-white leading-tight">Ultra Fast</p>
+                            <p class="text-xs text-slate-300">Instant Tx</p>
                         </div>
                     </div>
 
-                    <!-- Floating Tool 2 -->
-                    <div class="voin-tool-fly-alt absolute -right-2 bottom-4 z-20 glass-card px-3 py-2 rounded-xl flex items-center gap-2 text-xs">
-                        <span class="text-purple-300 text-base">&#128737;</span>
+                    <!-- Tool Fly 2 -->
+                    <div class="voin-tool-fly-alt absolute -right-2 bottom-8 z-20 glass-panel px-3.5 py-2 rounded-2xl flex items-center gap-2.5 text-xs sm:text-sm">
+                        <span class="text-purple-300 text-lg">&#128737;</span>
                         <div>
-                            <p class="font-bold text-white">VOIN Vault</p>
-                            <p class="text-[10px] text-slate-400">Multi-Layer Security</p>
+                            <p class="font-bold text-white leading-tight">VOIN Vault</p>
+                            <p class="text-xs text-slate-300">Secure Web3</p>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- 4 Kartu Statistik Horizontal Seperti Gambar Referensi -->
+        <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-tile p-5 rounded-2xl">
+                <div class="voin-tool-fly text-2xl text-purple-300 mb-2">&#128230;</div>
+                <p class="font-display text-xl sm:text-2xl font-extrabold text-white">260,000,000</p>
+                <p class="text-sm text-slate-300 mt-1">Total Supply</p>
+            </div>
+
+            <div class="glass-tile p-5 rounded-2xl">
+                <div class="voin-tool-fly-alt text-2xl text-orange-400 mb-2">&#128293;</div>
+                <p class="font-display text-xl sm:text-2xl font-extrabold text-white">60%</p>
+                <p class="text-sm text-slate-300 mt-1">For Presale (156,000,000 VOIN)</p>
+            </div>
+
+            <div class="glass-tile p-5 rounded-2xl">
+                <div class="voin-tool-fly text-2xl text-cyan-300 mb-2">&#128230;</div>
+                <p class="font-display text-xl sm:text-2xl font-extrabold text-white">10</p>
+                <p class="text-sm text-slate-300 mt-1">Presale Batches (15.6M / batch)</p>
+            </div>
+
+            <div class="glass-tile p-5 rounded-2xl">
+                <div class="voin-tool-fly-alt text-2xl text-fuchsia-300 mb-2">&#128640;</div>
+                <p class="font-display text-xl sm:text-2xl font-extrabold text-white">A Stronger</p>
+                <p class="text-sm text-slate-300 mt-1">Ecosystem &amp; VOIN Wallet</p>
             </div>
         </div>
     </section>
 
     <!-- ================= 2. PRESALE SECTION (FORM & LOGIC ASLI 100% UTUH) ================= -->
     <section id="presale" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-        <div class="text-center max-w-2xl mx-auto mb-8">
-            <span class="text-xs font-display uppercase tracking-[0.25em] text-cyan-300">Live Token Sale</span>
-            <h2 class="font-display text-2xl sm:text-4xl font-extrabold mt-1">Presale VOIN Terminal</h2>
-            <p class="text-slate-400 text-xs sm:text-sm mt-1">Secure. Transparent. Fair. Ikuti presale resmi batch 1 hingga 10 langsung melalui server VOIN.</p>
+        <div class="mb-7">
+            <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-white">Presale VOIN</h2>
+            <p class="text-slate-300 text-sm sm:text-base mt-1">Secure. Transparent. Fair. Presale Mainnet (Des 2026 - Des 2028).</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             <!-- Kiri: Grid Batch 1 - 10 -->
-            <div class="lg:col-span-7 glass-card p-5 sm:p-7 rounded-3xl">
+            <div class="lg:col-span-7 glass-panel p-5 sm:p-7 rounded-3xl">
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
-                    <div>
-                        <h3 class="font-display text-base sm:text-lg font-bold text-white">Struktur 10 Batch Presale</h3>
-                        <p class="text-xs text-slate-400">Setiap batch memiliki kuota tetap 15,600,000 VOIN (6% dari Total Supply)</p>
-                    </div>
-                    <span class="px-3 py-1 rounded-full text-xs bg-cyan-500/15 border border-cyan-400/30 text-cyan-300">
-                        Total: 156,000,000 VOIN
+                    <h3 class="font-display text-lg sm:text-xl font-bold text-white">Select Batch (1 - 10)</h3>
+                    <span class="px-3.5 py-1 rounded-full text-xs sm:text-sm bg-purple-950/80 border border-purple-400/35 text-cyan-200 font-medium">
+                        156,000,000 VOIN
                     </span>
                 </div>
 
                 <div id="batchGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3"></div>
-
-                <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-slate-800/80 text-xs">
-                    <div class="glass-subcard p-3 rounded-xl flex items-center gap-2.5">
-                        <span class="voin-tool-fly text-cyan-300 text-base">&#128197;</span>
-                        <div>
-                            <p class="text-slate-400 text-[11px]">Periode Presale</p>
-                            <p class="font-semibold text-white">Des 2026 - Des 2028</p>
-                        </div>
-                    </div>
-                    <div class="glass-subcard p-3 rounded-xl flex items-center gap-2.5">
-                        <span class="voin-tool-fly-alt text-purple-300 text-base">&#128176;</span>
-                        <div>
-                            <p class="text-slate-400 text-[11px]">Metode Bayar</p>
-                            <p class="font-semibold text-white">USDT / IDR</p>
-                        </div>
-                    </div>
-                    <div class="glass-subcard p-3 rounded-xl flex items-center gap-2.5">
-                        <span class="voin-tool-fly text-emerald-300 text-base">&#9989;</span>
-                        <div>
-                            <p class="text-slate-400 text-[11px]">Distribusi</p>
-                            <p class="font-semibold text-white">Otomatis Tercatat</p>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <!-- Kanan: Form Presale Asli (ID & onclick 100% Sama) -->
-            <div class="lg:col-span-5 glass-card p-6 sm:p-7 rounded-3xl relative overflow-hidden">
+            <!-- Kanan: Form Pembelian Asli (SEMUA ID & ONCLICK ASLI) -->
+            <div class="lg:col-span-5 glass-panel p-6 sm:p-7 rounded-3xl relative overflow-hidden">
                 <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-fuchsia-500"></div>
 
                 <div class="text-center mb-5">
-                    <div class="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-purple-500/15 border border-purple-400/30 mb-2.5 voin-tool-fly">
-                        <svg class="w-5 h-5 text-cyan-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                        </svg>
-                    </div>
-                    <h3 class="font-display text-xl sm:text-2xl font-bold text-white">VOIN COIN</h3>
-                    <p class="text-slate-400 text-xs mt-1">Presale Mainnet (Des 2026 - Des 2028)</p>
-                    <p id="connectionStatus" class="text-xs text-yellow-400 mt-1.5 font-medium">Menghubungkan ke server...</p>
+                    <h3 class="font-display text-2xl font-extrabold text-cyan-300">VOIN COIN</h3>
+                    <p class="text-slate-300 text-sm mt-1">Presale Mainnet (Des 2026 - Des 2028)</p>
+                    <p id="connectionStatus" class="text-xs sm:text-sm text-yellow-400 mt-1.5 font-semibold">Menghubungkan ke server...</p>
                 </div>
 
-                <div class="bg-gradient-to-r from-indigo-950/90 via-purple-950/80 to-blue-950/90 border border-purple-400/40 rounded-2xl p-3.5 text-center mb-4">
-                    <p class="text-xs uppercase tracking-widest text-cyan-300">Saat ini masuk dalam:</p>
+                <!-- Indikator Batch -->
+                <div class="bg-blue-950/60 border border-blue-400/50 rounded-2xl p-3.5 text-center mb-5">
+                    <p class="text-xs sm:text-sm text-blue-200">Saat ini masuk dalam:</p>
                     <p class="font-display text-xl sm:text-2xl font-extrabold text-white mt-0.5">
-                        BATCH <span id="currentBatch" class="text-purple-300">1</span> / 10
+                        BATCH <span id="currentBatch" class="text-cyan-300">1</span> / 10
                     </p>
                 </div>
 
-                <div class="glass-subcard rounded-2xl p-4 mb-5 space-y-2">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-slate-400">Total Terjual:</span>
+                <!-- Statistik Kuota (ID Asli) -->
+                <div class="glass-tile rounded-2xl p-4 mb-5 space-y-2.5 text-sm sm:text-base">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-300">Total Terjual:</span>
                         <span id="tokensSold" class="font-bold text-emerald-400">Memuat...</span>
                     </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-slate-400">Sisa Kuota (Total):</span>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-300">Sisa Kuota (Total):</span>
                         <span id="tokensRemaining" class="font-bold text-amber-300">Memuat...</span>
                     </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-slate-400">Sisa Kuota Batch Ini:</span>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-300">Sisa Kuota Batch Ini:</span>
                         <span id="batchRemaining" class="font-bold text-purple-300">Memuat...</span>
                     </div>
                 </div>
 
-                <div class="space-y-3.5">
+                <!-- Form Pembelian (ID & onclick Asli) -->
+                <div class="space-y-4">
                     <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <label for="walletAddress" class="block text-xs text-slate-300">Alamat Wallet VOIN Anda</label>
-                            <button type="button" onclick="openWalletModal()" class="text-[11px] text-cyan-300 hover:underline cursor-pointer">Pilih Wallet</button>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="walletAddress" class="block text-sm font-medium text-slate-200">Alamat Wallet VOIN Anda</label>
+                            <button type="button" onclick="openWalletModal()" class="text-xs sm:text-sm text-cyan-300 hover:underline font-medium cursor-pointer">Pilih Wallet</button>
                         </div>
-                        <input type="text" id="walletAddress" placeholder="0x..." class="w-full bg-[#070b1e]/90 border border-indigo-500/35 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+                        <input type="text" id="walletAddress" placeholder="0x..." class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400">
                     </div>
                     <div>
-                        <label for="amountPaid" class="block text-xs text-slate-300 mb-1">Jumlah Pembayaran (USDT/IDR)</label>
-                        <input type="number" id="amountPaid" min="0.01" step="any" placeholder="Contoh: 100" class="w-full bg-[#070b1e]/90 border border-indigo-500/35 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-400">
+                        <label for="amountPaid" class="block text-sm font-medium text-slate-200 mb-1.5">Jumlah Pembayaran (USDT/IDR)</label>
+                        <input type="number" id="amountPaid" min="0.01" step="any" placeholder="Contoh: 100" class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-purple-400">
                     </div>
-                    <button id="buyBtn" onclick="buyTokens()" class="w-full btn-voin text-white font-display font-bold tracking-wider py-3.5 rounded-xl cursor-pointer">
+                    <button id="buyBtn" onclick="buyTokens()" class="w-full btn-primary-voin text-white font-bold text-sm sm:text-base py-3.5 rounded-xl cursor-pointer">
                         Beli VOIN
                     </button>
                 </div>
 
                 <div class="mt-4 text-center">
-                    <p class="text-[11px] text-slate-400">Jadwal: Desember 2026 - Desember 2028</p>
+                    <p class="text-xs sm:text-sm text-slate-400">Jadwal: Desember 2026 - Desember 2028</p>
                 </div>
             </div>
         </div>
@@ -372,93 +363,64 @@
 
     <!-- ================= 3. ABOUT ================= -->
     <section id="about" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-        <div class="glass-card rounded-3xl p-6 sm:p-9 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-            <div class="lg:col-span-7 space-y-3">
-                <span class="text-xs font-display uppercase tracking-[0.25em] text-purple-400">About VOIN</span>
-                <h2 class="font-display text-2xl sm:text-3xl font-extrabold">The Next Frontier of Web3 &amp; Digital Wallet</h2>
-                <p class="text-slate-300 text-sm leading-relaxed">
-                    <strong>VOIN ($VOIN)</strong> menyatukan dompet aset digital <strong>VOIN Wallet</strong>, utilitas transaksi cepat, dan ekosistem komunitas dalam satu platform terpadu.
-                </p>
-            </div>
-            <div class="lg:col-span-5 grid grid-cols-2 gap-3 text-center">
-                <div class="glass-subcard p-4 rounded-2xl">
-                    <div class="voin-tool-fly text-2xl mb-1">&#127918;</div>
-                    <p class="font-display font-bold text-xs text-white">Play &amp; Earn</p>
-                </div>
-                <div class="glass-subcard p-4 rounded-2xl">
-                    <div class="voin-tool-fly-alt text-2xl mb-1">&#128179;</div>
-                    <p class="font-display font-bold text-xs text-white">VOIN Wallet</p>
-                </div>
-                <div class="glass-subcard p-4 rounded-2xl">
-                    <div class="voin-tool-fly-alt text-2xl mb-1">&#127760;</div>
-                    <p class="font-display font-bold text-xs text-white">Global Web3</p>
-                </div>
-                <div class="glass-subcard p-4 rounded-2xl">
-                    <div class="voin-tool-fly text-2xl mb-1">&#128640;</div>
-                    <p class="font-display font-bold text-xs text-white">Build &amp; Grow</p>
-                </div>
-            </div>
+        <div class="glass-panel rounded-3xl p-6 sm:p-8">
+            <span class="text-xs sm:text-sm font-display uppercase tracking-wider text-purple-300">About</span>
+            <h2 class="font-display text-2xl sm:text-3xl font-extrabold mt-1">Tentang VOIN Wallet &amp; Ekosistem</h2>
+            <p class="text-slate-300 text-sm sm:text-base mt-3 leading-relaxed max-w-3xl">
+                <strong>VOIN</strong> menghadirkan ekosistem aset digital yang memadukan <strong>VOIN Wallet</strong>, transaksi cepat, serta pembagian presale 10 batch yang transparan bagi seluruh pendukung awal.
+            </p>
         </div>
     </section>
 
     <!-- ================= 4. TECHNOLOGY ================= -->
     <section id="technology" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-        <div class="text-center max-w-xl mx-auto mb-7">
-            <span class="text-xs font-display uppercase tracking-[0.25em] text-cyan-300">Core Architecture</span>
-            <h2 class="font-display text-2xl sm:text-3xl font-extrabold mt-1">VOIN Technology</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div class="glass-card p-5 rounded-3xl">
-                <div class="voin-tool-fly text-2xl text-cyan-300 mb-3">&#9889;</div>
-                <h3 class="font-display text-base font-bold">High-Throughput Engine</h3>
-                <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">Pemrosesan transaksi cepat dengan biaya rendah untuk kebutuhan wallet dan ekosistem.</p>
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5">Technology</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="glass-tile p-5 rounded-2xl">
+                <div class="voin-tool-fly text-2xl text-cyan-300 mb-2">&#9889;</div>
+                <h3 class="font-display text-base sm:text-lg font-bold">Fast Processing</h3>
+                <p class="text-sm text-slate-300 mt-1.5">Arsitektur responsif untuk memproses data presale dan aktivitas ekosistem secara cepat.</p>
             </div>
-            <div class="glass-card p-5 rounded-3xl">
-                <div class="voin-tool-fly-alt text-2xl text-purple-300 mb-3">&#128274;</div>
-                <h3 class="font-display text-base font-bold">Secure Vault Layer</h3>
-                <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">Perlindungan aset berlapis dan verifikasi transaksi langsung di sisi pengguna.</p>
+            <div class="glass-tile p-5 rounded-2xl">
+                <div class="voin-tool-fly-alt text-2xl text-purple-300 mb-2">&#128274;</div>
+                <h3 class="font-display text-base sm:text-lg font-bold">Protected Access</h3>
+                <p class="text-sm text-slate-300 mt-1.5">Keamanan terstruktur untuk melindungi interaksi wallet dan data transaksi pengguna.</p>
             </div>
-            <div class="glass-card p-5 rounded-3xl">
-                <div class="voin-tool-fly text-2xl text-indigo-300 mb-3">&#128279;</div>
-                <h3 class="font-display text-base font-bold">Cross-Chain Ready</h3>
-                <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">Dirancang agar kompatibel dengan infrastruktur Web3 modern dan integrasi dApp.</p>
+            <div class="glass-tile p-5 rounded-2xl">
+                <div class="voin-tool-fly text-2xl text-indigo-300 mb-2">&#128279;</div>
+                <h3 class="font-display text-base sm:text-lg font-bold">Scalable Ecosystem</h3>
+                <p class="text-sm text-slate-300 mt-1.5">Siap dikembangkan untuk berbagai utilitas Web3 dan aplikasi komunitas VOIN.</p>
             </div>
         </div>
     </section>
 
     <!-- ================= 5. TOKENOMICS ================= -->
     <section id="tokenomics" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-        <div class="glass-card p-6 sm:p-8 rounded-3xl">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-                <div>
-                    <span class="text-xs font-display uppercase tracking-[0.25em] text-purple-400">Token Distribution</span>
-                    <h2 class="font-display text-2xl sm:text-3xl font-extrabold mt-1">VOIN Tokenomics</h2>
-                </div>
-                <div class="px-4 py-2 rounded-2xl bg-purple-950/70 border border-purple-400/35">
-                    <p class="text-[11px] text-slate-400">Total Supply</p>
-                    <p class="font-display text-base sm:text-lg font-extrabold text-cyan-300">260,000,000 VOIN</p>
-                </div>
+        <div class="glass-panel p-6 sm:p-8 rounded-3xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                <h2 class="font-display text-2xl sm:text-3xl font-extrabold">Tokenomics</h2>
+                <span class="font-display text-base sm:text-lg font-bold text-cyan-300">Total Supply: 260,000,000 VOIN</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="glass-subcard p-4 rounded-2xl border-l-4 border-l-purple-500">
-                    <p class="font-display text-xl font-extrabold">60%</p>
-                    <p class="text-xs font-semibold text-purple-300 mt-1">Presale (156,000,000 VOIN)</p>
-                    <p class="text-[11px] text-slate-400 mt-1">Dibagi rata dalam 10 Batch (15.6M/batch).</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm sm:text-base">
+                <div class="glass-tile p-4 rounded-2xl">
+                    <p class="font-display text-xl font-extrabold text-purple-300">60%</p>
+                    <p class="font-semibold text-white mt-1">Presale (156,000,000)</p>
+                    <p class="text-xs sm:text-sm text-slate-300 mt-1">10 Batch &times; 15,600,000 VOIN</p>
                 </div>
-                <div class="glass-subcard p-4 rounded-2xl border-l-4 border-l-cyan-400">
-                    <p class="font-display text-xl font-extrabold">15%</p>
-                    <p class="text-xs font-semibold text-cyan-300 mt-1">Liquidity &amp; Listing</p>
-                    <p class="text-[11px] text-slate-400 mt-1">39,000,000 VOIN untuk likuiditas pasar.</p>
+                <div class="glass-tile p-4 rounded-2xl">
+                    <p class="font-display text-xl font-extrabold text-cyan-300">15%</p>
+                    <p class="font-semibold text-white mt-1">Liquidity</p>
+                    <p class="text-xs sm:text-sm text-slate-300 mt-1">39,000,000 VOIN</p>
                 </div>
-                <div class="glass-subcard p-4 rounded-2xl border-l-4 border-l-indigo-400">
-                    <p class="font-display text-xl font-extrabold">15%</p>
-                    <p class="text-xs font-semibold text-indigo-300 mt-1">Ecosystem &amp; Rewards</p>
-                    <p class="text-[11px] text-slate-400 mt-1">39,000,000 VOIN untuk komunitas &amp; insentif.</p>
+                <div class="glass-tile p-4 rounded-2xl">
+                    <p class="font-display text-xl font-extrabold text-indigo-300">15%</p>
+                    <p class="font-semibold text-white mt-1">Ecosystem &amp; Rewards</p>
+                    <p class="text-xs sm:text-sm text-slate-300 mt-1">39,000,000 VOIN</p>
                 </div>
-                <div class="glass-subcard p-4 rounded-2xl border-l-4 border-l-fuchsia-400">
-                    <p class="font-display text-xl font-extrabold">10%</p>
-                    <p class="text-xs font-semibold text-fuchsia-300 mt-1">Team &amp; Development</p>
-                    <p class="text-[11px] text-slate-400 mt-1">26,000,000 VOIN pengembangan jangka panjang.</p>
+                <div class="glass-tile p-4 rounded-2xl">
+                    <p class="font-display text-xl font-extrabold text-fuchsia-300">10%</p>
+                    <p class="font-semibold text-white mt-1">Team &amp; Dev</p>
+                    <p class="text-xs sm:text-sm text-slate-300 mt-1">26,000,000 VOIN</p>
                 </div>
             </div>
         </div>
@@ -466,30 +428,27 @@
 
     <!-- ================= 6. ROADMAP ================= -->
     <section id="roadmap" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-        <div class="text-center max-w-xl mx-auto mb-7">
-            <span class="text-xs font-display uppercase tracking-[0.25em] text-cyan-300">Milestones</span>
-            <h2 class="font-display text-2xl sm:text-3xl font-extrabold mt-1">VOIN Roadmap (2026 - 2028)</h2>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="glass-card p-5 rounded-3xl border-t-2 border-t-emerald-400">
-                <p class="text-[11px] font-display text-emerald-400">PHASE 1 &bull; DES 2026</p>
-                <h3 class="font-display text-sm font-bold mt-1.5 mb-2">Launch &amp; Early Batch</h3>
-                <p class="text-xs text-slate-400">Pembukaan portal presale resmi dan alokasi batch awal.</p>
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5">Roadmap (2026 - 2028)</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm sm:text-base">
+            <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-emerald-400">
+                <p class="text-xs font-display font-bold text-emerald-400">DESEMBER 2026</p>
+                <h3 class="font-bold text-white mt-1">Presale Launch</h3>
+                <p class="text-xs sm:text-sm text-slate-300 mt-1">Pembukaan portal presale &amp; batch awal.</p>
             </div>
-            <div class="glass-card p-5 rounded-3xl border-t-2 border-t-cyan-400">
-                <p class="text-[11px] font-display text-cyan-300">PHASE 2 &bull; 2027</p>
-                <h3 class="font-display text-sm font-bold mt-1.5 mb-2">VOIN Wallet Expansion</h3>
-                <p class="text-xs text-slate-400">Pengembangan fitur wallet, staking, dan integrasi ekosistem.</p>
+            <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-cyan-400">
+                <p class="text-xs font-display font-bold text-cyan-300">2027</p>
+                <h3 class="font-bold text-white mt-1">Wallet &amp; Utility</h3>
+                <p class="text-xs sm:text-sm text-slate-300 mt-1">Pengembangan fitur VOIN Wallet &amp; utilitas.</p>
             </div>
-            <div class="glass-card p-5 rounded-3xl border-t-2 border-t-purple-400">
-                <p class="text-[11px] font-display text-purple-300">PHASE 3 &bull; H1 2028</p>
-                <h3 class="font-display text-sm font-bold mt-1.5 mb-2">Batch Completion</h3>
-                <p class="text-xs text-slate-400">Penyelesaian batch lanjutan dan perluasan kemitraan Web3.</p>
+            <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-purple-400">
+                <p class="text-xs font-display font-bold text-purple-300">H1 2028</p>
+                <h3 class="font-bold text-white mt-1">Batch Progression</h3>
+                <p class="text-xs sm:text-sm text-slate-300 mt-1">Kelanjutan batch presale &amp; ekspansi komunitas.</p>
             </div>
-            <div class="glass-card p-5 rounded-3xl border-t-2 border-t-fuchsia-400">
-                <p class="text-[11px] font-display text-fuchsia-300">PHASE 4 &bull; DES 2028</p>
-                <h3 class="font-display text-sm font-bold mt-1.5 mb-2">Mainnet &amp; Distribution</h3>
-                <p class="text-xs text-slate-400">Penutupan presale dan aktivasi penuh ekosistem VOIN.</p>
+            <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-fuchsia-400">
+                <p class="text-xs font-display font-bold text-fuchsia-300">DESEMBER 2028</p>
+                <h3 class="font-bold text-white mt-1">Mainnet Milestone</h3>
+                <p class="text-xs sm:text-sm text-slate-300 mt-1">Penutupan jadwal presale &amp; aktivasi penuh.</p>
             </div>
         </div>
     </section>
@@ -497,24 +456,22 @@
     <!-- ================= 7. WHITEPAPER & COMMUNITY ================= -->
     <section id="whitepaper" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="glass-card p-6 rounded-3xl">
-                <span class="text-xs font-display uppercase tracking-[0.25em] text-cyan-300">Whitepaper</span>
-                <h2 class="font-display text-xl sm:text-2xl font-extrabold mt-1">VOIN Documentation</h2>
-                <p class="text-xs sm:text-sm text-slate-400 mt-2">Ringkasan model suplai 260M VOIN, 10 batch presale (156M VOIN), dan jadwal resmi Des 2026 - Des 2028.</p>
-                <button onclick="openWhitepaperSummary()" class="btn-voin mt-4 px-4 py-2.5 rounded-xl font-display text-xs font-bold text-white cursor-pointer">
+            <div class="glass-panel p-6 rounded-3xl">
+                <h2 class="font-display text-xl sm:text-2xl font-extrabold">Whitepaper</h2>
+                <p class="text-sm sm:text-base text-slate-300 mt-2">Ringkasan suplai 260,000,000 VOIN, alokasi presale 156,000,000 VOIN (10 batch), dan jadwal Des 2026 - Des 2028.</p>
+                <button onclick="openWhitepaperSummary()" class="btn-primary-voin mt-4 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer">
                     Lihat Ringkasan Whitepaper
                 </button>
             </div>
 
-            <div id="community" class="glass-card p-6 rounded-3xl">
-                <span class="text-xs font-display uppercase tracking-[0.25em] text-purple-400">Community</span>
-                <h2 class="font-display text-xl sm:text-2xl font-extrabold mt-1">Join VOIN Ecosystem</h2>
-                <p class="text-xs sm:text-sm text-slate-400 mt-2">Ikuti perkembangan batch presale dan pembaruan resmi VOIN.</p>
-                <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold">
-                    <a href="#presale" class="glass-subcard py-2.5 px-3 rounded-xl text-center hover:text-cyan-300">Telegram</a>
-                    <a href="#presale" class="glass-subcard py-2.5 px-3 rounded-xl text-center hover:text-cyan-300">X / Twitter</a>
-                    <a href="#presale" class="glass-subcard py-2.5 px-3 rounded-xl text-center hover:text-purple-300">Discord</a>
-                    <a href="#presale" class="glass-subcard py-2.5 px-3 rounded-xl text-center hover:text-purple-300">GitHub</a>
+            <div id="community" class="glass-panel p-6 rounded-3xl">
+                <h2 class="font-display text-xl sm:text-2xl font-extrabold">Community</h2>
+                <p class="text-sm sm:text-base text-slate-300 mt-2">Ikuti pembaruan resmi ekosistem VOIN.</p>
+                <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs sm:text-sm font-semibold">
+                    <a href="#presale" class="glass-tile py-2.5 px-3 rounded-xl text-center hover:text-cyan-300">Telegram</a>
+                    <a href="#presale" class="glass-tile py-2.5 px-3 rounded-xl text-center hover:text-cyan-300">X / Twitter</a>
+                    <a href="#presale" class="glass-tile py-2.5 px-3 rounded-xl text-center hover:text-purple-300">Discord</a>
+                    <a href="#presale" class="glass-tile py-2.5 px-3 rounded-xl text-center hover:text-purple-300">GitHub</a>
                 </div>
             </div>
         </div>
@@ -522,51 +479,48 @@
 
     <!-- ================= 8. FAQ ================= -->
     <section id="faq" class="max-w-4xl mx-auto px-4 sm:px-6 py-10">
-        <div class="text-center mb-6">
-            <span class="text-xs font-display uppercase tracking-[0.25em] text-cyan-300">FAQ</span>
-            <h2 class="font-display text-2xl sm:text-3xl font-extrabold mt-1">Pertanyaan Umum</h2>
-        </div>
-        <div class="space-y-3">
-            <details class="glass-card rounded-2xl p-4" open>
-                <summary class="font-semibold text-sm cursor-pointer text-white">Bagaimana cara membeli token VOIN?</summary>
-                <p class="text-xs text-slate-400 mt-2">Masukkan alamat wallet Anda (<code>0x...</code>) dan jumlah pembayaran (USDT/IDR) pada bagian Presale, lalu klik tombol <strong>Beli VOIN</strong>.</p>
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5">FAQ</h2>
+        <div class="space-y-3 text-sm sm:text-base">
+            <details class="glass-panel rounded-2xl p-4 sm:p-5" open>
+                <summary class="font-semibold cursor-pointer text-white">Bagaimana cara membeli token VOIN?</summary>
+                <p class="text-slate-300 mt-2">Isi alamat wallet Anda (<code>0x...</code>) dan jumlah pembayaran (USDT/IDR) di bagian Presale, lalu klik tombol <strong>Beli VOIN</strong>.</p>
             </details>
-            <details class="glass-card rounded-2xl p-4">
-                <summary class="font-semibold text-sm cursor-pointer text-white">Berapa kuota presale per batch?</summary>
-                <p class="text-xs text-slate-400 mt-2">Total presale 156,000,000 VOIN dibagi ke dalam 10 Batch, masing-masing 15,600,000 VOIN.</p>
+            <details class="glass-panel rounded-2xl p-4 sm:p-5">
+                <summary class="font-semibold cursor-pointer text-white">Berapa kuota presale per batch?</summary>
+                <p class="text-slate-300 mt-2">Total presale 156,000,000 VOIN dibagi ke dalam 10 Batch, masing-masing 15,600,000 VOIN.</p>
             </details>
-            <details class="glass-card rounded-2xl p-4">
-                <summary class="font-semibold text-sm cursor-pointer text-white">Kapan jadwal presale berlangsung?</summary>
-                <p class="text-xs text-slate-400 mt-2">Jadwal resmi presale mulai Desember 2026 hingga Desember 2028.</p>
+            <details class="glass-panel rounded-2xl p-4 sm:p-5">
+                <summary class="font-semibold cursor-pointer text-white">Kapan jadwal presale berlangsung?</summary>
+                <p class="text-slate-300 mt-2">Jadwal resmi presale mulai Desember 2026 hingga Desember 2028.</p>
             </details>
         </div>
     </section>
 
     <!-- ================= FOOTER ================= -->
-    <footer class="border-t border-purple-500/20 bg-[#03050f] mt-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-            <span class="font-display font-bold text-white">VOIN WALLET &bull; Presale Mainnet</span>
-            <span>Desember 2026 - Desember 2028</span>
+    <footer class="border-t border-purple-500/20 bg-[#040714] mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm text-slate-400">
+            <span class="font-display font-bold text-white">VOIN WALLET</span>
+            <span>Presale Mainnet &bull; Des 2026 - Des 2028</span>
         </div>
     </footer>
 
     <!-- ================= MODAL CONNECT WALLET ================= -->
     <div id="walletModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-        <div class="glass-card max-w-md w-full rounded-3xl p-6 relative">
-            <button onclick="closeWalletModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg cursor-pointer">&times;</button>
-            <h3 class="font-display text-lg font-bold text-white">Connect Your Wallet</h3>
-            <p class="text-xs text-slate-400 mt-1 mb-4">Hubungkan wallet atau isi alamat wallet VOIN Anda.</p>
-            <div class="space-y-2">
-                <button type="button" onclick="connectWeb3Wallet('MetaMask')" class="w-full glass-subcard p-3 rounded-xl flex items-center justify-between text-xs font-medium cursor-pointer">
+        <div class="glass-panel max-w-md w-full rounded-3xl p-6 relative">
+            <button onclick="closeWalletModal()" class="absolute top-4 right-4 text-slate-300 hover:text-white text-xl cursor-pointer">&times;</button>
+            <h3 class="font-display text-lg sm:text-xl font-bold text-white">Connect Your Wallet</h3>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1 mb-4">Hubungkan wallet atau isi alamat wallet VOIN Anda.</p>
+            <div class="space-y-2.5 text-sm">
+                <button type="button" onclick="connectWeb3Wallet('MetaMask')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
                     <span>MetaMask</span><span class="text-cyan-300">Connect &rarr;</span>
                 </button>
-                <button type="button" onclick="connectWeb3Wallet('Trust Wallet')" class="w-full glass-subcard p-3 rounded-xl flex items-center justify-between text-xs font-medium cursor-pointer">
+                <button type="button" onclick="connectWeb3Wallet('Trust Wallet')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
                     <span>Trust Wallet</span><span class="text-cyan-300">Connect &rarr;</span>
                 </button>
-                <button type="button" onclick="connectWeb3Wallet('Coinbase Wallet')" class="w-full glass-subcard p-3 rounded-xl flex items-center justify-between text-xs font-medium cursor-pointer">
+                <button type="button" onclick="connectWeb3Wallet('Coinbase Wallet')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
                     <span>Coinbase Wallet</span><span class="text-cyan-300">Connect &rarr;</span>
                 </button>
-                <button type="button" onclick="connectWeb3Wallet('WalletConnect')" class="w-full glass-subcard p-3 rounded-xl flex items-center justify-between text-xs font-medium cursor-pointer">
+                <button type="button" onclick="connectWeb3Wallet('WalletConnect')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
                     <span>WalletConnect</span><span class="text-cyan-300">Connect &rarr;</span>
                 </button>
             </div>
@@ -580,10 +534,6 @@
         const CONFIGURED_API_URL = ""; 
         const API_URL = (CONFIGURED_API_URL || window.location.origin).replace(/\/+$/, "");
         const MAX_PER_BATCH = 15600000;
-
-        function toggleMobileMenu() {
-            document.getElementById("mobileMenu").classList.toggle("hidden");
-        }
 
         function openWalletModal() {
             const modal = document.getElementById("walletModal");
@@ -628,7 +578,7 @@
             Swal.fire({
                 title: "VOIN Whitepaper Ringkas",
                 html: `
-                    <div style="text-align:left;font-size:13px;line-height:1.6;">
+                    <div style="text-align:left;font-size:14px;line-height:1.65;">
                         <p><strong>Token Name:</strong> VOIN ($VOIN)</p>
                         <p><strong>Total Supply:</strong> 260,000,000 VOIN</p>
                         <p><strong>Alokasi Presale:</strong> 156,000,000 VOIN (60%)</p>
@@ -652,28 +602,28 @@
                 const sold = Number(batchDetails[i] || 0);
 
                 let badgeText = "Upcoming";
-                let cardStyle = "glass-subcard opacity-75";
-                let titleColor = "text-slate-300";
+                let cardStyle = "glass-tile opacity-80";
+                let titleColor = "text-slate-200";
 
                 if (isActive) {
                     badgeText = "LIVE";
-                    cardStyle = "bg-gradient-to-b from-purple-600/35 to-indigo-950/90 border border-cyan-400 shadow-[0_0_20px_rgba(56,189,248,0.3)]";
+                    cardStyle = "bg-gradient-to-b from-purple-600/35 to-indigo-950/90 border-2 border-cyan-400 shadow-[0_0_20px_rgba(56,189,248,0.3)]";
                     titleColor = "text-cyan-300";
                 } else if (isDone) {
                     badgeText = "Sold Out";
-                    cardStyle = "bg-emerald-950/30 border border-emerald-500/35 opacity-80";
+                    cardStyle = "bg-emerald-950/35 border border-emerald-500/40 opacity-85";
                     titleColor = "text-emerald-300";
                 }
 
                 html += `
                     <div class="${cardStyle} p-3 rounded-2xl text-center transition">
-                        <div class="flex items-center justify-between text-[10px] mb-1">
+                        <div class="flex items-center justify-between text-xs mb-1">
                             <span class="font-display font-bold ${titleColor}">Batch ${i}</span>
-                            <span class="px-1.5 py-0.5 rounded bg-black/40 text-[9px] ${isActive ? 'text-emerald-300 animate-pulse' : 'text-slate-400'}">${badgeText}</span>
+                            <span class="px-1.5 py-0.5 rounded bg-black/45 text-[10px] ${isActive ? 'text-emerald-300 font-semibold' : 'text-slate-300'}">${badgeText}</span>
                         </div>
-                        <p class="font-display text-sm font-extrabold text-white">6%</p>
-                        <p class="text-[10px] text-slate-400 mt-0.5">15.6M VOIN</p>
-                        ${isActive ? `<p class="text-[9px] text-purple-200 mt-1">Terjual: ${sold.toLocaleString("id-ID")}</p>` : ""}
+                        <p class="font-display text-base font-extrabold text-white">6%</p>
+                        <p class="text-xs text-slate-300 mt-0.5">15.6M VOIN</p>
+                        ${isActive ? `<p class="text-[11px] text-purple-200 mt-1">Terjual: ${sold.toLocaleString("id-ID")}</p>` : ""}
                     </div>
                 `;
             }
@@ -683,7 +633,7 @@
         function setStatus(text, colorClass = "text-yellow-400") {
             const el = document.getElementById("connectionStatus");
             el.innerText = text;
-            el.className = `text-xs mt-1.5 font-medium ${colorClass}`;
+            el.className = `text-xs sm:text-sm mt-1.5 font-semibold ${colorClass}`;
         }
 
         async function loadStats() {
