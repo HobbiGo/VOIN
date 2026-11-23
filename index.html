@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VOIN — Build. Play. Earn. with VOIN | Official Presale</title>
+    <script src="contract_config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -397,7 +398,7 @@
                 <div class="mt-5 p-4 rounded-2xl bg-gradient-to-r from-indigo-950/85 via-purple-950/75 to-indigo-950/85 border border-purple-400/35 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <p class="text-xs text-purple-200 uppercase tracking-wider">Purchase Rules</p>
-                        <p class="font-display text-sm sm:text-base font-bold text-white mt-0.5">Min: $10 &bull; Max: Unlimited (Within Batch Quota)</p>
+                        <p id="purchaseRulesBanner" class="font-display text-sm sm:text-base font-bold text-white mt-0.5">Min: $25 &bull; Max: $10,000 / Wallet / Batch</p>
                     </div>
                     <div class="flex items-center gap-5 text-left sm:text-right">
                         <div>
@@ -456,10 +457,10 @@
                     <div>
                         <div class="flex justify-between items-center mb-1.5">
                             <label for="amountPaid" class="block text-sm font-medium text-slate-200">Payment Amount (USD)</label>
-                            <span class="text-xs text-cyan-300 font-medium">Min: $10 &bull; Max: Batch Quota</span>
+                            <span id="amountLimitBadge" class="text-xs text-cyan-300 font-medium">Min: $25 &bull; Max: $10,000 / Batch</span>
                         </div>
-                        <input type="number" id="amountPaid" min="10" step="any" placeholder="Minimum 10 (e.g. 10, 100, 1000)" oninput="updateEstimatedVoin()" class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-purple-400">
-                        <p id="estimatedVoinPreview" class="text-xs text-purple-200 mt-1.5">Estimated VOIN: 0 VOIN &bull; Min: $10 &bull; Max: Unlimited (within batch quota)</p>
+                        <input type="number" id="amountPaid" min="25" max="10000" step="any" placeholder="Minimum 25 - Max 10000 per batch" oninput="updateEstimatedVoin()" class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-purple-400">
+                        <p id="estimatedVoinPreview" class="text-xs text-purple-200 mt-1.5">Estimated VOIN: 0 VOIN &bull; Min: $25 &bull; Max: $10,000 per wallet per batch</p>
                     </div>
                     <button type="button" id="buyBtn" onclick="buyTokens()" class="w-full btn-primary-voin text-white font-bold text-sm sm:text-base py-3.5 rounded-xl cursor-pointer">
                         Buy VOIN
@@ -530,15 +531,15 @@
         <div class="space-y-3 text-sm sm:text-base">
             <details class="glass-panel rounded-2xl p-4 sm:p-5" open>
                 <summary class="font-semibold cursor-pointer text-white">How do I buy VOIN tokens?</summary>
-                <p class="text-slate-300 mt-2">Connect or enter your wallet address (<code>0x...</code>) and payment amount (minimum $10) in the Presale section, then click <strong>Buy VOIN</strong>.</p>
+                <p class="text-slate-300 mt-2">Connect or enter your wallet address (<code>0x...</code>) and payment amount ($25 to $10,000 per wallet per batch) in the Presale section, then click <strong>Buy VOIN</strong>.</p>
             </details>
             <details class="glass-panel rounded-2xl p-4 sm:p-5">
                 <summary class="font-semibold cursor-pointer text-white">What is the minimum and maximum purchase per batch?</summary>
-                <p class="text-slate-300 mt-2">Minimum purchase is <strong>$10</strong>, and maximum purchase per batch is <strong>unlimited</strong> as long as it does not exceed the remaining 15,600,000 VOIN quota in the active batch.</p>
+                <p class="text-slate-300 mt-2">Minimum purchase is <strong>$25</strong>, and maximum purchase per wallet per batch is <strong>$10,000</strong> (within the 15,600,000 VOIN batch quota).</p>
             </details>
             <details class="glass-panel rounded-2xl p-4 sm:p-5">
                 <summary class="font-semibold cursor-pointer text-white">When does the presale run?</summary>
-                <p class="text-slate-300 mt-2">The official presale schedule runs from December 2026 to December 2028.</p>
+                <p class="text-slate-300 mt-2">The official presale schedule runs from December 1, 2026 to December 2028.</p>
             </details>
         </div>
     </section>
@@ -586,10 +587,13 @@
 
     <!-- ================= PRESALE & WALLET LOGIC ================= -->
     <script>
+        const VOIN_CFG = typeof window.VOIN_PRESALE_CONFIG !== "undefined" ? window.VOIN_PRESALE_CONFIG : null;
         const CONFIGURED_API_URL = "";
         const API_URL = (CONFIGURED_API_URL || window.location.origin).replace(/\/+$/, "");
-        const MAX_PER_BATCH = 15600000;
-        const MIN_PURCHASE_USD = 10;
+        const MAX_PER_BATCH = VOIN_CFG?.batchVoinAllocation ? Number(VOIN_CFG.batchVoinAllocation) : 15600000;
+        const MIN_PURCHASE_USD = VOIN_CFG?.limitsUsd?.minPurchaseUsd ? Number(VOIN_CFG.limitsUsd.minPurchaseUsd) : 25;
+        const MAX_PURCHASE_USD_PER_BATCH = VOIN_CFG?.limitsUsd?.maxPurchaseUsdPerWalletPerBatch ? Number(VOIN_CFG.limitsUsd.maxPurchaseUsdPerWalletPerBatch) : 10000;
+        const TREASURY_ADDRESS = VOIN_CFG?.treasuryAddress || "0xAEb22359588A50e6F746004E66418Eb2c978dAA2";
         const STORAGE_WALLET_KEY = "voin_wallet_address";
         const STORAGE_PROVIDER_KEY = "voin_wallet_provider";
         const STORAGE_HISTORY_KEY = "voin_wallet_history";
@@ -646,7 +650,7 @@
             if (!previewEl) return;
 
             if (Number.isNaN(amount) || amount <= 0) {
-                previewEl.innerText = `Estimated VOIN: 0 VOIN • Min: $${MIN_PURCHASE_USD} • Max: Unlimited (within batch quota)`;
+                previewEl.innerText = `Estimated VOIN: 0 VOIN • Min: $${MIN_PURCHASE_USD} • Max: $${MAX_PURCHASE_USD_PER_BATCH.toLocaleString("en-US")} / wallet / batch`;
                 return;
             }
 
@@ -788,8 +792,9 @@
                         <p><strong style="color:#67e8f9;">Total Supply:</strong> 260,000,000 VOIN</p>
                         <p><strong style="color:#c084fc;">Presale Allocation:</strong> 156,000,000 VOIN (60%)</p>
                         <p><strong style="color:#67e8f9;">Batch Structure:</strong> 10 Batches &times; 15,600,000 VOIN</p>
-                        <p><strong style="color:#c084fc;">Purchase Rule:</strong> Min $10 &bull; Max Unlimited (Within Batch Quota)</p>
-                        <p><strong style="color:#c084fc;">Presale Schedule:</strong> December 2026 - December 2028</p>
+                        <p><strong style="color:#c084fc;">Purchase Rule:</strong> Min $${MIN_PURCHASE_USD} &bull; Max $${MAX_PURCHASE_USD_PER_BATCH.toLocaleString("en-US")} / Wallet / Batch</p>
+                        <p><strong style="color:#67e8f9;">Treasury:</strong> ${TREASURY_ADDRESS}</p>
+                        <p><strong style="color:#c084fc;">Presale Schedule:</strong> Dec 1, 2026 - Dec 2028</p>
                     </div>
                 `,
                 confirmButtonText: "Got It"
@@ -898,11 +903,11 @@
             const buyBtn = document.getElementById("buyBtn");
             const activeBatch = Number(document.getElementById("currentBatch").innerText) || 1;
 
-            if (!address || Number.isNaN(amount) || amount < MIN_PURCHASE_USD) {
+            if (!address || Number.isNaN(amount) || amount < MIN_PURCHASE_USD || amount > MAX_PURCHASE_USD_PER_BATCH) {
                 Swal.fire({
                     ...swalTheme,
-                    title: "Minimum Purchase $10",
-                    text: "Please enter a valid wallet address and payment amount of at least $10.",
+                    title: "Invalid Purchase Amount",
+                    text: `Please enter a valid wallet address and payment amount between $${MIN_PURCHASE_USD} and $${MAX_PURCHASE_USD_PER_BATCH.toLocaleString("en-US")} per wallet per batch.`,
                     icon: "error"
                 });
                 return;
