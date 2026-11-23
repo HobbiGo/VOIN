@@ -381,7 +381,7 @@
     <section id="presale" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div class="mb-7">
             <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-white">Presale VOIN</h2>
-            <p class="text-slate-300 text-sm sm:text-base mt-1">Secure. Transparent. Fair. Official Presale (Dec 2026 - Dec 2028).</p>
+            <p class="text-slate-300 text-sm sm:text-base mt-1">Connect your investor wallet, buy VOIN in the active batch, and track your converted VOIN &amp; total wallet purchase.</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -409,7 +409,7 @@
                             <p class="font-display text-sm sm:text-base font-extrabold text-cyan-300">15,600,000 VOIN</p>
                         </div>
                         <a href="dashboard.html" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-cyan-400/40 bg-white/5 hover:border-cyan-300 text-cyan-200 transition">
-                            View Dashboard &rarr;
+                            Final Result &rarr;
                         </a>
                     </div>
                 </div>
@@ -478,13 +478,29 @@
                     </div>
                 </div>
 
+                <!-- Investor Wallet Conversion & Total Summary -->
+                <div class="glass-tile rounded-2xl p-4 mb-5 border border-purple-400/35 space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-semibold text-purple-200 uppercase tracking-wider">Your Wallet Conversion &amp; Total</span>
+                        <span id="investorActiveBadge" class="text-cyan-300 font-mono">Not Connected</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs sm:text-sm">
+                        <span class="text-slate-300">Total Purchased (USD):</span>
+                        <span id="investorWalletTotalUsd" class="font-display font-bold text-white">$0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs sm:text-sm">
+                        <span class="text-slate-300">Total VOIN Converted:</span>
+                        <span id="investorWalletTotalVoin" class="font-display font-bold text-emerald-400">0 VOIN</span>
+                    </div>
+                </div>
+
                 <div class="space-y-4">
                     <div>
                         <div class="flex justify-between items-center mb-1.5">
-                            <label for="walletAddress" class="block text-sm font-medium text-slate-200">Your Buyer Wallet Address</label>
-                            <button type="button" onclick="openWalletModal()" class="text-xs sm:text-sm text-cyan-300 hover:underline font-medium cursor-pointer">Select Wallet</button>
+                            <label for="walletAddress" class="block text-sm font-medium text-slate-200">Your Investor Wallet Address</label>
+                            <button type="button" onclick="openWalletModal()" class="text-xs sm:text-sm text-cyan-300 hover:underline font-medium cursor-pointer">Connect / Select Wallet</button>
                         </div>
-                        <input type="text" id="walletAddress" placeholder="0x..." class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400">
+                        <input type="text" id="walletAddress" placeholder="0x..." oninput="handleBuyerInputChange()" class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400">
                     </div>
                     <div>
                         <div class="flex justify-between items-center mb-1.5">
@@ -492,10 +508,10 @@
                             <span class="text-xs text-cyan-300 font-medium">Min: $10 &bull; Max: Batch Quota</span>
                         </div>
                         <input type="number" id="amountPaid" min="10" step="any" placeholder="Minimum 10 (e.g. 10, 100, 1000)" oninput="updateEstimatedVoin()" class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-purple-400">
-                        <p id="estimatedVoinPreview" class="text-xs text-purple-200 mt-1.5">Estimated VOIN: 0 VOIN &bull; Min: $10 &bull; Max: Unlimited (within batch quota)</p>
+                        <p id="estimatedVoinPreview" class="text-xs text-purple-200 mt-1.5">Converted VOIN: 0 VOIN &bull; Min: $10 &bull; Max: Unlimited (within batch quota)</p>
                     </div>
                     <button type="button" id="buyBtn" onclick="buyTokens()" class="w-full btn-primary-voin text-white font-bold text-sm sm:text-base py-3.5 rounded-xl cursor-pointer">
-                        Buy VOIN
+                        Buy VOIN &amp; Convert
                     </button>
                 </div>
 
@@ -513,7 +529,7 @@
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h2 class="font-display text-lg sm:text-xl font-extrabold text-white">Live Sales Rank</h2>
-                        <p class="text-xs text-slate-300">Top presale buyers ranked by VOIN purchased</p>
+                        <p class="text-xs text-slate-300">Top presale buyers ranked by converted VOIN</p>
                     </div>
                     <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 border border-emerald-400/40 text-emerald-300">LIVE</span>
                 </div>
@@ -524,7 +540,7 @@
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h2 class="font-display text-lg sm:text-xl font-extrabold text-white">Live Purchase History</h2>
-                        <p class="text-xs text-slate-300">Recent buy results, exact timestamps, and sales rank</p>
+                        <p class="text-xs text-slate-300">Recent conversion results, exact timestamps, and sales rank</p>
                     </div>
                     <a href="dashboard.html" class="text-xs sm:text-sm font-semibold text-cyan-300 hover:underline">Open Investor Dashboard &rarr;</a>
                 </div>
@@ -539,7 +555,7 @@
             <span class="text-xs sm:text-sm font-display uppercase tracking-wider text-purple-300">About</span>
             <h2 class="font-display text-2xl sm:text-3xl font-extrabold mt-1">About VOIN Wallet &amp; Ecosystem</h2>
             <p class="text-slate-300 text-sm sm:text-base mt-3 leading-relaxed max-w-3xl">
-                <strong>VOIN</strong> connects the presale interface with <code>node.py</code> and <code>presale_contract.py</code> services, while providing investor account tracking and wallet history inside <code>dashboard.html</code>.
+                <strong>VOIN</strong> connects investor wallets with the presale engine and <code>dashboard.html</code> so every investor can monitor their converted VOIN, total wallet purchases, and final result.
             </p>
         </div>
     </section>
@@ -556,8 +572,8 @@
                 <p class="text-sm text-slate-300 mt-1.5">Manages 10 batches of 15,600,000 VOIN each out of 260,000,000 VOIN total supply.</p>
             </div>
             <div class="glass-tile p-5 rounded-2xl">
-                <h3 class="font-display text-base sm:text-lg font-bold text-indigo-300">Investor Wallet History</h3>
-                <p class="text-sm text-slate-300 mt-1.5">Records buy results, exact timestamps, and sales rank inside <code>dashboard.html</code>.</p>
+                <h3 class="font-display text-base sm:text-lg font-bold text-indigo-300">Investor Wallet Conversion</h3>
+                <p class="text-sm text-slate-300 mt-1.5">Calculates converted VOIN per purchase, total wallet volume, and final summary inside <code>dashboard.html</code>.</p>
             </div>
         </div>
     </section>
@@ -589,16 +605,16 @@
         <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5">FAQ</h2>
         <div class="space-y-3 text-sm sm:text-base">
             <details class="glass-panel rounded-2xl p-4 sm:p-5" open>
-                <summary class="font-semibold cursor-pointer text-white">How do I buy VOIN tokens?</summary>
-                <p class="text-slate-300 mt-2">Connect or enter your wallet address (<code>0x...</code>) and payment amount (minimum $10) in the Presale section, then click <strong>Buy VOIN</strong>.</p>
+                <summary class="font-semibold cursor-pointer text-white">How do I buy VOIN tokens as an investor?</summary>
+                <p class="text-slate-300 mt-2">Connect or enter your investor wallet address (<code>0x...</code>) and payment amount (minimum $10) in the Presale section, then click <strong>Buy VOIN &amp; Convert</strong> to see your converted VOIN and total wallet purchase.</p>
             </details>
             <details class="glass-panel rounded-2xl p-4 sm:p-5">
                 <summary class="font-semibold cursor-pointer text-white">What is the minimum and maximum purchase per batch?</summary>
                 <p class="text-slate-300 mt-2">Minimum purchase is <strong>$10</strong>, and maximum purchase per batch is <strong>unlimited</strong> as long as it does not exceed the remaining 15,600,000 VOIN quota in the active batch.</p>
             </details>
             <details class="glass-panel rounded-2xl p-4 sm:p-5">
-                <summary class="font-semibold cursor-pointer text-white">When does the presale run?</summary>
-                <p class="text-slate-300 mt-2">The official presale schedule runs from December 2026 to December 2028.</p>
+                <summary class="font-semibold cursor-pointer text-white">Where do I see my final total VOIN and purchase summary?</summary>
+                <p class="text-slate-300 mt-2">Open <strong>Investor Dashboard</strong> at any time or after buying to view your converted VOIN, total USD spent, and final result summary.</p>
             </details>
         </div>
     </section>
@@ -615,11 +631,11 @@
         <div class="glass-panel max-w-md w-full rounded-3xl p-6 relative max-h-[90vh] overflow-y-auto">
             <button type="button" onclick="closeWalletModal()" class="absolute top-4 right-4 text-slate-300 hover:text-white text-xl cursor-pointer">&times;</button>
             <h3 class="font-display text-lg sm:text-xl font-bold text-white">Investor Wallet Connection</h3>
-            <p id="homeWalletHint" class="text-xs sm:text-sm text-slate-300 mt-1 mb-4">Enter your wallet address first, then click <strong>2. Connect Wallet</strong>.</p>
+            <p id="homeWalletHint" class="text-xs sm:text-sm text-slate-300 mt-1 mb-4">Connect your investor wallet or enter your <code>0x...</code> address, then click <strong>2. Connect Wallet</strong>.</p>
 
             <div class="glass-tile rounded-2xl p-4 mb-4 space-y-3 border border-cyan-400/35">
                 <div class="flex items-center justify-between gap-2">
-                    <label for="modalManualAddress" class="block text-xs font-semibold text-cyan-200">1. Wallet Address</label>
+                    <label for="modalManualAddress" class="block text-xs font-semibold text-cyan-200">1. Investor Wallet Address</label>
                     <button type="button" onclick="detectHomeBrowserWallet()" class="text-xs text-purple-300 hover:underline font-semibold cursor-pointer">Detect Browser Wallet</button>
                 </div>
                 <input type="text" id="modalManualAddress" placeholder="0x..." class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400">
@@ -654,12 +670,12 @@
         </div>
     </div>
 
-    <!-- ================= PRESALE, COUNTDOWN & WALLET LOGIC ================= -->
+    <!-- ================= PRESALE, CONVERSION & WALLET LOGIC ================= -->
     <script>
         const CONFIGURED_API_URL = "";
         const API_URL = (CONFIGURED_API_URL || window.location.origin).replace(/\/+$/, "");
 
-        // Internal VOIN settlement destination (not rendered in UI)
+        // Provided VOIN presale settlement account
         const RECEIVING_WALLET_ADDRESS = "0xAEb22359588A50e6F746004E66418Eb2c978dAA2";
 
         const MAX_PER_BATCH = 15600000;
@@ -739,12 +755,12 @@
             if (!previewEl) return;
 
             if (Number.isNaN(amount) || amount <= 0) {
-                previewEl.innerText = `Estimated VOIN: 0 VOIN • Min: $${MIN_PURCHASE_USD} • Max: Unlimited (within batch quota)`;
+                previewEl.innerText = `Converted VOIN: 0 VOIN • Min: $${MIN_PURCHASE_USD} • Max: Unlimited (within batch quota)`;
                 return;
             }
 
             const estVoin = amount / priceUsd;
-            previewEl.innerText = `Estimated VOIN: ${estVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN (Batch ${activeBatch} @ $${priceUsd.toFixed(2)}/VOIN)`;
+            previewEl.innerText = `Converted VOIN: ${estVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN (Batch ${activeBatch} @ $${priceUsd.toFixed(2)}/VOIN)`;
         }
 
         function formatCountdownParts(targetMs) {
@@ -852,6 +868,39 @@
             return record;
         }
 
+        function updateInvestorWalletTotals(targetAddr = "") {
+            const addr = (targetAddr || document.getElementById("walletAddress")?.value || localStorage.getItem(STORAGE_WALLET_KEY) || "").trim();
+            const badge = document.getElementById("investorActiveBadge");
+            const usdEl = document.getElementById("investorWalletTotalUsd");
+            const voinEl = document.getElementById("investorWalletTotalVoin");
+            if (!usdEl || !voinEl || !badge) return;
+
+            if (!isValidEvmAddress(addr)) {
+                badge.innerText = "Not Connected";
+                usdEl.innerText = "$0.00";
+                voinEl.innerText = "0 VOIN";
+                return;
+            }
+
+            badge.innerText = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+            const entries = getWalletHistory().filter((item) => (item.wallet || "").toLowerCase() === addr.toLowerCase());
+            const totalUsd = entries.reduce((sum, item) => sum + Number(item.amountPaid || 0), 0);
+            const totalVoin = entries.reduce((sum, item) => sum + Number(item.buyResultVoin ?? item.tokens_received ?? 0), 0);
+
+            usdEl.innerText = `$${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            voinEl.innerText = `${totalVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN`;
+        }
+
+        function handleBuyerInputChange() {
+            const val = (document.getElementById("walletAddress")?.value || "").trim();
+            if (isValidEvmAddress(val)) {
+                localStorage.setItem(STORAGE_WALLET_KEY, val);
+                updateInvestorWalletTotals(val);
+            } else {
+                updateInvestorWalletTotals("");
+            }
+        }
+
         function renderHomeLiveSections(apiFeed = null) {
             const localHistory = getWalletHistory();
             const source = Array.isArray(apiFeed) && apiFeed.length ? apiFeed : localHistory;
@@ -921,6 +970,7 @@
                 if (navDisconnect) navDisconnect.classList.remove("hidden");
                 localStorage.setItem(STORAGE_WALLET_KEY, cleanAddr);
                 if (provider) localStorage.setItem(STORAGE_PROVIDER_KEY, provider);
+                updateInvestorWalletTotals(cleanAddr);
             } else {
                 if (input) input.value = "";
                 if (navText) navText.innerText = "Connect Wallet";
@@ -928,6 +978,7 @@
                 if (navDisconnect) navDisconnect.classList.add("hidden");
                 localStorage.removeItem(STORAGE_WALLET_KEY);
                 localStorage.removeItem(STORAGE_PROVIDER_KEY);
+                updateInvestorWalletTotals("");
             }
         }
 
@@ -937,7 +988,7 @@
             Swal.fire({
                 ...swalTheme,
                 title: "Wallet Disconnected",
-                text: "Your wallet has been disconnected.",
+                text: "Your investor wallet has been disconnected.",
                 icon: "info"
             });
         }
@@ -951,7 +1002,7 @@
             if (manualInput) manualInput.value = currentVal;
 
             document.getElementById("homeWalletHint").innerHTML =
-                `Enter your wallet address (<code>0x...</code>) first, then click <strong>2. Connect Wallet</strong>.`;
+                `Enter your investor wallet address (<code>0x...</code>) or select a wallet below, then click <strong>2. Connect Wallet</strong>.`;
             modal.classList.remove("hidden");
             modal.classList.add("flex");
             setTimeout(() => manualInput?.focus(), 50);
@@ -969,7 +1020,7 @@
             const provider = getInjectedProvider(providerName);
 
             document.getElementById("homeWalletHint").innerHTML =
-                `Selected Wallet: <strong style="color:#67e8f9;">${providerName}</strong>. Enter or confirm your <code>0x...</code> address above, then click <strong>2. Connect Wallet</strong>.`;
+                `Selected Wallet: <strong style="color:#67e8f9;">${providerName}</strong>. Enter or confirm your <code>0x...</code> investor address above, then click <strong>2. Connect Wallet</strong>.`;
 
             if (provider && typeof provider.request === "function") {
                 try {
@@ -981,7 +1032,7 @@
                         closeWalletModal();
                         Swal.fire({
                             ...swalTheme,
-                            title: "Wallet Connected",
+                            title: "Investor Wallet Connected",
                             html: `<p style="font-size:14px;color:#cbd5e1;">Wallet: <strong style="color:#c084fc;">${providerName}</strong><br>Address: <strong style="color:#67e8f9;">${cleanAddr}</strong></p>`,
                             icon: "success"
                         });
@@ -1001,7 +1052,7 @@
                 Swal.fire({
                     ...swalTheme,
                     title: "Browser Wallet Not Detected",
-                    text: "Please enter your wallet address (0x...) manually in the field above.",
+                    text: "Please enter your investor wallet address (0x...) manually in the field above.",
                     icon: "info"
                 });
                 return;
@@ -1041,12 +1092,12 @@
                 });
                 return;
             }
-            const providerLabel = selectedHomeProvider || "Wallet";
+            const providerLabel = selectedHomeProvider || "Investor Wallet";
             syncWalletState(addr, providerLabel);
             closeWalletModal();
             Swal.fire({
                 ...swalTheme,
-                title: "Wallet Connected",
+                title: "Investor Wallet Connected",
                 html: `<p style="font-size:14px;color:#cbd5e1;">Wallet: <strong style="color:#c084fc;">${providerLabel}</strong><br>Address: <strong style="color:#67e8f9;">${addr}</strong></p>`,
                 icon: "success"
             });
@@ -1163,7 +1214,7 @@
                 setStatus("Connected to presale server", "text-green-400");
             } catch (e) {
                 console.warn("Presale API unreachable:", e);
-                setStatus("Presale server offline (local history active)", "text-amber-300");
+                setStatus("Presale server offline (wallet conversion & local history active)", "text-amber-300");
                 document.getElementById("tokensSold").innerText = "-";
                 document.getElementById("tokensRemaining").innerText = "-";
                 document.getElementById("batchRemaining").innerText = "-";
@@ -1179,8 +1230,8 @@
             if (!isValidEvmAddress(address)) {
                 Swal.fire({
                     ...swalTheme,
-                    title: "Invalid Wallet Address",
-                    html: `<p style="font-size:14px;color:#cbd5e1;">Please enter or connect a valid EVM wallet address (<strong style="color:#67e8f9;">0x...</strong>, 42 characters).</p>`,
+                    title: "Invalid Investor Wallet",
+                    html: `<p style="font-size:14px;color:#cbd5e1;">Please connect or enter your valid EVM wallet address (<strong style="color:#67e8f9;">0x...</strong>, 42 characters).</p>`,
                     icon: "error"
                 });
                 return;
@@ -1196,13 +1247,13 @@
                 return;
             }
 
-            syncWalletState(address);
+            syncWalletState(address, localStorage.getItem(STORAGE_PROVIDER_KEY) || "Investor Wallet");
             buyBtn.disabled = true;
 
             Swal.fire({
                 ...swalTheme,
-                title: "Processing...",
-                text: "Submitting VOIN presale order",
+                title: "Processing Conversion...",
+                text: "Submitting VOIN presale purchase for your wallet",
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
@@ -1234,7 +1285,7 @@
                     const savedEntry = appendWalletHistoryEntry({
                         wallet: address,
                         receiverWallet: result.receiver_wallet || RECEIVING_WALLET_ADDRESS,
-                        provider: localStorage.getItem(STORAGE_PROVIDER_KEY) || "Wallet",
+                        provider: localStorage.getItem(STORAGE_PROVIDER_KEY) || "Investor Wallet",
                         batch: Number(result.batch) || activeBatch,
                         pricePerVoinUsd: Number(result.price_per_voin_usd) || activePriceUsd,
                         amountPaid: amount,
@@ -1246,22 +1297,28 @@
 
                     document.getElementById("amountPaid").value = "";
                     updateEstimatedVoin();
+                    updateInvestorWalletTotals(address);
                     await loadStats();
+
+                    const walletEntries = getWalletHistory().filter((h) => (h.wallet || "").toLowerCase() === address.toLowerCase());
+                    const cumUsd = walletEntries.reduce((s, x) => s + Number(x.amountPaid || 0), 0);
+                    const cumVoin = walletEntries.reduce((s, x) => s + Number(x.buyResultVoin || 0), 0);
 
                     const navAction = await Swal.fire({
                         ...swalTheme,
-                        title: "Purchase Recorded!",
+                        title: "VOIN Converted & Recorded!",
                         html: `
                             <div style="text-align:left;font-size:14px;line-height:1.7;color:#e2e8f0;">
-                                <p><strong>Buy Result:</strong> <span style="color:#34d399;">${savedEntry.buyResultVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN</span></p>
+                                <p><strong>Investor Wallet:</strong> <span style="color:#67e8f9;">${address.slice(0, 6)}...${address.slice(-4)}</span></p>
+                                <p><strong>This Purchase Conversion:</strong> <span style="color:#34d399;">${savedEntry.buyResultVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN</span> ($${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</p>
+                                <p><strong>Total Wallet Purchase:</strong> <span style="color:#c084fc;">${cumVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN</span> ($${cumUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</p>
                                 <p><strong>Batch &amp; Price:</strong> Batch ${savedEntry.batch} ($${savedEntry.pricePerVoinUsd.toFixed(2)}/VOIN)</p>
-                                <p><strong>Sales Rank:</strong> <span style="color:#67e8f9;">#${savedEntry.rank}</span></p>
                                 <p><strong>Timestamp:</strong> ${savedEntry.fullFormatted}</p>
                             </div>
                         `,
                         icon: "success",
                         showCancelButton: true,
-                        confirmButtonText: "Open Investor Dashboard",
+                        confirmButtonText: "View Final Result in Dashboard",
                         cancelButtonText: "Close"
                     });
 
@@ -1273,39 +1330,45 @@
                     Swal.fire({ ...swalTheme, title: "Transaction Failed", text: errMsg, icon: "error" });
                 }
             } catch (error) {
-                console.warn("API unavailable, logging local test record:", error);
+                console.warn("API unavailable, logging local conversion record:", error);
                 const savedEntry = appendWalletHistoryEntry({
                     wallet: address,
                     receiverWallet: RECEIVING_WALLET_ADDRESS,
-                    provider: localStorage.getItem(STORAGE_PROVIDER_KEY) || "Wallet",
+                    provider: localStorage.getItem(STORAGE_PROVIDER_KEY) || "Investor Wallet",
                     batch: activeBatch,
                     pricePerVoinUsd: activePriceUsd,
                     amountPaid: amount,
                     buyResultVoin: estimatedVoin,
                     salesRank: null,
-                    status: "Local Test Record",
+                    status: "Recorded (Local Conversion)",
                     ...ts
                 });
 
                 document.getElementById("amountPaid").value = "";
                 updateEstimatedVoin();
+                updateInvestorWalletTotals(address);
                 renderHomeLiveSections(null);
+
+                const walletEntries = getWalletHistory().filter((h) => (h.wallet || "").toLowerCase() === address.toLowerCase());
+                const cumUsd = walletEntries.reduce((s, x) => s + Number(x.amountPaid || 0), 0);
+                const cumVoin = walletEntries.reduce((s, x) => s + Number(x.buyResultVoin || 0), 0);
 
                 const navAction = await Swal.fire({
                     ...swalTheme,
-                    title: "Logged to Investor Wallet History",
+                    title: "VOIN Conversion Recorded",
                     html: `
                         <div style="text-align:left;font-size:14px;line-height:1.7;color:#e2e8f0;">
-                            <p style="color:#fcd34d;font-size:12px;">Backend API not reached; saved to local history for testing.</p>
-                            <p><strong>Buy Result:</strong> <span style="color:#34d399;">${savedEntry.buyResultVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN</span></p>
+                            <p style="color:#fcd34d;font-size:12px;">Backend API unreachable; conversion saved to your investor wallet history.</p>
+                            <p><strong>Investor Wallet:</strong> <span style="color:#67e8f9;">${address.slice(0, 6)}...${address.slice(-4)}</span></p>
+                            <p><strong>This Purchase Conversion:</strong> <span style="color:#34d399;">${savedEntry.buyResultVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN</span> ($${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</p>
+                            <p><strong>Total Wallet Purchase:</strong> <span style="color:#c084fc;">${cumVoin.toLocaleString("en-US", { maximumFractionDigits: 2 })} VOIN</span> ($${cumUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</p>
                             <p><strong>Batch &amp; Price:</strong> Batch ${savedEntry.batch} ($${savedEntry.pricePerVoinUsd.toFixed(2)}/VOIN)</p>
-                            <p><strong>Sales Rank:</strong> <span style="color:#67e8f9;">#${savedEntry.rank}</span></p>
                             <p><strong>Timestamp:</strong> ${savedEntry.fullFormatted}</p>
                         </div>
                     `,
                     icon: "info",
                     showCancelButton: true,
-                    confirmButtonText: "Open Investor Dashboard",
+                    confirmButtonText: "View Final Result in Dashboard",
                     cancelButtonText: "Close"
                 });
 
@@ -1321,6 +1384,8 @@
         const savedProvider = localStorage.getItem(STORAGE_PROVIDER_KEY) || "";
         if (savedWallet && isValidEvmAddress(savedWallet)) {
             syncWalletState(savedWallet, savedProvider);
+        } else {
+            updateInvestorWalletTotals("");
         }
 
         updateEstimatedVoin();
