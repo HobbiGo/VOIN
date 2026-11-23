@@ -14,6 +14,72 @@ from security.storage import VOINStorageEngine
 from security.d1_storage import VOIND1StorageEngine
 from security.d1_rate_limit import VOIND1RateLimitEngine
 
+try:
+    from blockchain.transaction_verifier import (
+        BlockchainTransactionVerifier,
+        DEFAULT_RPC_URL,
+        DEFAULT_TREASURY_ADDRESS,
+        VerificationResult,
+    )
+except Exception:
+    BlockchainTransactionVerifier = None
+    DEFAULT_RPC_URL = "https://data-seed-prebsc-1-s1.binance.org:8545/"
+    DEFAULT_TREASURY_ADDRESS = "0xAEb22359588A50e6F746004E66418Eb2c978dAA2"
+    VerificationResult = None
+
+
+def build_presale_verifier(env):
+    if BlockchainTransactionVerifier is None:
+        return None
+
+    rpc_url = getattr(env, "BSC_RPC_URL", None) or DEFAULT_RPC_URL
+    presale_contract = getattr(env, "VOIN_PRESALE_CONTRACT", None) or ""
+    treasury_address = getattr(env, "TREASURY_ADDRESS", None) or DEFAULT_TREASURY_ADDRESS
+    raw_chain_id = getattr(env, "EXPECTED_CHAIN_ID", None)
+    expected_chain_id = int(raw_chain_id) if raw_chain_id not in (None, "") else None
+
+    return BlockchainTransactionVerifier(
+        rpc_url=rpc_url,
+        presale_contract_address=presale_contract,
+        treasury_address=treasury_address,
+        expected_chain_id=expected_chain_id,
+    )
+
+
+def verify_presale_tx_hash(
+    env,
+    tx_hash: str,
+    expected_buyer: str | None = None,
+    existing_batch_spent_usd_wei: int = 0,
+) -> dict:
+    verifier = build_presale_verifier(env)
+    if verifier is None:
+        return {
+            "valid": False,
+            "tx_hash": tx_hash,
+            "reason": "BlockchainTransactionVerifier unavailable in current runtime",
+        }
+
+    result = verifier.verify_presale_transaction(
+        tx_hash=tx_hash,
+        expected_buyer=expected_buyer,
+        existing_batch_spent_usd_wei=existing_batch_spent_usd_wei,
+    )
+    return {
+        "valid": result.valid,
+        "tx_hash": result.tx_hash,
+        "chain_id": result.chain_id,
+        "block_number": result.block_number,
+        "buyer": result.buyer,
+        "payment_token": result.payment_token,
+        "amount_paid_raw": result.amount_paid_raw,
+        "usd_value_wei": result.usd_value_wei,
+        "voin_amount_wei": result.voin_amount_wei,
+        "batch_id": result.batch_id,
+        "timestamp": result.timestamp,
+        "reason": result.reason,
+    }
+
 
 def build_gateway(env):
     api_token = getattr(env, "API_TOKEN", None) or "voin-secret-token-yang-sangat-panjang-dan-aman-123"
