@@ -70,6 +70,9 @@ class VOINSecurityHTTPServer:
             500: "500 Internal Server Error"
         }
 
+        if isinstance(status_code, bool) or not isinstance(status_code, int):
+            status_code = 500
+
         status = status_messages.get(
             status_code,
             "500 Internal Server Error"
@@ -95,6 +98,13 @@ class VOINSecurityHTTPServer:
 
         try:
 
+            if not isinstance(environ, dict):
+                return self._json_response(
+                    start_response,
+                    400,
+                    {"error": "Invalid WSGI environment"}
+                )
+
             method = environ.get("REQUEST_METHOD", "GET")
             path = environ.get("PATH_INFO", "/")
 
@@ -105,12 +115,12 @@ class VOINSecurityHTTPServer:
             )
 
             if isinstance(authorization, str) and authorization.strip():
-                headers["Authorization"] = authorization
+                headers["Authorization"] = authorization.strip()
 
             raw_query = environ.get("QUERY_STRING", "")
 
             parsed_query = parse_qs(
-                raw_query,
+                raw_query if isinstance(raw_query, str) else "",
                 keep_blank_values=True
             )
 
@@ -125,6 +135,8 @@ class VOINSecurityHTTPServer:
                 raw_limit = query["limit"].strip()
                 if raw_limit.isdigit():
                     query["limit"] = int(raw_limit)
+                else:
+                    query["limit"] = raw_limit
 
             response = self.api_integration.handle_api_request(
                 method=method,
