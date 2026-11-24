@@ -1,5 +1,7 @@
 const VOIN_PRESALE_CONFIG = {
   treasuryAddress: "0xAEb22359588A50e6F746004E66418Eb2c978dAA2",
+  totalSupply: "260000000",
+  totalPresaleVoinAllocation: "156000000",
   schedule: {
     startTimestampUtc: 1796083200, // 1 Desember 2026 00:00:00 UTC
     endTimestampUtc: 1861919999,   // 31 Desember 2028 23:59:59 UTC
