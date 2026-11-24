@@ -1,7 +1,7 @@
 """
 VOIN NETWORK COMMUNICATION ENGINE V1.0
 
-Provides a validated message protocol layer.
+Provides a validated message protocol layer (BSC Mainnet / Chain ID 56).
 
 Features:
 - Standard message envelope
@@ -23,6 +23,10 @@ import json
 import re
 import time
 import uuid
+
+DEFAULT_CHAIN_ID = 56
+_EVM_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_ZERO_ADDRESS = "0x" + ("0" * 40)
 
 
 class VOINCommunicationEngine:
@@ -57,6 +61,24 @@ class VOINCommunicationEngine:
         self.handlers = {}
         self.security_events = []
 
+    @staticmethod
+    def _now_ts() -> int:
+        return int(time.time())
+
+    @staticmethod
+    def _normalize_peer_id(peer_id):
+        if not isinstance(peer_id, str):
+            return None
+        cleaned = peer_id.strip()
+        if not cleaned:
+            return None
+        if _EVM_ADDRESS_RE.match(cleaned):
+            normalized = cleaned.lower()
+            if normalized == _ZERO_ADDRESS:
+                return None
+            return normalized
+        return cleaned
+
     # --------------------------------------------------
     # MESSAGE ID VALIDATION
     # --------------------------------------------------
@@ -68,7 +90,7 @@ class VOINCommunicationEngine:
             return False
 
         try:
-            uuid.UUID(message_id)
+            uuid.UUID(message_id.strip())
             return True
 
         except (ValueError, TypeError, AttributeError):
@@ -83,7 +105,11 @@ class VOINCommunicationEngine:
         if self.network_engine is None:
             return False
 
-        return self.network_engine.is_trusted_peer(peer_id)
+        normalized_peer = self._normalize_peer_id(peer_id)
+        if normalized_peer is None:
+            return False
+
+        return bool(self.network_engine.is_trusted_peer(normalized_peer))
 
     # --------------------------------------------------
     # EVENT LOGGING
@@ -96,11 +122,13 @@ class VOINCommunicationEngine:
         details=None
     ):
 
+        normalized_peer = self._normalize_peer_id(peer_id) if peer_id is not None else None
+
         event = {
             "event_type": event_type,
-            "peer_id": peer_id,
-            "details": details or {},
-            "timestamp": time.time()
+            "peer_id": normalized_peer,
+            "details": dict(details) if isinstance(details, dict) else {},
+            "timestamp": self._now_ts()
         }
 
         self.security_events.append(event)
@@ -114,11 +142,19 @@ class VOINCommunicationEngine:
             )
 
             if callable(record_method):
-
-                record_method(
-                    event_type=event_type,
-                    details=event
-                )
+                try:
+                    record_method(
+                        event_type=event_type,
+                        wallet_address=(
+                            normalized_peer
+                            if isinstance(normalized_peer, str)
+                            and _EVM_ADDRESS_RE.match(normalized_peer)
+                            else None
+                        ),
+                        details=event["details"]
+                    )
+                except Exception:
+                    pass
 
         return event
 
@@ -134,21 +170,24 @@ class VOINCommunicationEngine:
         payload
     ):
 
-        if not self.is_authorized_peer(sender_id):
+        normalized_sender = self._normalize_peer_id(sender_id)
+        normalized_receiver = self._normalize_peer_id(receiver_id)
+
+        if not self.is_authorized_peer(normalized_sender):
 
             return {
                 "success": False,
                 "error": "Unauthorized sender"
             }
 
-        if not self.is_authorized_peer(receiver_id):
+        if not self.is_authorized_peer(normalized_receiver):
 
             return {
                 "success": False,
                 "error": "Unauthorized receiver"
             }
 
-        if message_type not in self.MESSAGE_TYPES:
+        if not isinstance(message_type, str) or message_type.strip().upper() not in self.MESSAGE_TYPES:
 
             return {
                 "success": False,
@@ -164,10 +203,10 @@ class VOINCommunicationEngine:
 
         message = {
             "message_id": str(uuid.uuid4()),
-            "sender_id": sender_id,
-            "receiver_id": receiver_id,
-            "message_type": message_type,
-            "timestamp": time.time(),
+            "sender_id": normalized_sender,
+            "receiver_id": normalized_receiver,
+            "message_type": message_type.strip().upper(),
+            "timestamp": self._now_ts(),
             "payload": payload
         }
 
@@ -234,7 +273,10 @@ class VOINCommunicationEngine:
         ):
             return False
 
-        if message["message_type"] not in self.MESSAGE_TYPES:
+        if (
+            not isinstance(message["message_type"], str)
+            or message["message_type"].strip().upper() not in self.MESSAGE_TYPES
+        ):
             return False
 
         if not isinstance(message["payload"], dict):
@@ -248,10 +290,12 @@ class VOINCommunicationEngine:
         if not isinstance(timestamp, (int, float)):
             return False
 
-        if timestamp > time.time() + self.MAX_FUTURE_OFFSET:
+        now = self._now_ts()
+
+        if timestamp > now + self.MAX_FUTURE_OFFSET:
             return False
 
-        if time.time() - timestamp > self.MAX_TIMESTAMP_AGE:
+        if now - timestamp > self.MAX_TIMESTAMP_AGE:
             return False
 
         try:
@@ -277,13 +321,17 @@ class VOINCommunicationEngine:
 
     def register_handler(self, message_type, handler):
 
-        if message_type not in self.MESSAGE_TYPES:
+        if not isinstance(message_type, str):
+            return False
+
+        normalized_type = message_type.strip().upper()
+        if normalized_type not in self.MESSAGE_TYPES:
             return False
 
         if not callable(handler):
             return False
 
-        self.handlers[message_type] = handler
+        self.handlers[normalized_type] = handler
 
         return True
 
@@ -297,11 +345,13 @@ class VOINCommunicationEngine:
         receiving_peer_id
     ):
 
+        normalized_receiver_peer = self._normalize_peer_id(receiving_peer_id)
+
         if not self.validate_message(message):
 
             self._record_event(
                 "INVALID_NETWORK_MESSAGE",
-                receiving_peer_id
+                normalized_receiver_peer
             )
 
             return {
@@ -309,11 +359,14 @@ class VOINCommunicationEngine:
                 "error": "Invalid message"
             }
 
-        if message["receiver_id"] != receiving_peer_id:
+        normalized_sender = self._normalize_peer_id(message["sender_id"])
+        normalized_msg_receiver = self._normalize_peer_id(message["receiver_id"])
+
+        if normalized_msg_receiver != normalized_receiver_peer:
 
             self._record_event(
                 "MESSAGE_RECEIVER_MISMATCH",
-                receiving_peer_id
+                normalized_receiver_peer
             )
 
             return {
@@ -321,13 +374,13 @@ class VOINCommunicationEngine:
                 "error": "Receiver mismatch"
             }
 
-        message_id = message["message_id"]
+        message_id = message["message_id"].strip()
 
         if message_id in self.processed_messages:
 
             self._record_event(
                 "MESSAGE_REPLAY_ATTEMPT",
-                message["sender_id"]
+                normalized_sender
             )
 
             return {
@@ -337,7 +390,7 @@ class VOINCommunicationEngine:
 
         self.processed_messages.add(message_id)
 
-        message_type = message["message_type"]
+        message_type = message["message_type"].strip().upper()
 
         handler = self.handlers.get(message_type)
 
@@ -345,7 +398,7 @@ class VOINCommunicationEngine:
 
             self._record_event(
                 "MESSAGE_HANDLER_NOT_FOUND",
-                message["sender_id"]
+                normalized_sender
             )
 
             return {
@@ -361,7 +414,7 @@ class VOINCommunicationEngine:
 
             self._record_event(
                 "MESSAGE_HANDLER_ERROR",
-                message["sender_id"]
+                normalized_sender
             )
 
             return {
@@ -371,7 +424,7 @@ class VOINCommunicationEngine:
 
         self._record_event(
             "MESSAGE_PROCESSED",
-            message["sender_id"],
+            normalized_sender,
             {
                 "message_type": message_type,
                 "message_id": message_id
@@ -404,6 +457,7 @@ class VOINCommunicationEngine:
         return {
             "engine": "VOIN Network Communication Engine",
             "version": self.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "message_protocol": True,
             "peer_authorization": True,
             "message_validation": True,
@@ -411,5 +465,5 @@ class VOINCommunicationEngine:
             "replay_protection": True,
             "message_handlers": True,
             "live_network_transport": False,
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
