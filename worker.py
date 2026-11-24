@@ -14,6 +14,10 @@ from security.storage import VOINStorageEngine
 from security.d1_storage import VOIND1StorageEngine
 from security.d1_rate_limit import VOIND1RateLimitEngine
 
+MAINNET_RPC_URL = "https://bsc-dataseed.binance.org/"
+MAINNET_CHAIN_ID = 56
+MAINNET_TREASURY = "0xAEb22359588A50e6F746004E66418Eb2c978dAA2"
+
 try:
     from blockchain.transaction_verifier import (
         BlockchainTransactionVerifier,
@@ -23,8 +27,8 @@ try:
     )
 except Exception:
     BlockchainTransactionVerifier = None
-    DEFAULT_RPC_URL = "https://data-seed-prebsc-1-s1.binance.org:8545/"
-    DEFAULT_TREASURY_ADDRESS = "0xAEb22359588A50e6F746004E66418Eb2c978dAA2"
+    DEFAULT_RPC_URL = MAINNET_RPC_URL
+    DEFAULT_TREASURY_ADDRESS = MAINNET_TREASURY
     VerificationResult = None
 
 
@@ -32,11 +36,11 @@ def build_presale_verifier(env):
     if BlockchainTransactionVerifier is None:
         return None
 
-    rpc_url = getattr(env, "BSC_RPC_URL", None) or DEFAULT_RPC_URL
+    rpc_url = getattr(env, "BSC_RPC_URL", None) or DEFAULT_RPC_URL or MAINNET_RPC_URL
     presale_contract = getattr(env, "VOIN_PRESALE_CONTRACT", None) or ""
-    treasury_address = getattr(env, "TREASURY_ADDRESS", None) or DEFAULT_TREASURY_ADDRESS
+    treasury_address = getattr(env, "TREASURY_ADDRESS", None) or DEFAULT_TREASURY_ADDRESS or MAINNET_TREASURY
     raw_chain_id = getattr(env, "EXPECTED_CHAIN_ID", None)
-    expected_chain_id = int(raw_chain_id) if raw_chain_id not in (None, "") else None
+    expected_chain_id = int(raw_chain_id) if raw_chain_id not in (None, "") else MAINNET_CHAIN_ID
 
     return BlockchainTransactionVerifier(
         rpc_url=rpc_url,
@@ -82,7 +86,7 @@ def verify_presale_tx_hash(
 
 
 def build_gateway(env):
-    api_token = getattr(env, "API_TOKEN", None) or "voin-secret-token-yang-sangat-panjang-dan-aman-123"
+    api_token = getattr(env, "API_TOKEN", None) or ""
     host = getattr(env, "GATEWAY_HOST", None) or "0.0.0.0"
     port = int(getattr(env, "GATEWAY_PORT", None) or 5000)
 
