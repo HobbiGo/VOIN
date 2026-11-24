@@ -22,10 +22,11 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 16px;
             background-color: var(--midnight-navy);
+            /* Menyatukan backdrop-voin.jpg pada body dengan gradasi yang seimbang */
             background-image:
                 radial-gradient(circle at 16% 18%, rgba(168, 85, 247, 0.22) 0%, transparent 45%),
                 radial-gradient(circle at 80% 28%, rgba(56, 189, 248, 0.18) 0%, transparent 48%),
-                linear-gradient(180deg, rgba(5, 8, 24, 0.78) 0%, rgba(10, 15, 41, 0.68) 45%, rgba(5, 8, 24, 0.92) 100%),
+                linear-gradient(180deg, rgba(5, 8, 24, 0.82) 0%, rgba(10, 15, 41, 0.72) 45%, rgba(5, 8, 24, 0.94) 100%),
                 url('backdrop-voin.jpg');
             background-size: cover;
             background-position: center top;
@@ -82,31 +83,22 @@
             transform: translateY(-2px);
         }
 
-        @keyframes voinCoinFloat {
+        /* Animasi mengambang untuk visual tiga pilar ekosistem baru */
+        @keyframes ecosystemFloat {
             0%, 100% {
                 transform: translateY(0px) scale(1);
-                filter: drop-shadow(0 0 26px rgba(168, 85, 247, 0.6));
+                filter: drop-shadow(0 0 25px rgba(168, 85, 247, 0.35)) drop-shadow(0 0 15px rgba(56, 189, 248, 0.2));
             }
             50% {
-                transform: translateY(-10px) scale(1.02);
-                filter: drop-shadow(0 14px 32px rgba(56, 189, 248, 0.65));
+                transform: translateY(-8px) scale(1.015);
+                filter: drop-shadow(0 15px 35px rgba(168, 85, 247, 0.45)) drop-shadow(0 10px 25px rgba(56, 189, 248, 0.35));
             }
         }
 
-        @keyframes orbitSpin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        .ecosystem-visual-wrap {
+            animation: ecosystemFloat 6s ease-in-out infinite;
+            will-change: transform;
         }
-
-        @keyframes toolFly {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
-        }
-
-        .voin-3d-wrap { perspective: 900px; }
-        .voin-coin-fly { animation: voinCoinFloat 4.8s ease-in-out infinite; will-change: transform; }
-        .orbit-ring { animation: orbitSpin 22s linear infinite; will-change: transform; }
-        .voin-tool-fly { animation: toolFly 4s ease-in-out infinite; will-change: transform; }
 
         .btn-primary-voin {
             background: linear-gradient(135deg, #6366f1 0%, #9333ea 55%, #3b82f6 100%);
@@ -122,13 +114,6 @@
         .btn-primary-voin:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-        }
-
-        /* Masking halus tanpa mix-blend-mode agar tepi koin tidak tembus garis latar */
-        .voin-coin-clean {
-            border-radius: 9999px;
-            -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 66%, rgba(0, 0, 0, 0.6) 80%, transparent 96%);
-            mask-image: radial-gradient(circle at 50% 50%, #000 66%, rgba(0, 0, 0, 0.6) 80%, transparent 96%);
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -191,15 +176,17 @@
     </header>
 
     <!-- ================= HERO SECTION ================= -->
-    <section id="home" class="max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-12">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div class="lg:col-span-7 space-y-5">
+    <section id="home" class="max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-16">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            
+            <!-- Area Kiri: Deskripsi dan Call To Action -->
+            <div class="lg:col-span-6 space-y-6">
                 <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/75 backdrop-blur-md border border-purple-500/45 text-xs sm:text-sm text-cyan-200 font-medium">
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
                     + VOIN Ecosystem &bull; Official Presale Dec 2026 - Dec 2028
                 </div>
 
-                <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.12] drop-shadow-[0_4px_24px_rgba(0,0,0,0.75)]">
+                <h1 class="font-display text-4xl sm:text-5xl lg:text-[56px] font-black leading-[1.12] drop-shadow-[0_4px_24px_rgba(0,0,0,0.75)]">
                     Build. Play. Earn.<br>
                     <span class="bg-gradient-to-r from-cyan-300 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">with VOIN.</span>
                 </h1>
@@ -236,42 +223,26 @@
                 </div>
             </div>
 
-            <!-- KOIN VOIN YANG DIRAPIKAN -->
-            <div class="lg:col-span-5 flex items-center justify-center py-4 voin-3d-wrap">
-                <div class="relative w-72 sm:w-88 h-72 sm:h-88 flex items-center justify-center">
-                    <!-- Aura pelindung agar garis latar belakang tidak memotong tepi koin -->
-                    <div class="absolute w-64 h-64 rounded-full bg-[#090d26]/85 blur-2xl pointer-events-none"></div>
-                    <div class="absolute w-64 h-64 rounded-full bg-gradient-to-tr from-purple-600/35 via-indigo-500/20 to-cyan-400/30 blur-3xl pointer-events-none"></div>
-                    <div class="orbit-ring absolute w-64 sm:w-76 h-64 sm:h-76 rounded-full border border-dashed border-cyan-400/35 pointer-events-none"></div>
-                    <div class="absolute w-56 sm:w-68 h-56 sm:h-68 rounded-full border border-purple-400/30 pointer-events-none"></div>
-
-                    <div class="voin-tool-fly absolute top-1 right-7 w-4 h-4 rotate-45 rounded-sm bg-gradient-to-br from-purple-400 to-indigo-700 border border-purple-200/50 shadow-[0_0_12px_rgba(168,85,247,0.85)] pointer-events-none"></div>
-                    <div class="voin-tool-fly absolute bottom-3 left-7 w-4 h-4 rotate-45 rounded-sm bg-gradient-to-br from-cyan-300 to-purple-600 border border-cyan-100/50 shadow-[0_0_12px_rgba(56,189,248,0.85)] pointer-events-none"></div>
-
-                    <img id="heroCoinImg" src="voin-logo.jpg?v=5" alt="VOIN 3D Coin" class="relative z-10 w-56 sm:w-64 h-56 sm:h-64 object-cover voin-coin-fly voin-coin-clean select-none" onerror="this.style.display='none'; document.getElementById('heroCoinFallback').style.display='flex';">
-
-                    <div id="heroCoinFallback" style="display:none;" class="relative z-10 w-52 h-52 rounded-full bg-gradient-to-br from-purple-700 via-indigo-900 to-cyan-700 border-2 border-purple-300/60 voin-coin-fly flex-col items-center justify-center text-center p-4 shadow-[0_0_40px_rgba(168,85,247,0.5)]">
-                        <span class="font-display text-5xl font-black text-white">V</span>
-                        <span class="font-display text-xs tracking-widest text-cyan-200 mt-1">VOIN WALLET</span>
-                    </div>
-
-                    <div class="voin-tool-fly absolute left-0 top-6 z-20 glass-panel px-3.5 py-2 rounded-2xl flex items-center gap-2.5 text-xs sm:text-sm">
-                        <span class="text-cyan-300 text-lg">&#9889;</span>
-                        <div>
-                            <p class="font-bold text-white leading-tight">Ultra Fast</p>
-                            <p class="text-xs text-slate-300">Instant Settlement</p>
-                        </div>
-                    </div>
-
-                    <div class="voin-tool-fly absolute right-0 bottom-6 z-20 glass-panel px-3.5 py-2 rounded-2xl flex items-center gap-2.5 text-xs sm:text-sm">
-                        <span class="text-purple-300 text-lg">&#128737;</span>
-                        <div>
-                            <p class="font-bold text-white leading-tight">VOIN Vault</p>
-                            <p class="text-xs text-slate-300">Web3 Security</p>
+            <!-- Area Kanan: Visual 3 Pilihan Terintegrasi "pictureplus-voin.jpg" -->
+            <div class="lg:col-span-6 flex items-center justify-center py-4">
+                <div class="relative w-full max-w-lg lg:max-w-xl flex items-center justify-center">
+                    <!-- Glow aura lembut melingkari visual ekosistem -->
+                    <div class="absolute w-80 h-80 rounded-full bg-[#090d26]/80 blur-3xl pointer-events-none"></div>
+                    <div class="absolute w-72 h-72 rounded-full bg-gradient-to-tr from-purple-600/25 via-indigo-500/15 to-cyan-400/20 blur-3xl pointer-events-none"></div>
+                    
+                    <!-- Penerapan pictureplus-voin.jpg sebagai aset utama -->
+                    <div class="ecosystem-visual-wrap relative z-10 w-full transition duration-500">
+                        <img id="ecosystemAssetsImg" src="pictureplus-voin.jpg" alt="VOIN Ecosystem Features" class="w-full h-auto object-contain select-none" onerror="this.style.display='none'; document.getElementById('ecosystemFallback').style.display='flex';">
+                        
+                        <!-- Fallback jika berkas pictureplus-voin.jpg belum terbaca -->
+                        <div id="ecosystemFallback" style="display:none;" class="w-full py-12 flex-col items-center justify-center text-center p-6 border border-purple-500/30 rounded-3xl bg-indigo-950/40 backdrop-blur-md">
+                            <span class="font-display text-3xl font-extrabold text-white">VOIN ECOSYSTEM</span>
+                            <p class="text-slate-300 text-sm mt-2">Features visualizations (Physical Card, Ecosystem Node & Security Vault)</p>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
 
         <!-- Why VOIN? -->
@@ -282,21 +253,21 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="glass-tile p-4 rounded-2xl flex items-start gap-3.5">
-                    <span class="voin-tool-fly text-2xl text-cyan-300">&#127918;</span>
+                    <span class="text-2xl text-cyan-300">&#127918;</span>
                     <div>
                         <h3 class="font-bold text-white text-sm sm:text-base">Play &amp; Earn</h3>
                         <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Engage in ecosystem activities and earn VOIN rewards.</p>
                     </div>
                 </div>
                 <div class="glass-tile p-4 rounded-2xl flex items-start gap-3.5">
-                    <span class="voin-tool-fly text-2xl text-purple-300">&#128142;</span>
+                    <span class="text-2xl text-purple-300">&#128142;</span>
                     <div>
                         <h3 class="font-bold text-white text-sm sm:text-base">Real Utility</h3>
                         <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Use VOIN across wallet features, presale batches, and ecosystem tools.</p>
                     </div>
                 </div>
                 <div class="glass-tile p-4 rounded-2xl flex items-start gap-3.5">
-                    <span class="voin-tool-fly text-2xl text-emerald-300">&#129309;</span>
+                    <span class="text-2xl text-emerald-300">&#129309;</span>
                     <div>
                         <h3 class="font-bold text-white text-sm sm:text-base">Grow Together</h3>
                         <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Build alongside early participants across 10 structured presale batches.</p>
@@ -306,7 +277,7 @@
         </div>
     </section>
 
-    <!-- ================= TOKENOMICS (60%, 15%, 15%, 10%) ================= -->
+    <!-- ================= TOKENOMICS ================= -->
     <section id="tokenomics" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div class="glass-panel p-6 sm:p-8 rounded-3xl">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
