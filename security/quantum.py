@@ -20,6 +20,8 @@ ML-DSA implementation.
 
 import time
 
+DEFAULT_CHAIN_ID = 56
+
 try:
     import oqs
 except ImportError:
@@ -66,13 +68,22 @@ class VOINQuantumSecurityEngine:
     @staticmethod
     def _to_bytes(value, field_name):
 
-        if isinstance(value, bytes):
-            return value
+        if isinstance(value, (bytes, bytearray)):
+            return bytes(value)
 
         if isinstance(value, str):
 
+            cleaned = value.strip()
+            if cleaned.startswith(("0x", "0X")):
+                cleaned = cleaned[2:]
+
+            if not cleaned or len(cleaned) % 2 != 0:
+                raise ValueError(
+                    f"Invalid hexadecimal {field_name}"
+                )
+
             try:
-                return bytes.fromhex(value)
+                return bytes.fromhex(cleaned)
 
             except ValueError as error:
                 raise ValueError(
@@ -192,6 +203,7 @@ class VOINQuantumSecurityEngine:
         return {
             "engine": "VOIN Quantum Security Engine",
             "version": cls.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "standard": "NIST FIPS 204",
             "cryptography": "Post-Quantum Cryptography",
             "signature_algorithms": list(
@@ -199,5 +211,6 @@ class VOINQuantumSecurityEngine:
             ),
             "default_algorithm": "ML-DSA-65",
             "backend": "liboqs-python",
+            "backend_installed": oqs is not None,
             "status": "READY_FOR_BACKEND_CONFIGURATION"
         }
