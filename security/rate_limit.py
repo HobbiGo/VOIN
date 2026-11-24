@@ -12,12 +12,13 @@ Features:
 - Security event logging
 """
 
+import re
 import sqlite3
 import time
-import math
-import re
 
 from contextlib import closing
+
+_ZERO_ADDRESS = "0x" + ("0" * 40)
 
 
 class VOINRateLimitEngine:
@@ -54,6 +55,10 @@ class VOINRateLimitEngine:
         self._initialize_database()
 
     @staticmethod
+    def _now_ts() -> int:
+        return int(time.time())
+
+    @staticmethod
     def _validate_positive_int(value, name):
 
         if isinstance(value, bool) or not isinstance(value, int):
@@ -69,20 +74,23 @@ class VOINRateLimitEngine:
         return value
 
     @staticmethod
-    def _normalize_wallet(wallet_address):
+    def _normalize_wallet(wallet_address, *, allow_zero: bool = False):
 
         if not isinstance(wallet_address, str):
             raise ValueError("Invalid wallet address")
 
-        wallet_address = wallet_address.strip().lower()
+        cleaned = wallet_address.strip().lower()
 
-        if not wallet_address or len(wallet_address) > 128:
+        if not cleaned or len(cleaned) != 42:
             raise ValueError("Invalid wallet address")
 
-        if not re.fullmatch(r"0x[a-f0-9]{40}", wallet_address):
+        if not re.fullmatch(r"0x[a-f0-9]{40}", cleaned):
             raise ValueError("Invalid wallet address format")
 
-        return wallet_address
+        if not allow_zero and cleaned == _ZERO_ADDRESS:
+            raise ValueError("Zero address is not allowed")
+
+        return cleaned
 
     # ==========================================
     # SQLITE CONNECTION MANAGEMENT
@@ -115,13 +123,31 @@ class VOINRateLimitEngine:
 
                     wallet_address TEXT PRIMARY KEY,
 
-                    window_started_at REAL NOT NULL,
+                    window_started_at INTEGER NOT NULL,
 
                     attempt_count INTEGER NOT NULL DEFAULT 0,
 
-                    blocked_until REAL NOT NULL DEFAULT 0,
+                    blocked_until INTEGER NOT NULL DEFAULT 0,
 
-                    updated_at REAL NOT NULL
+                    updated_at INTEGER NOT NULL
+
+                )
+            """)
+
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS security_events (
+
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                    event_type TEXT NOT NULL,
+
+                    wallet_address TEXT,
+
+                    reference_id TEXT,
+
+                    created_at INTEGER NOT NULL,
+
+                    details TEXT
 
                 )
             """)
@@ -134,8 +160,11 @@ class VOINRateLimitEngine:
         self,
         connection,
         wallet_address,
-        details
+        details,
+        created_at=None
     ):
+
+        ts = int(created_at) if created_at is not None else self._now_ts()
 
         connection.execute(
             """
@@ -152,7 +181,7 @@ class VOINRateLimitEngine:
                 "RATE_LIMIT_EXCEEDED",
                 wallet_address,
                 None,
-                time.time(),
+                ts,
                 details
             )
         )
@@ -165,7 +194,7 @@ class VOINRateLimitEngine:
 
         wallet = self._normalize_wallet(wallet_address)
 
-        now = time.time()
+        now = self._now_ts()
 
         connection = self._connect()
 
@@ -200,28 +229,27 @@ class VOINRateLimitEngine:
                     (wallet, now, now)
                 )
 
-                window_started = now
+                window_started = int(now)
                 attempts = 0
                 blocked_until = 0
 
             else:
 
-                window_started = row["window_started_at"]
-                attempts = row["attempt_count"]
-                blocked_until = row["blocked_until"]
+                window_started = int(row["window_started_at"])
+                attempts = int(row["attempt_count"])
+                blocked_until = int(row["blocked_until"])
 
             # Existing cooldown is still active.
 
             if blocked_until > now:
 
-                retry_after = math.ceil(
-                    blocked_until - now
-                )
+                retry_after = max(1, blocked_until - now)
 
                 self._log_violation(
                     connection,
                     wallet,
-                    "Request rejected during active cooldown"
+                    "Request rejected during active cooldown",
+                    created_at=now
                 )
 
                 connection.commit()
@@ -247,9 +275,7 @@ class VOINRateLimitEngine:
 
             if attempts >= self.max_attempts:
 
-                blocked_until = (
-                    now + self.cooldown_seconds
-                )
+                blocked_until = now + self.cooldown_seconds
 
                 connection.execute(
                     """
@@ -268,7 +294,8 @@ class VOINRateLimitEngine:
                 self._log_violation(
                     connection,
                     wallet,
-                    "Maximum wallet authentication attempts exceeded"
+                    "Maximum wallet authentication attempts exceeded",
+                    created_at=now
                 )
 
                 connection.commit()
@@ -338,7 +365,7 @@ class VOINRateLimitEngine:
 
         wallet = self._normalize_wallet(wallet_address)
 
-        now = time.time()
+        now = self._now_ts()
 
         # Automatically close SQLite connection.
 
@@ -364,9 +391,9 @@ class VOINRateLimitEngine:
                 "status": "NORMAL"
             }
 
-        attempts = row["attempt_count"]
+        attempts = int(row["attempt_count"])
 
-        blocked_until = row["blocked_until"]
+        blocked_until = int(row["blocked_until"])
 
         if blocked_until > now:
 
@@ -375,14 +402,12 @@ class VOINRateLimitEngine:
                 "attempts": attempts,
                 "remaining": 0,
                 "blocked": True,
-                "retry_after": math.ceil(
-                    blocked_until - now
-                ),
+                "retry_after": max(1, blocked_until - now),
                 "status": "BLOCKED"
             }
 
         window_expired = (
-            now - row["window_started_at"]
+            now - int(row["window_started_at"])
             >= self.window_seconds
         )
 
@@ -437,5 +462,5 @@ class VOINRateLimitEngine:
             "max_attempts": self.max_attempts,
             "window_seconds": self.window_seconds,
             "cooldown_seconds": self.cooldown_seconds,
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
