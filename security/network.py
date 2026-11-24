@@ -1,7 +1,7 @@
 """
 VOIN NETWORK SECURITY ENGINE V1.1.1
 
-Provides defensive network peer management.
+Provides defensive network peer management (BSC Mainnet / Chain ID 56).
 
 Features:
 - Peer identity validation & normalization
@@ -24,9 +24,9 @@ import copy
 import ipaddress
 import re
 import time
-
 from urllib.parse import urlparse
 
+DEFAULT_CHAIN_ID = 56
 ZERO_PEER_ID = "0x" + ("0" * 40)
 
 
@@ -95,12 +95,25 @@ class VOINNetworkSecurityEngine:
                 if status not in {"TRUSTED", "REVOKED"}:
                     continue
 
+                registered_at = peer.get("registered_at")
+                updated_at = peer.get("updated_at")
+
                 self.trusted_peers[peer_id] = {
                     "peer_id": peer_id,
                     "endpoint": endpoint.strip(),
                     "status": status,
-                    "registered_at": peer.get("registered_at"),
-                    "updated_at": peer.get("updated_at")
+                    "registered_at": (
+                        int(registered_at)
+                        if isinstance(registered_at, (int, float))
+                        and not isinstance(registered_at, bool)
+                        else registered_at
+                    ),
+                    "updated_at": (
+                        int(updated_at)
+                        if isinstance(updated_at, (int, float))
+                        and not isinstance(updated_at, bool)
+                        else updated_at
+                    ),
                 }
 
         except Exception:
@@ -608,6 +621,7 @@ class VOINNetworkSecurityEngine:
         return {
             "engine": "VOIN Network Security Engine",
             "version": self.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "peer_identity_validation": True,
             "trusted_peer_management": True,
             "endpoint_validation": True,
