@@ -1,9 +1,11 @@
 """
-VOIN SECURITY MIDDLEWARE ENGINE V1.0.5
+VOIN SECURITY MIDDLEWARE ENGINE V1.0.5 (BSC Mainnet / Chain ID 56)
 """
 
 import json
 import secrets
+
+DEFAULT_CHAIN_ID = 56
 
 
 def _voin_init(self, application):
@@ -31,13 +33,16 @@ def _voin_response(self, start_response, status, data, request_id):
 
 
 def _voin_validate_request(self, environ):
+    if not isinstance(environ, dict):
+        return False
+
     method = environ.get("REQUEST_METHOD", "")
     path = environ.get("PATH_INFO", "")
 
-    if not isinstance(method, str) or not method:
+    if not isinstance(method, str) or not method.strip():
         return False
 
-    if not isinstance(path, str):
+    if not isinstance(path, str) or not path:
         return False
 
     if not path.startswith("/"):
@@ -46,7 +51,11 @@ def _voin_validate_request(self, environ):
     if len(path) > self.MAX_PATH_LENGTH:
         return False
 
-    if any(ord(char) < 32 for char in path):
+    if any(ord(char) < 32 or ord(char) == 127 for char in path):
+        return False
+
+    segments = [seg for seg in path.split("/") if seg]
+    if ".." in segments:
         return False
 
     return True
@@ -87,7 +96,8 @@ def _voin_start_response(self, start_response, request_id):
 def _voin_call(self, environ, start_response):
     request_id = secrets.token_hex(16)
 
-    environ["voin.request_id"] = request_id
+    if isinstance(environ, dict):
+        environ["voin.request_id"] = request_id
 
     if not self._validate_request(environ):
         return self._response(
@@ -122,12 +132,13 @@ def _voin_engine_info(cls):
     return {
         "engine": "VOIN Security Middleware",
         "version": cls.VERSION,
+        "chain_id": DEFAULT_CHAIN_ID,
         "wsgi_support": True,
         "request_validation": True,
         "request_id": True,
         "security_headers": True,
         "error_handling": True,
-        "status": "READY_FOR_TESTING"
+        "status": "MAINNET_READY"
     }
 
 
