@@ -2,12 +2,15 @@
 VOIN D1 Rate Limit Engine
 Version: 1.0.3
 
-Asynchronous wallet rate limiter using Cloudflare D1.
+Asynchronous wallet rate limiter using Cloudflare D1 (BSC Mainnet / Chain ID 56).
 """
 
+import json
 import re
 import time
-import json
+
+DEFAULT_CHAIN_ID = 56
+_ZERO_ADDRESS = "0x" + ("0" * 40)
 
 
 class VOIND1RateLimitEngine:
@@ -43,7 +46,7 @@ class VOIND1RateLimitEngine:
         self.cooldown_seconds = cooldown_seconds
 
     @staticmethod
-    def _normalize_wallet(wallet_address):
+    def _normalize_wallet(wallet_address, *, allow_zero: bool = False):
         if not isinstance(wallet_address, str):
             raise ValueError("Invalid wallet address")
 
@@ -51,6 +54,9 @@ class VOIND1RateLimitEngine:
 
         if not re.fullmatch(r"0x[a-f0-9]{40}", wallet):
             raise ValueError("Invalid wallet address")
+
+        if not allow_zero and wallet == _ZERO_ADDRESS:
+            raise ValueError("Zero address is not allowed")
 
         return wallet
 
@@ -227,6 +233,7 @@ class VOIND1RateLimitEngine:
             "attempts": attempts,
             "max_attempts": self.max_attempts,
             "cooldown_seconds": self.cooldown_seconds,
+            "chain_id": DEFAULT_CHAIN_ID,
             "source": "VOIND1RateLimitEngine",
             "version": self.VERSION,
         }
@@ -249,7 +256,11 @@ class VOIND1RateLimitEngine:
                 "RATE_LIMIT_EXCEEDED",
                 wallet,
                 now,
-                json.dumps(details),
+                json.dumps(
+                    details,
+                    separators=(",", ":"),
+                    allow_nan=False,
+                ),
             )
             .run()
         )
@@ -337,10 +348,11 @@ class VOIND1RateLimitEngine:
         return {
             "engine": "VOIN D1 Rate Limit Engine",
             "version": self.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "storage": "Cloudflare D1",
             "async": True,
             "max_attempts": self.max_attempts,
             "window_seconds": self.window_seconds,
             "cooldown_seconds": self.cooldown_seconds,
-            "status": "READY_FOR_TESTING",
+            "status": "MAINNET_READY",
         }
