@@ -1,5 +1,5 @@
 """
-VOIN SECURITY API ENGINE V1.0
+VOIN SECURITY API ENGINE V1.0 (BSC Mainnet / Chain ID 56)
 
 Features:
 - Protected security dashboard access
@@ -320,6 +320,7 @@ class VOINSecurityAPIEngine:
                 200,
                 {
                     "success": True,
+                    "chain_id": DEFAULT_CHAIN_ID,
                     "api_version": self.VERSION,
                     "data": result
                 }
