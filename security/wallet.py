@@ -6,7 +6,7 @@ private key validation and encrypted keystore management.
 
 Security:
 - Cryptographically secure wallet generation
-- Ethereum-compatible addresses
+- Ethereum-compatible addresses (EVM / BSC Mainnet Chain ID 56)
 - EIP-55 checksum validation
 - Ethereum V3 keystore validation
 - Bounded KDF parameters
@@ -23,6 +23,8 @@ from eth_utils import (
     is_checksum_address,
     to_checksum_address,
 )
+
+ZERO_ADDRESS = "0x" + ("0" * 40)
 
 
 class VOINWalletEngine:
@@ -48,13 +50,27 @@ class VOINWalletEngine:
         self.status = "READY"
 
     # --------------------------------------------------
+    # INTERNAL HELPERS
+    # --------------------------------------------------
+
+    @staticmethod
+    def _format_hex_key(raw_key) -> str:
+        if isinstance(raw_key, bytes):
+            hex_str = raw_key.hex()
+        else:
+            hex_str = str(raw_key).strip()
+        if hex_str.startswith(("0x", "0X")):
+            hex_str = hex_str[2:]
+        return "0x" + hex_str.lower()
+
+    # --------------------------------------------------
     # WALLET GENERATION
     # --------------------------------------------------
 
     @staticmethod
     def generate_wallet():
         """
-        Generate a new Ethereum wallet.
+        Generate a new EVM-compatible wallet.
 
         IMPORTANT:
         The private key is returned in plaintext.
@@ -64,9 +80,9 @@ class VOINWalletEngine:
         account = Account.create()
 
         return {
-            "address": account.address,
-            "private_key": account.key.hex(),
-            "wallet_type": "ETHEREUM",
+            "address": to_checksum_address(account.address),
+            "private_key": VOINWalletEngine._format_hex_key(account.key),
+            "wallet_type": "EVM",
             "version": VOINWalletEngine.VERSION,
         }
 
@@ -75,37 +91,37 @@ class VOINWalletEngine:
     # --------------------------------------------------
 
     @staticmethod
-    def validate_address(address):
+    def validate_address(address, *, allow_zero: bool = False):
 
         if not isinstance(address, str):
             return False
 
-        address = address.strip()
+        cleaned = address.strip()
 
-        if not re.fullmatch(r"0x[0-9a-fA-F]{40}", address):
+        if not re.fullmatch(r"0x[0-9a-fA-F]{40}", cleaned):
             return False
 
-        body = address[2:]
+        if not allow_zero and cleaned.lower() == ZERO_ADDRESS:
+            return False
+
+        body = cleaned[2:]
 
         if body == body.lower() or body == body.upper():
             return True
 
-        return is_checksum_address(address)
+        return is_checksum_address(cleaned)
 
     # --------------------------------------------------
     # CHECKSUM ADDRESS
     # --------------------------------------------------
 
     @staticmethod
-    def get_address_checksum(address):
+    def get_address_checksum(address, *, allow_zero: bool = False):
 
-        if not isinstance(address, str):
+        if not VOINWalletEngine.validate_address(address, allow_zero=allow_zero):
             raise ValueError("Invalid wallet address")
 
-        if not re.fullmatch(r"0x[0-9a-fA-F]{40}", address):
-            raise ValueError("Invalid wallet address")
-
-        return to_checksum_address(address)
+        return to_checksum_address(address.strip())
 
     # --------------------------------------------------
     # PRIVATE KEY VALIDATION
@@ -119,7 +135,7 @@ class VOINWalletEngine:
 
         key = private_key.strip()
 
-        if key.startswith("0x"):
+        if key.startswith(("0x", "0X")):
             key = key[2:]
 
         if not re.fullmatch(r"[0-9a-fA-F]{64}", key):
@@ -140,16 +156,17 @@ class VOINWalletEngine:
     # --------------------------------------------------
 
     @staticmethod
-    def get_wallet_info(address):
+    def get_wallet_info(address, *, allow_zero: bool = False):
 
-        if not VOINWalletEngine.validate_address(address):
+        if not VOINWalletEngine.validate_address(address, allow_zero=allow_zero):
             raise ValueError("Invalid wallet address")
 
-        checksum_address = to_checksum_address(address)
+        checksum_address = to_checksum_address(address.strip())
 
         return {
             "address": checksum_address,
-            "wallet_type": "ETHEREUM",
+            "normalized_address": checksum_address.lower(),
+            "wallet_type": "EVM",
             "address_valid": True,
             "checksum_valid": True,
             "private_key_exposed": False,
@@ -353,7 +370,7 @@ class VOINWalletEngine:
 
         VOINWalletEngine._validate_password(password)
 
-        account = Account.from_key(private_key)
+        account = Account.from_key(private_key.strip())
 
         encrypted = Account.encrypt(
             account.key,
@@ -396,7 +413,7 @@ class VOINWalletEngine:
             raise ValueError("Keystore too large")
 
         return {
-            "address": account.address,
+            "address": to_checksum_address(account.address),
             "keystore": keystore_json,
             "keystore_version": VOINWalletEngine.KEYSTORE_VERSION,
             "encrypted": True,
@@ -453,7 +470,7 @@ class VOINWalletEngine:
                 if stored_address.lower() != account.address[2:].lower():
                     raise ValueError("Keystore address mismatch")
 
-            return private_key.hex()
+            return VOINWalletEngine._format_hex_key(private_key)
 
         except Exception:
 
@@ -471,7 +488,7 @@ class VOINWalletEngine:
         return {
             "engine": cls.ENGINE_NAME,
             "version": cls.VERSION,
-            "wallet_type": "ETHEREUM",
+            "wallet_type": "EVM",
             "address_standard": "EIP-55",
             "keystore_standard": "Ethereum V3",
             "secure_random_generation": True,
@@ -479,5 +496,5 @@ class VOINWalletEngine:
             "private_key_logging": False,
             "automatic_private_key_storage": False,
             "recovery_backdoor": False,
-            "status": "READY_FOR_TESTING",
+            "status": "MAINNET_READY",
         }
