@@ -87,6 +87,13 @@ class VOINAuthenticationEngine:
         cleaned = challenge_id.strip()
         return cleaned if cleaned else None
 
+    @staticmethod
+    def _normalize_signature(signature):
+        if isinstance(signature, str):
+            cleaned = signature.strip()
+            return cleaned if cleaned else signature
+        return signature
+
     # Create authentication challenge
     def create_authentication_challenge(self, wallet_address):
 
@@ -157,6 +164,7 @@ class VOINAuthenticationEngine:
             }
 
         wallet = self._normalize_wallet(wallet_address)
+        normalized_signature = self._normalize_signature(signature)
 
         identity = self.identities.get(wallet)
 
@@ -214,7 +222,7 @@ class VOINAuthenticationEngine:
         # Verify digital signature first.
         signature_result = self.signature_engine.verify_signature(
             message=challenge["message"],
-            signature=signature,
+            signature=normalized_signature,
             expected_address=wallet
         )
 
