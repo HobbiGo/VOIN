@@ -82,22 +82,35 @@
             transform: translateY(-2px);
         }
 
-        /* Penyatuan langsung ke backdrop tanpa batas kotak/putih */
-        .voin-seamless-stage {
+        /* Penyatuan halus gambar ke backdrop utama tanpa kotak mencolok */
+        .voin-backdrop-blend-box {
             position: relative;
-            background: radial-gradient(ellipse 78% 72% at 50% 50%, rgba(168, 85, 247, 0.18) 0%, rgba(56, 189, 248, 0.10) 48%, transparent 76%);
+            width: 100%;
+            max-width: 600px;
+            border-radius: 28px;
+            overflow: hidden;
         }
 
-        .ecosystem-seamless-img {
-            position: relative;
-            z-index: 2;
+        .voin-backdrop-blend-box img {
+            display: block;
+            width: 100%;
+            height: auto;
             mix-blend-mode: multiply;
-            filter: contrast(1.42) saturate(1.25) brightness(0.96) drop-shadow(0 0 18px rgba(56, 189, 248, 0.45)) drop-shadow(0 0 28px rgba(168, 85, 247, 0.4));
+            filter: contrast(1.48) brightness(0.92) saturate(1.22);
             -webkit-mask-image:
-                radial-gradient(ellipse 84% 78% at 50% 50%, #000 62%, rgba(0, 0, 0, 0.55) 80%, transparent 98%),
-                linear-gradient(to bottom, transparent 0%, #000 10%, #000 90%, transparent 100%);
-            -webkit-mask-composite: source-in;
-            mask-image: radial-gradient(ellipse 84% 78% at 50% 50%, #000 62%, rgba(0, 0, 0, 0.55) 80%, transparent 98%);
+                radial-gradient(ellipse 78% 74% at 50% 50%, rgba(0, 0, 0, 1) 48%, rgba(0, 0, 0, 0.55) 74%, rgba(0, 0, 0, 0) 98%);
+            mask-image:
+                radial-gradient(ellipse 78% 74% at 50% 50%, rgba(0, 0, 0, 1) 48%, rgba(0, 0, 0, 0.55) 74%, rgba(0, 0, 0, 0) 98%);
+        }
+
+        .voin-backdrop-tint {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 50% 50%, rgba(12, 18, 46, 0.12) 35%, rgba(5, 8, 24, 0.68) 85%, rgba(5, 8, 24, 0.92) 100%),
+                linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(168, 85, 247, 0.12));
+            mix-blend-mode: normal;
         }
 
         @keyframes ecosystemFloat {
@@ -105,7 +118,7 @@
                 transform: translateY(0px);
             }
             50% {
-                transform: translateY(-7px);
+                transform: translateY(-6px);
             }
         }
 
@@ -237,14 +250,17 @@
                 </div>
             </div>
 
-            <!-- Area Kanan: Penyatuan langsung ke backdrop tanpa kotak/putih -->
+            <!-- Area Kanan: Penyatuan gambar ke backdrop -->
             <div class="lg:col-span-6 flex items-center justify-center py-2">
-                <div class="voin-seamless-stage ecosystem-visual-wrap w-full max-w-xl rounded-3xl p-2 sm:p-4 flex items-center justify-center">
-                    <img id="ecosystemAssetsImg" src="pictureplus-voin.jpg" alt="VOIN Ecosystem Features" class="ecosystem-seamless-img w-full h-auto select-none" onerror="this.style.display='none'; document.getElementById('ecosystemFallback').style.display='flex';">
+                <div class="ecosystem-visual-wrap w-full flex items-center justify-center">
+                    <div class="voin-backdrop-blend-box">
+                        <img id="ecosystemAssetsImg" src="pictureplus-voin.jpg" alt="VOIN Ecosystem Features" class="select-none" onerror="this.style.display='none'; document.getElementById('ecosystemFallback').style.display='flex';">
+                        <div class="voin-backdrop-tint"></div>
 
-                    <div id="ecosystemFallback" style="display:none;" class="w-full py-12 flex-col items-center justify-center text-center p-6 rounded-2xl bg-indigo-950/50">
-                        <span class="font-display text-2xl sm:text-3xl font-extrabold text-white">VOIN ECOSYSTEM</span>
-                        <p class="text-slate-300 text-sm mt-2">Physical Card &bull; Ecosystem Node &bull; VOIN Vault</p>
+                        <div id="ecosystemFallback" style="display:none;" class="w-full py-12 flex-col items-center justify-center text-center p-6 rounded-2xl bg-indigo-950/50">
+                            <span class="font-display text-2xl sm:text-3xl font-extrabold text-white">VOIN ECOSYSTEM</span>
+                            <p class="text-slate-300 text-sm mt-2">Physical Card &bull; Ecosystem Node &bull; VOIN Vault</p>
+                        </div>
                     </div>
                 </div>
             </div>
