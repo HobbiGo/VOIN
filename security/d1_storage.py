@@ -544,9 +544,12 @@ class VOIND1StorageEngine:
         if wallet_address is not None:
             wallet = self._normalize_wallet(wallet_address)
 
+        cleaned_reference_id = None
         if reference_id is not None:
             if not isinstance(reference_id, str):
                 raise ValueError("Invalid reference ID")
+            stripped = reference_id.strip()
+            cleaned_reference_id = stripped if stripped else None
 
         serialized = self._serialize_details(details)
 
@@ -564,7 +567,7 @@ class VOIND1StorageEngine:
             (
                 event_type.strip().upper(),
                 wallet,
-                reference_id,
+                cleaned_reference_id,
                 self._now_ts(),
                 serialized
             )
