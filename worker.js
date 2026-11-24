@@ -1,5 +1,5 @@
-const DEFAULT_GATEWAY_URL = "http://127.0.0.1:5000";
-const DEFAULT_API_TOKEN = "voin-secret-token-yang-sangat-panjang-dan-aman-123";
+const DEFAULT_GATEWAY_URL = "";
+const DEFAULT_API_TOKEN = "";
 
 const PRESALE_PUBLIC_CONFIG = {
   treasuryAddress: "0xAEb22359588A50e6F746004E66418Eb2c978dAA2",
@@ -63,54 +63,90 @@ function buildForwardHeaders(request, apiToken) {
   return headers;
 }
 
+function withStandardHeaders(response, extraHeaders = {}) {
+  const headers = new Headers(response.headers);
+  headers.set("X-VOIN-Gateway", "cloudflare-worker");
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Token");
+
+  for (const [k, v] of Object.entries(extraHeaders)) {
+    headers.set(k, v);
+  }
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
   async fetch(request, env, ctx) {
+    const method = (request.method || "GET").toUpperCase();
+
+    if (method === "OPTIONS") {
+      return withStandardHeaders(new Response(null, { status: 204 }));
+    }
+
     const url = new URL(request.url);
-    const upstreamBase = env.VOIN_GATEWAY_URL || DEFAULT_GATEWAY_URL;
-    const apiToken = env.API_TOKEN || DEFAULT_API_TOKEN;
+    const upstreamBase = (env.VOIN_GATEWAY_URL || DEFAULT_GATEWAY_URL || "").trim();
+    const apiToken = (env.API_TOKEN || DEFAULT_API_TOKEN || "").trim();
 
     if (url.pathname === "/health") {
-      return new Response(
-        JSON.stringify({
-          status: "OPERATIONAL",
-          message: "VOIN Worker gateway active",
-          upstreamConfigured: Boolean(env.VOIN_GATEWAY_URL),
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "X-VOIN-Gateway": "cloudflare-worker",
-          },
-        }
+      return withStandardHeaders(
+        new Response(
+          JSON.stringify({
+            status: "OPERATIONAL",
+            message: "VOIN Worker gateway active",
+            upstreamConfigured: Boolean(upstreamBase),
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
       );
     }
 
-    if (url.pathname === "/presale/config" && (request.method || "GET").toUpperCase() === "GET") {
-      return new Response(
-        JSON.stringify({
-          status: "OK",
-          presale: {
-            ...PRESALE_PUBLIC_CONFIG,
-            treasuryAddress: env.TREASURY_ADDRESS || PRESALE_PUBLIC_CONFIG.treasuryAddress,
-            contracts: {
-              voinToken: env.VOIN_TOKEN_ADDRESS || "",
-              voinPresale: env.VOIN_PRESALE_CONTRACT || "",
-              voinVesting: env.VOIN_VESTING_CONTRACT || "",
+    if (url.pathname === "/presale/config" && method === "GET") {
+      return withStandardHeaders(
+        new Response(
+          JSON.stringify({
+            status: "OK",
+            presale: {
+              ...PRESALE_PUBLIC_CONFIG,
+              treasuryAddress: (env.TREASURY_ADDRESS || PRESALE_PUBLIC_CONFIG.treasuryAddress).trim(),
+              contracts: {
+                voinToken: (env.VOIN_TOKEN_ADDRESS || "").trim(),
+                voinPresale: (env.VOIN_PRESALE_CONTRACT || "").trim(),
+                voinVesting: (env.VOIN_VESTING_CONTRACT || "").trim(),
+              },
             },
-          },
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "X-VOIN-Gateway": "cloudflare-worker",
-          },
-        }
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
       );
     }
 
-    const method = (request.method || "GET").toUpperCase();
+    if (!upstreamBase) {
+      return withStandardHeaders(
+        new Response(
+          JSON.stringify({
+            status: "MISCONFIGURED",
+            message: "VOIN_GATEWAY_URL belum dikonfigurasi pada environment Worker",
+          }),
+          {
+            status: 502,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      );
+    }
+
     const targetUrl = buildUpstreamUrl(request.url, upstreamBase);
     const forwardHeaders = buildForwardHeaders(request, apiToken);
 
@@ -130,28 +166,26 @@ export default {
       const upstreamResponse = await fetch(targetUrl, init);
       const responseBody = await upstreamResponse.arrayBuffer();
 
-      const responseHeaders = new Headers(upstreamResponse.headers);
-      responseHeaders.set("X-VOIN-Gateway", "cloudflare-worker");
-
-      return new Response(responseBody, {
-        status: upstreamResponse.status,
-        statusText: upstreamResponse.statusText,
-        headers: responseHeaders,
-      });
+      return withStandardHeaders(
+        new Response(responseBody, {
+          status: upstreamResponse.status,
+          statusText: upstreamResponse.statusText,
+          headers: upstreamResponse.headers,
+        })
+      );
     } catch (error) {
-      return new Response(
-        JSON.stringify({
-          status: "BAD_GATEWAY",
-          message: "Gagal menghubungi VOIN Gateway / Node upstream",
-          detail: error instanceof Error ? error.message : String(error),
-        }),
-        {
-          status: 502,
-          headers: {
-            "Content-Type": "application/json",
-            "X-VOIN-Gateway": "cloudflare-worker",
-          },
-        }
+      return withStandardHeaders(
+        new Response(
+          JSON.stringify({
+            status: "BAD_GATEWAY",
+            message: "Gagal menghubungi VOIN Gateway / Node upstream",
+            detail: error instanceof Error ? error.message : String(error),
+          }),
+          {
+            status: 502,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
       );
     }
   },
