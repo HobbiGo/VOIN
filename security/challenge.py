@@ -4,7 +4,7 @@ VOIN CHALLENGE ENGINE V1.3.1
 Features:
 - Secure nonce generation
 - Challenge ID generation
-- Wallet validation
+- Wallet validation & normalization
 - Nonce format validation
 - Atomic nonce and challenge persistence
 - Challenge expiration
@@ -13,12 +13,16 @@ Features:
 - Persistent challenge storage
 """
 
-import secrets
-import time
 import hashlib
 import re
+import secrets
+import time
 
 from security.storage import VOINStorageEngine
+
+DEFAULT_CHAIN_ID = 56
+_EVM_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_ZERO_ADDRESS = "0x" + ("0" * 40)
 
 
 class VOINChallengeEngine:
@@ -50,6 +54,35 @@ class VOINChallengeEngine:
             else VOINStorageEngine()
         )
 
+    @staticmethod
+    def _now_ts() -> int:
+        return int(time.time())
+
+    @staticmethod
+    def _normalize_wallet(wallet_address, *, allow_zero: bool = False) -> str:
+        if not isinstance(wallet_address, str):
+            raise ValueError("Invalid wallet address")
+
+        cleaned = wallet_address.strip()
+        if not cleaned:
+            raise ValueError("Invalid wallet address")
+
+        if not _EVM_ADDRESS_RE.match(cleaned):
+            raise ValueError("Invalid EVM wallet address format")
+
+        normalized = cleaned.lower()
+        if not allow_zero and normalized == _ZERO_ADDRESS:
+            raise ValueError("Zero address is not allowed")
+
+        return normalized
+
+    @staticmethod
+    def _normalize_challenge_id(challenge_id):
+        if not isinstance(challenge_id, str):
+            return None
+        cleaned = challenge_id.strip()
+        return cleaned if cleaned else None
+
     # ==================================================
     # CREATE CHALLENGE
     # ==================================================
@@ -60,13 +93,7 @@ class VOINChallengeEngine:
         nonce=None
     ):
 
-        if (
-            not isinstance(wallet_address, str)
-            or not wallet_address.strip()
-        ):
-            raise ValueError("Invalid wallet address")
-
-        wallet_address = wallet_address.strip()
+        normalized_wallet = self._normalize_wallet(wallet_address)
 
         if nonce is None:
             nonce = secrets.token_hex(32)
@@ -77,7 +104,9 @@ class VOINChallengeEngine:
         ):
             raise ValueError("Invalid nonce format")
 
-        timestamp = int(time.time())
+        normalized_nonce = nonce.lower()
+
+        timestamp = self._now_ts()
 
         expires_at = (
             timestamp + self.expiry_seconds
@@ -89,8 +118,8 @@ class VOINChallengeEngine:
 
         message = (
             "VOIN WALLET AUTHENTICATION\n"
-            f"Wallet: {wallet_address}\n"
-            f"Nonce: {nonce}\n"
+            f"Wallet: {normalized_wallet}\n"
+            f"Nonce: {normalized_nonce}\n"
             f"Timestamp: {timestamp}\n"
             f"Challenge ID: {challenge_id}\n"
             "Purpose: Wallet ownership verification"
@@ -103,8 +132,8 @@ class VOINChallengeEngine:
 
         self.storage.create_challenge_atomic(
             challenge_id,
-            wallet_address,
-            nonce,
+            normalized_wallet,
+            normalized_nonce,
             message,
             expires_at
         )
@@ -113,7 +142,7 @@ class VOINChallengeEngine:
             "success": True,
             "challenge_id": challenge_id,
             "message": message,
-            "nonce": nonce,
+            "nonce": normalized_nonce,
             "expires_at": expires_at
         }
 
@@ -127,19 +156,21 @@ class VOINChallengeEngine:
         wallet_address
     ):
 
-        if (
-            not isinstance(challenge_id, str)
-            or not isinstance(wallet_address, str)
-        ):
+        normalized_challenge_id = self._normalize_challenge_id(
+            challenge_id
+        )
+        if normalized_challenge_id is None:
             return False
 
-        if not challenge_id or not wallet_address.strip():
+        try:
+            normalized_wallet = self._normalize_wallet(wallet_address)
+        except ValueError:
             return False
 
         try:
 
             challenge = self.storage.get_challenge(
-                challenge_id
+                normalized_challenge_id
             )
 
             if not challenge:
@@ -156,8 +187,8 @@ class VOINChallengeEngine:
                 return False
 
             if (
-                stored_wallet.lower()
-                != wallet_address.strip().lower()
+                stored_wallet.strip().lower()
+                != normalized_wallet
             ):
                 return False
 
@@ -169,7 +200,7 @@ class VOINChallengeEngine:
             ):
                 return False
 
-            if int(time.time()) >= expires_at:
+            if self._now_ts() >= expires_at:
                 return False
 
             return True
@@ -187,7 +218,10 @@ class VOINChallengeEngine:
         wallet_address=None
     ):
 
-        if not isinstance(challenge_id, str):
+        normalized_challenge_id = self._normalize_challenge_id(
+            challenge_id
+        )
+        if normalized_challenge_id is None:
             return False
 
         try:
@@ -195,7 +229,7 @@ class VOINChallengeEngine:
             if wallet_address is None:
 
                 challenge = self.storage.get_challenge(
-                    challenge_id
+                    normalized_challenge_id
                 )
 
                 if not challenge:
@@ -205,12 +239,11 @@ class VOINChallengeEngine:
                     "wallet_address"
                 )
 
-            if not isinstance(wallet_address, str):
-                return False
+            normalized_wallet = self._normalize_wallet(wallet_address)
 
             return self.storage.consume_challenge(
-                challenge_id,
-                wallet_address
+                normalized_challenge_id,
+                normalized_wallet
             )
 
         except (ValueError, TypeError):
@@ -226,6 +259,7 @@ class VOINChallengeEngine:
         return {
             "engine": "VOIN Challenge Engine",
             "version": cls.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "storage": "SQLite",
             "persistent_challenges": True,
             "persistent_nonces": True,
@@ -236,5 +270,5 @@ class VOINChallengeEngine:
             "wallet_ownership_validation": True,
             "atomic_consumption": True,
             "replay_protection": True,
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
