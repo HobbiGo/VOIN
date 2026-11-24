@@ -123,11 +123,16 @@ class VOINAuditEngine:
         event_type = self._validate_event_type(event_type)
         normalized_wallet = self._normalize_wallet(wallet_address)
         details = self._validate_details(details)
+        cleaned_reference_id = (
+            reference_id.strip()
+            if isinstance(reference_id, str) and reference_id.strip()
+            else (None if isinstance(reference_id, str) else reference_id)
+        )
 
         self.storage.log_event(
             event_type=event_type,
             wallet_address=normalized_wallet,
-            reference_id=reference_id,
+            reference_id=cleaned_reference_id,
             details=details
         )
 
