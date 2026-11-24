@@ -2,17 +2,23 @@
 VOIN SECURITY MONITORING ENGINE V1.1
 
 Monitors security audit events and detects suspicious
-activity using configurable event thresholds.
+activity using configurable event thresholds (BSC Mainnet / Chain ID 56).
 
 Compatible with:
 - VOIN Audit Engine V1.0.0
-- VOIN Storage Engine V1.3.0
+- VOIN Storage Engine V1.4.0
 - VOIN Security Integration V1.5.0
 """
 
 from collections import Counter
+import re
+import time
 
 from security.audit import VOINAuditEngine
+
+_EVM_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_ZERO_ADDRESS = "0x" + ("0" * 40)
+DEFAULT_CHAIN_ID = 56
 
 
 class VOINSecurityMonitor:
@@ -36,6 +42,10 @@ class VOINSecurityMonitor:
         self.audit = audit_engine or VOINAuditEngine()
 
     @staticmethod
+    def _now_ts() -> int:
+        return int(time.time())
+
+    @staticmethod
     def _validate_positive_integer(value, name):
 
         if isinstance(value, bool) or not isinstance(value, int):
@@ -47,6 +57,25 @@ class VOINSecurityMonitor:
             raise ValueError(
                 f"{name} must be a positive integer"
             )
+
+    @staticmethod
+    def _normalize_wallet(wallet_address, *, allow_zero: bool = False):
+
+        if not isinstance(wallet_address, str):
+            raise ValueError("Invalid wallet address")
+
+        cleaned = wallet_address.strip()
+        if not cleaned:
+            raise ValueError("Invalid wallet address")
+
+        if not _EVM_ADDRESS_RE.match(cleaned):
+            raise ValueError("Invalid EVM wallet address format")
+
+        normalized = cleaned.lower()
+        if not allow_zero and normalized == _ZERO_ADDRESS:
+            raise ValueError("Zero address is not allowed")
+
+        return normalized
 
     @staticmethod
     def _get_event_type(event):
@@ -122,21 +151,18 @@ class VOINSecurityMonitor:
         limit=100
     ):
 
-        if (
-            not isinstance(wallet_address, str)
-            or not wallet_address.strip()
-        ):
-            raise ValueError("Invalid wallet address")
+        normalized_wallet = self._normalize_wallet(wallet_address)
 
         self._validate_positive_integer(limit, "limit")
 
         return self.audit.get_wallet_events(
-            wallet_address=wallet_address,
+            wallet_address=normalized_wallet,
             limit=limit
         )
 
-    @staticmethod
+    @classmethod
     def _create_alert(
+        cls,
         alert_type,
         count,
         threshold,
@@ -148,6 +174,7 @@ class VOINSecurityMonitor:
             "severity": "HIGH",
             "count": count,
             "threshold": threshold,
+            "timestamp": cls._now_ts(),
             "message": message
         }
 
@@ -340,6 +367,7 @@ class VOINSecurityMonitor:
         return {
             "engine": "VOIN SECURITY MONITORING ENGINE",
             "version": self.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
 
             "audit_integration": True,
             "authentication_monitoring": True,
@@ -351,5 +379,6 @@ class VOINSecurityMonitor:
             "unauthorized_access_monitoring": True,
 
             "threshold_alerts": True,
-            "storage": "SQLite"
+            "storage": "SQLite",
+            "status": "MAINNET_READY"
         }
