@@ -82,35 +82,38 @@
             transform: translateY(-2px);
         }
 
-        /* Penyatuan halus gambar ke backdrop utama tanpa kotak mencolok */
-        .voin-backdrop-blend-box {
+        /* Penyatuan gambar terpisah ke backdrop */
+        .voin-asset-card {
             position: relative;
-            width: 100%;
-            max-width: 600px;
-            border-radius: 28px;
+            border-radius: 20px;
             overflow: hidden;
+            background: rgba(9, 14, 38, 0.55);
+            border: 1px solid rgba(129, 140, 248, 0.25);
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .voin-backdrop-blend-box img {
+        .voin-asset-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(56, 189, 248, 0.6);
+            box-shadow: 0 12px 28px rgba(147, 51, 234, 0.25);
+        }
+
+        .voin-asset-img {
             display: block;
             width: 100%;
-            height: auto;
-            mix-blend-mode: multiply;
-            filter: contrast(1.48) brightness(0.92) saturate(1.22);
-            -webkit-mask-image:
-                radial-gradient(ellipse 78% 74% at 50% 50%, rgba(0, 0, 0, 1) 48%, rgba(0, 0, 0, 0.55) 74%, rgba(0, 0, 0, 0) 98%);
-            mask-image:
-                radial-gradient(ellipse 78% 74% at 50% 50%, rgba(0, 0, 0, 1) 48%, rgba(0, 0, 0, 0.55) 74%, rgba(0, 0, 0, 0) 98%);
+            height: 100%;
+            object-fit: cover;
+            mix-blend-mode: lighten;
+            filter: contrast(1.12) saturate(1.15);
+            -webkit-mask-image: radial-gradient(ellipse 88% 86% at 50% 50%, #000 65%, rgba(0, 0, 0, 0.5) 86%, transparent 100%);
+            mask-image: radial-gradient(ellipse 88% 86% at 50% 50%, #000 65%, rgba(0, 0, 0, 0.5) 86%, transparent 100%);
         }
 
-        .voin-backdrop-tint {
+        .voin-asset-fade {
             position: absolute;
             inset: 0;
             pointer-events: none;
-            background:
-                radial-gradient(circle at 50% 50%, rgba(12, 18, 46, 0.12) 35%, rgba(5, 8, 24, 0.68) 85%, rgba(5, 8, 24, 0.92) 100%),
-                linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(168, 85, 247, 0.12));
-            mix-blend-mode: normal;
+            background: radial-gradient(circle at 50% 50%, transparent 45%, rgba(5, 8, 24, 0.65) 100%);
         }
 
         @keyframes ecosystemFloat {
@@ -118,12 +121,17 @@
                 transform: translateY(0px);
             }
             50% {
-                transform: translateY(-6px);
+                transform: translateY(-5px);
             }
         }
 
-        .ecosystem-visual-wrap {
+        .ecosystem-float-slow {
             animation: ecosystemFloat 6s ease-in-out infinite;
+            will-change: transform;
+        }
+
+        .ecosystem-float-alt {
+            animation: ecosystemFloat 7s ease-in-out 1s infinite;
             will-change: transform;
         }
 
@@ -250,17 +258,24 @@
                 </div>
             </div>
 
-            <!-- Area Kanan: Penyatuan gambar ke backdrop -->
-            <div class="lg:col-span-6 flex items-center justify-center py-2">
-                <div class="ecosystem-visual-wrap w-full flex items-center justify-center">
-                    <div class="voin-backdrop-blend-box">
-                        <img id="ecosystemAssetsImg" src="pictureplus-voin.jpg" alt="VOIN Ecosystem Features" class="select-none" onerror="this.style.display='none'; document.getElementById('ecosystemFallback').style.display='flex';">
-                        <div class="voin-backdrop-tint"></div>
-
-                        <div id="ecosystemFallback" style="display:none;" class="w-full py-12 flex-col items-center justify-center text-center p-6 rounded-2xl bg-indigo-950/50">
-                            <span class="font-display text-2xl sm:text-3xl font-extrabold text-white">VOIN ECOSYSTEM</span>
-                            <p class="text-slate-300 text-sm mt-2">Physical Card &bull; Ecosystem Node &bull; VOIN Vault</p>
-                        </div>
+            <!-- Area Kanan: 4 File Gambar Terpisah (voin-picture1.jpg, voin-picture2.jpg, voin-picture3.jpg, voin-picture5.jpg) -->
+            <div class="lg:col-span-6">
+                <div class="grid grid-cols-2 gap-3.5 sm:gap-4">
+                    <div class="voin-asset-card ecosystem-float-slow aspect-square">
+                        <img src="voin-picture1.jpg" alt="VOIN Visual 1" class="voin-asset-img">
+                        <div class="voin-asset-fade"></div>
+                    </div>
+                    <div class="voin-asset-card ecosystem-float-alt aspect-square">
+                        <img src="voin-picture2.jpg" alt="VOIN Visual 2" class="voin-asset-img">
+                        <div class="voin-asset-fade"></div>
+                    </div>
+                    <div class="voin-asset-card ecosystem-float-alt aspect-square">
+                        <img src="voin-picture3.jpg" alt="VOIN Visual 3" class="voin-asset-img">
+                        <div class="voin-asset-fade"></div>
+                    </div>
+                    <div class="voin-asset-card ecosystem-float-slow aspect-square">
+                        <img src="voin-picture5.jpg" alt="VOIN Visual 5" class="voin-asset-img">
+                        <div class="voin-asset-fade"></div>
                     </div>
                 </div>
             </div>
