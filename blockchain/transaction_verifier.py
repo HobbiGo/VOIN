@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 
 DEFAULT_TREASURY_ADDRESS = "0xAEb22359588A50e6F746004E66418Eb2c978dAA2"
-DEFAULT_RPC_URL = os.getenv("BSC_RPC_URL", "https://data-seed-prebsc-1-s1.binance.org:8545/")
+DEFAULT_RPC_URL = os.getenv("BSC_RPC_URL", "https://bsc-dataseed.binance.org/")
 
 # Jadwal presale: 1 Desember 2026 00:00:00 UTC s/d 31 Desember 2028 23:59:59 UTC
 PRESALE_START_TIMESTAMP = 1796083200
@@ -18,11 +18,11 @@ PRESALE_END_TIMESTAMP = 1861919999
 # Batas pembelian per wallet per batch (skala 1e18 USD)
 MIN_PURCHASE_USD_WEI = 25 * (10**18)
 MAX_PURCHASE_USD_PER_BATCH_WEI = 10_000 * (10**18)
+TOTAL_BATCHES = 10
 
 # Keccak-256 topic0 untuk event:
 # TokensPurchased(address,address,uint256,uint256,uint256,uint256,uint256)
-# Catatan: isi dengan hash keccak256 exact signature saat kontrak sudah di-compile/deploy
-TOKENS_PURCHASED_TOPIC0 = os.getenv("VOIN_TOKENS_PURCHASED_TOPIC0", "")
+TOKENS_PURCHASED_TOPIC0 = (os.getenv("VOIN_TOKENS_PURCHASED_TOPIC0") or "").strip()
 
 
 @dataclass
@@ -69,7 +69,7 @@ class BlockchainTransactionVerifier:
         rpc_url: str = DEFAULT_RPC_URL,
         presale_contract_address: str = "",
         treasury_address: str = DEFAULT_TREASURY_ADDRESS,
-        expected_chain_id: Optional[int] = None,
+        expected_chain_id: Optional[int] = 56,
         timeout_seconds: int = 15,
     ) -> None:
         self.rpc_url = rpc_url
@@ -143,8 +143,9 @@ class BlockchainTransactionVerifier:
         buyer = self._decode_indexed_address(topics[1])
         payment_token = self._decode_indexed_address(topics[2])
         batch_id = int(topics[3], 16)
+        if not (1 <= batch_id <= TOTAL_BATCHES):
+            return None
 
-        # Data berisi: amountPaidRaw, usdValue, voinAmount, timestamp (4 x uint256)
         words = self._decode_uint256_words(log.get("data", "0x"))
         if len(words) < 4:
             return None
