@@ -84,47 +84,75 @@
 
         .tokenomics-ring-wrap {
             position: relative;
-            width: 11rem;
-            height: 11rem;
+            width: 11.5rem;
+            height: 11.5rem;
             border-radius: 9999px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: conic-gradient(
                 from 0deg,
-                #c084fc 0% 60%,
+                #e879f9 0% 24%,
+                #c084fc 24% 60%,
                 #38bdf8 60% 75%,
                 #6366f1 75% 90%,
                 #f472b6 90% 100%
             );
             box-shadow:
-                0 0 26px rgba(192, 132, 252, 0.55),
-                0 0 44px rgba(56, 189, 248, 0.28);
+                0 0 28px rgba(192, 132, 252, 0.65),
+                0 0 48px rgba(56, 189, 248, 0.35);
         }
 
         .tokenomics-ring-wrap::before {
             content: "";
             position: absolute;
-            inset: -6px;
+            inset: -7px;
             border-radius: 9999px;
-            border: 1px solid rgba(125, 211, 252, 0.45);
-            box-shadow: inset 0 0 16px rgba(168, 85, 247, 0.35);
+            border: 1.5px solid rgba(125, 211, 252, 0.55);
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.3), inset 0 0 16px rgba(168, 85, 247, 0.35);
             pointer-events: none;
         }
 
-        .tokenomics-card-bright {
+        .tokenomics-card-sharp {
             position: relative;
-            background: linear-gradient(135deg, rgba(15, 23, 56, 0.68) 0%, rgba(10, 14, 36, 0.56) 100%);
+            background: linear-gradient(135deg, rgba(16, 25, 62, 0.72) 0%, rgba(10, 14, 38, 0.60) 100%);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(148, 163, 255, 0.38);
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(165, 180, 252, 0.42);
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.16);
             transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
 
-        .tokenomics-card-bright:hover {
+        .tokenomics-card-sharp::before,
+        .tokenomics-card-sharp::after {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            pointer-events: none;
+            border-color: rgba(125, 211, 252, 0.75);
+        }
+
+        .tokenomics-card-sharp::before {
+            top: 5px;
+            left: 5px;
+            border-top: 2px solid;
+            border-left: 2px solid;
+            border-top-left-radius: 6px;
+        }
+
+        .tokenomics-card-sharp::after {
+            bottom: 5px;
+            right: 5px;
+            border-right: 2px solid;
+            border-bottom: 2px solid;
+            border-bottom-right-radius: 6px;
+        }
+
+        .tokenomics-card-sharp:hover {
             transform: translateY(-2px);
-            box-shadow: 0 14px 30px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border-color: rgba(103, 232, 249, 0.85);
+            box-shadow: 0 14px 32px rgba(56, 189, 248, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22);
         }
 
         .btn-primary-voin {
@@ -279,7 +307,7 @@
         </div>
     </section>
 
-    <!-- ================= TOKENOMICS (SHARP & BRIGHT) ================= -->
+    <!-- ================= TOKENOMICS ================= -->
     <section id="tokenomics" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div class="glass-panel p-6 sm:p-8 rounded-3xl">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -287,43 +315,43 @@
                     <h2 class="font-display text-2xl sm:text-3xl font-extrabold text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)]">Tokenomics</h2>
                     <p class="text-xs sm:text-sm text-slate-100 mt-0.5">Transparent allocation designed for sustainable ecosystem growth.</p>
                 </div>
-                <span class="font-display text-base sm:text-lg font-extrabold text-cyan-200 drop-shadow-[0_0_12px_rgba(56,189,248,0.55)]">
+                <span class="font-display text-base sm:text-lg font-extrabold text-cyan-200 drop-shadow-[0_0_14px_rgba(56,189,248,0.65)]">
                     Total Supply: 260,000,000 VOIN
                 </span>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                <div class="lg:col-span-5 tokenomics-card-bright p-5 rounded-2xl border-cyan-300/40 flex flex-col sm:flex-row items-center gap-5">
+                <div class="lg:col-span-5 tokenomics-card-sharp p-5 rounded-2xl border-cyan-300/45 flex flex-col sm:flex-row items-center gap-5">
                     <div class="tokenomics-ring-wrap shrink-0">
-                        <div class="w-32 h-32 rounded-full bg-[#070c24]/95 border border-cyan-300/35 flex flex-col items-center justify-center text-center px-2 shadow-[inset_0_0_18px_rgba(168,85,247,0.35)]">
-                            <span class="font-display text-2xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.45)]">60%</span>
-                            <span class="text-xs font-semibold text-cyan-200 mt-0.5">Presale</span>
-                            <span class="text-[9px] text-slate-300 leading-tight mt-0.5">Total Supply<br>260,000,000 VOIN</span>
+                        <div class="w-32 h-32 rounded-full bg-[#070c24]/95 border border-cyan-300/40 flex flex-col items-center justify-center text-center px-2 shadow-[inset_0_0_20px_rgba(168,85,247,0.4)]">
+                            <span class="font-display text-2xl font-black text-white leading-tight drop-shadow-[0_0_12px_rgba(255,255,255,0.5)]">60%</span>
+                            <span class="font-display text-xs font-bold text-white mt-0.5">Presale</span>
+                            <span class="text-[10px] text-cyan-200 font-medium leading-tight mt-1">Total Supply<br><span class="text-white font-semibold">260,000,000 VOIN</span></span>
                         </div>
                     </div>
 
                     <div class="space-y-2.5 text-xs sm:text-sm w-full">
-                        <div class="flex items-center justify-between py-0.5 border-b border-white/10">
+                        <div class="flex items-center justify-between py-1 border-b border-white/10">
                             <span class="flex items-center gap-2 text-white font-medium">
-                                <span class="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-[0_0_8px_#c084fc]"></span>Presale (10 Batches)
+                                <span class="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-[0_0_10px_#c084fc]"></span>Presale (10 Batches)
                             </span>
                             <span class="font-display font-bold text-purple-300">60%</span>
                         </div>
-                        <div class="flex items-center justify-between py-0.5 border-b border-white/10">
+                        <div class="flex items-center justify-between py-1 border-b border-white/10">
                             <span class="flex items-center gap-2 text-white font-medium">
-                                <span class="w-2.5 h-2.5 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8]"></span>Liquidity
+                                <span class="w-2.5 h-2.5 rounded-full bg-sky-400 shadow-[0_0_10px_#38bdf8]"></span>Liquidity
                             </span>
                             <span class="font-display font-bold text-cyan-300">15%</span>
                         </div>
-                        <div class="flex items-center justify-between py-0.5 border-b border-white/10">
+                        <div class="flex items-center justify-between py-1 border-b border-white/10">
                             <span class="flex items-center gap-2 text-white font-medium">
-                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-[0_0_8px_#818cf8]"></span>Ecosystem &amp; Rewards
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-[0_0_10px_#818cf8]"></span>Ecosystem &amp; Rewards
                             </span>
                             <span class="font-display font-bold text-indigo-300">15%</span>
                         </div>
-                        <div class="flex items-center justify-between py-0.5">
+                        <div class="flex items-center justify-between py-1">
                             <span class="flex items-center gap-2 text-white font-medium">
-                                <span class="w-2.5 h-2.5 rounded-full bg-pink-400 shadow-[0_0_8px_#f472b6]"></span>Team &amp; Development
+                                <span class="w-2.5 h-2.5 rounded-full bg-pink-400 shadow-[0_0_10px_#f472b6]"></span>Team &amp; Development
                             </span>
                             <span class="font-display font-bold text-pink-300">10%</span>
                         </div>
@@ -331,24 +359,24 @@
                 </div>
 
                 <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm sm:text-base">
-                    <div class="tokenomics-card-bright p-4 rounded-2xl border-l-4 border-l-purple-400 hover:border-purple-300">
-                        <p class="font-display text-xl font-black text-purple-300 drop-shadow-[0_0_10px_rgba(192,132,252,0.5)]">60%</p>
-                        <p class="font-bold text-white mt-1">Presale (156,000,000)</p>
+                    <div class="tokenomics-card-sharp p-4 sm:p-5 rounded-2xl hover:border-purple-300">
+                        <p class="font-display text-2xl font-black text-purple-300 drop-shadow-[0_0_12px_rgba(192,132,252,0.55)]">60%</p>
+                        <p class="font-bold text-white text-base sm:text-lg mt-1">Presale (156,000,000)</p>
                         <p class="text-xs sm:text-sm text-slate-200 mt-1">10 Batches &times; 15,600,000 VOIN</p>
                     </div>
-                    <div class="tokenomics-card-bright p-4 rounded-2xl border-l-4 border-l-cyan-300 hover:border-cyan-200">
-                        <p class="font-display text-xl font-black text-cyan-300 drop-shadow-[0_0_10px_rgba(56,189,248,0.5)]">15%</p>
-                        <p class="font-bold text-white mt-1">Liquidity</p>
+                    <div class="tokenomics-card-sharp p-4 sm:p-5 rounded-2xl hover:border-cyan-200">
+                        <p class="font-display text-2xl font-black text-cyan-300 drop-shadow-[0_0_12px_rgba(56,189,248,0.55)]">15%</p>
+                        <p class="font-bold text-white text-base sm:text-lg mt-1">Liquidity</p>
                         <p class="text-xs sm:text-sm text-slate-200 mt-1">39,000,000 VOIN</p>
                     </div>
-                    <div class="tokenomics-card-bright p-4 rounded-2xl border-l-4 border-l-indigo-400 hover:border-indigo-300">
-                        <p class="font-display text-xl font-black text-indigo-300 drop-shadow-[0_0_10px_rgba(129,140,248,0.5)]">15%</p>
-                        <p class="font-bold text-white mt-1">Ecosystem &amp; Rewards</p>
+                    <div class="tokenomics-card-sharp p-4 sm:p-5 rounded-2xl hover:border-indigo-300">
+                        <p class="font-display text-2xl font-black text-indigo-300 drop-shadow-[0_0_12px_rgba(129,140,248,0.55)]">15%</p>
+                        <p class="font-bold text-white text-base sm:text-lg mt-1">Ecosystem &amp; Rewards</p>
                         <p class="text-xs sm:text-sm text-slate-200 mt-1">39,000,000 VOIN</p>
                     </div>
-                    <div class="tokenomics-card-bright p-4 rounded-2xl border-l-4 border-l-pink-400 hover:border-pink-300">
-                        <p class="font-display text-xl font-black text-pink-300 drop-shadow-[0_0_10px_rgba(244,114,182,0.5)]">10%</p>
-                        <p class="font-bold text-white mt-1">Team &amp; Development</p>
+                    <div class="tokenomics-card-sharp p-4 sm:p-5 rounded-2xl hover:border-pink-300">
+                        <p class="font-display text-2xl font-black text-pink-300 drop-shadow-[0_0_12px_rgba(244,114,182,0.55)]">10%</p>
+                        <p class="font-bold text-white text-base sm:text-lg mt-1">Team &amp; Development</p>
                         <p class="text-xs sm:text-sm text-slate-200 mt-1">26,000,000 VOIN</p>
                     </div>
                 </div>
