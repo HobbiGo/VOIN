@@ -290,12 +290,13 @@ class VOINCommunicationEngine:
         if not isinstance(timestamp, (int, float)):
             return False
 
+        ts_value = int(timestamp)
         now = self._now_ts()
 
-        if timestamp > now + self.MAX_FUTURE_OFFSET:
+        if ts_value > now + self.MAX_FUTURE_OFFSET:
             return False
 
-        if now - timestamp > self.MAX_TIMESTAMP_AGE:
+        if now - ts_value > self.MAX_TIMESTAMP_AGE:
             return False
 
         try:
@@ -388,8 +389,6 @@ class VOINCommunicationEngine:
                 "error": "Duplicate message"
             }
 
-        self.processed_messages.add(message_id)
-
         message_type = message["message_type"].strip().upper()
 
         handler = self.handlers.get(message_type)
@@ -421,6 +420,8 @@ class VOINCommunicationEngine:
                 "success": False,
                 "error": "Message processing failed"
             }
+
+        self.processed_messages.add(message_id)
 
         self._record_event(
             "MESSAGE_PROCESSED",
