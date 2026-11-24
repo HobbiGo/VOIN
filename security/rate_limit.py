@@ -1,5 +1,5 @@
 """
-VOIN RATE LIMITING ENGINE V1.0
+VOIN RATE LIMITING ENGINE V1.0 (BSC Mainnet / Chain ID 56)
 
 Features:
 - Per-wallet request limiting
@@ -12,12 +12,12 @@ Features:
 - Security event logging
 """
 
+from contextlib import closing
 import re
 import sqlite3
 import time
 
-from contextlib import closing
-
+DEFAULT_CHAIN_ID = 56
 _ZERO_ADDRESS = "0x" + ("0" * 40)
 
 
@@ -33,9 +33,14 @@ class VOINRateLimitEngine:
         cooldown_seconds=300
     ):
 
+        if storage is None:
+            raise ValueError("Storage engine is required")
+
         self.storage = storage
 
-        self.database_path = str(storage.database_path)
+        self.database_path = str(
+            getattr(storage, "database_path", ":memory:")
+        )
 
         self.max_attempts = self._validate_positive_int(
             max_attempts,
@@ -458,6 +463,7 @@ class VOINRateLimitEngine:
         return {
             "engine": "VOIN Rate Limiting Engine",
             "version": self.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "database": self.database_path,
             "max_attempts": self.max_attempts,
             "window_seconds": self.window_seconds,
