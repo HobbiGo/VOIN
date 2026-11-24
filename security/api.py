@@ -14,6 +14,11 @@ Features:
 """
 
 import hmac
+import re
+
+_EVM_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_ZERO_ADDRESS = "0x" + ("0" * 40)
+DEFAULT_CHAIN_ID = 56
 
 
 class VOINSecurityAPIEngine:
@@ -69,6 +74,34 @@ class VOINSecurityAPIEngine:
             if rate_limit_engine is not None
             else getattr(dashboard, "rate_limit_engine", None)
         )
+
+    @staticmethod
+    def _normalize_wallet(wallet_address, *, allow_zero: bool = False) -> str:
+        if not isinstance(wallet_address, str):
+            raise ValueError("Invalid wallet address")
+
+        cleaned = wallet_address.strip()
+        if not cleaned or wallet_address != cleaned:
+            raise ValueError("Invalid wallet address")
+
+        if not _EVM_ADDRESS_RE.match(cleaned):
+            raise ValueError("Invalid EVM wallet address format")
+
+        normalized = cleaned.lower()
+        if not allow_zero and normalized == _ZERO_ADDRESS:
+            raise ValueError("Zero address is not allowed")
+
+        return normalized
+
+    @staticmethod
+    def _parse_limit(raw_limit):
+        if isinstance(raw_limit, bool):
+            return None
+        if isinstance(raw_limit, int):
+            return raw_limit
+        if isinstance(raw_limit, str) and raw_limit.isdigit():
+            return int(raw_limit)
+        return None
 
     def _response(self, status_code, data):
 
@@ -171,6 +204,8 @@ class VOINSecurityAPIEngine:
 
     def get_wallet_rate_limit(self, wallet_address):
 
+        normalized_wallet = self._normalize_wallet(wallet_address)
+
         if self.rate_limit_engine is None:
             return {
                 "available": False,
@@ -189,7 +224,7 @@ class VOINSecurityAPIEngine:
                 "status": "NOT_CONFIGURED"
             }
 
-        return get_status(wallet_address)
+        return get_status(normalized_wallet)
 
     def handle_request(
         self,
@@ -240,13 +275,9 @@ class VOINSecurityAPIEngine:
 
             elif path == "/api/security/alerts":
 
-                limit = query.get("limit", 100)
+                limit = self._parse_limit(query.get("limit", 100))
 
-                if (
-                    isinstance(limit, bool)
-                    or not isinstance(limit, int)
-                    or not 1 <= limit <= 1000
-                ):
+                if limit is None or not 1 <= limit <= 1000:
                     return self._response(
                         400,
                         {"error": "Invalid alert limit"}
@@ -264,18 +295,18 @@ class VOINSecurityAPIEngine:
                     "wallet_address"
                 )
 
-                if (
-                    not isinstance(wallet_address, str)
-                    or not wallet_address.strip()
-                    or wallet_address != wallet_address.strip()
-                ):
+                try:
+                    normalized_wallet = self._normalize_wallet(
+                        wallet_address
+                    )
+                except ValueError:
                     return self._response(
                         400,
-                        {"error": "Wallet address is required"}
+                        {"error": "Invalid wallet address"}
                     )
 
                 result = self.get_wallet_rate_limit(
-                    wallet_address
+                    normalized_wallet
                 )
 
             else:
@@ -314,6 +345,7 @@ class VOINSecurityAPIEngine:
         return {
             "engine": "VOIN Security API Engine",
             "version": cls.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "dashboard_api": True,
             "alert_api": True,
             "monitoring_api": True,
@@ -322,5 +354,5 @@ class VOINSecurityAPIEngine:
             "constant_time_comparison": True,
             "strict_validation": True,
             "read_only": True,
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
