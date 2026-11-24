@@ -1,12 +1,18 @@
 """
-VOIN SECURITY GATEWAY ENGINE V1.1.1
+VOIN SECURITY GATEWAY ENGINE V1.1.1 (BSC Mainnet / Chain ID 56)
 """
+
+import re
 
 from security.api import VOINSecurityAPIEngine
 from security.api_integration import VOINSecurityAPIIntegration
 from security.http_server import VOINSecurityHTTPServer
 from security.integration import VOINSecurityIntegration
 from security.middleware import VOINSecurityMiddleware
+
+DEFAULT_CHAIN_ID = 56
+_EVM_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_ZERO_ADDRESS = "0x" + ("0" * 40)
 
 
 class VOINSecurityGateway:
@@ -27,6 +33,12 @@ class VOINSecurityGateway:
         if not isinstance(security_integration, VOINSecurityIntegration):
             raise TypeError("Invalid VOIN Security Integration Engine")
 
+        if not isinstance(host, str) or not host.strip():
+            raise ValueError("Invalid host")
+
+        if isinstance(port, bool) or not isinstance(port, int) or not (1 <= port <= 65535):
+            raise ValueError("Port must be an integer between 1 and 65535")
+
         self.api_engine = api_engine
         self.security_integration = security_integration
 
@@ -37,7 +49,7 @@ class VOINSecurityGateway:
 
         self.http_server = VOINSecurityHTTPServer(
             api_integration=self.api_integration,
-            host=host,
+            host=host.strip(),
             port=port
         )
 
@@ -46,9 +58,31 @@ class VOINSecurityGateway:
                 self.http_server.application(environ, start_response)
         )
 
+    @staticmethod
+    def _normalize_wallet(wallet_address, *, allow_zero: bool = False) -> str:
+        if not isinstance(wallet_address, str):
+            raise ValueError("Invalid wallet address")
+
+        cleaned = wallet_address.strip()
+        if not _EVM_ADDRESS_RE.match(cleaned):
+            raise ValueError("Invalid EVM wallet address format")
+
+        normalized = cleaned.lower()
+        if not allow_zero and normalized == _ZERO_ADDRESS:
+            raise ValueError("Zero address is not allowed")
+
+        return normalized
+
+    @staticmethod
+    def _normalize_challenge_id(challenge_id) -> str:
+        if not isinstance(challenge_id, str) or not challenge_id.strip():
+            raise ValueError("Invalid challenge ID")
+        return challenge_id.strip()
+
     def create_wallet_authentication(self, wallet_address):
+        normalized_wallet = self._normalize_wallet(wallet_address)
         return self.api_integration.create_wallet_authentication(
-            wallet_address=wallet_address
+            wallet_address=normalized_wallet
         )
 
     def verify_wallet_authentication(
@@ -57,9 +91,11 @@ class VOINSecurityGateway:
         challenge_id,
         signature
     ):
+        normalized_wallet = self._normalize_wallet(wallet_address)
+        normalized_challenge_id = self._normalize_challenge_id(challenge_id)
         return self.api_integration.verify_wallet_authentication(
-            wallet_address=wallet_address,
-            challenge_id=challenge_id,
+            wallet_address=normalized_wallet,
+            challenge_id=normalized_challenge_id,
             signature=signature
         )
 
@@ -93,6 +129,7 @@ class VOINSecurityGateway:
         return {
             "engine": "VOIN Security Gateway",
             "version": self.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "security_integration": self.security_integration.VERSION,
             "api_integration": self.api_integration.VERSION,
             "http_server": self.http_server.VERSION,
@@ -113,5 +150,5 @@ class VOINSecurityGateway:
             "rate_limiting": True,
             "host": self.http_server.host,
             "port": self.http_server.port,
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
