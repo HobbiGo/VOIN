@@ -26,6 +26,7 @@ API_TOKEN = (os.getenv("API_TOKEN") or "").strip()
 DB_PATH = os.getenv("VOIN_DB_PATH", os.path.join(BASE_DIR, "voin.db"))
 SKIP_ONCHAIN_VERIFICATION = os.getenv("SKIP_ONCHAIN_VERIFICATION", "false").lower() == "true"
 
+
 # ============================================================
 # 1. PRESALE STATE & CONTRACT
 # ============================================================
@@ -63,6 +64,7 @@ class BlockchainState:
 presale_state = BlockchainState()
 presale_contract = VOINPresaleContract(presale_state)
 
+
 # ============================================================
 # 2. BLOCKCHAIN L1 STATE
 # ============================================================
@@ -82,11 +84,14 @@ chain = VoinChain(genesis_data=genesis_data, difficulty=1, store=store)
 PEERS = set()
 LOCK = threading.Lock()
 
+expected_chain_id_raw = (os.getenv("EXPECTED_CHAIN_ID") or "97").strip()
+expected_chain_id = int(expected_chain_id_raw) if expected_chain_id_raw else None
+
 verifier = BlockchainTransactionVerifier(
     rpc_url=os.getenv("BSC_RPC_URL", "https://data-seed-prebsc-1-s1.binance.org:8545/"),
     presale_contract_address=os.getenv("VOIN_PRESALE_CONTRACT", ""),
     treasury_address=os.getenv("TREASURY_ADDRESS", "0xAEb22359588A50e6F746004E66418Eb2c978dAA2"),
-    expected_chain_id=int(os.getenv("EXPECTED_CHAIN_ID", "97")),
+    expected_chain_id=expected_chain_id,
 )
 
 if not SKIP_ONCHAIN_VERIFICATION and not verifier.presale_contract:
@@ -104,6 +109,7 @@ if not chain.validators:
         print(f"[DEV] Validator default terdaftar: {_dev_acct.address}")
     except Exception as exc:
         print(f"[DEV] Gagal membuat validator default: {exc}")
+
 
 # ============================================================
 # 3. HELPER FUNCTIONS
@@ -151,6 +157,7 @@ def _broadcast_block_to_peers(block, sig_e, sig_p, skip_peer=None):
         except Exception as exc:
             print(f"[P2P] Gagal broadcast ke {peer}: {exc}")
 
+
 # ============================================================
 # 4. FLASK APP & ROUTES
 # ============================================================
@@ -165,24 +172,27 @@ def serve_index():
 
 @app.route("/<path:filename>")
 def serve_static(filename):
-    safe = os.path.normpath(filename)
-    if safe.startswith("..") or os.path.isabs(safe):
+    if not filename or filename.startswith((".", "/")):
         return jsonify({"error": "invalid path"}), 400
-    return send_from_directory(BASE_DIR, safe)
+    full_path = os.path.abspath(os.path.join(BASE_DIR, filename))
+    if not full_path.startswith(BASE_DIR + os.sep) or not os.path.isfile(full_path):
+        return jsonify({"error": "not found"}), 404
+    return send_from_directory(BASE_DIR, filename)
 
 
 # ---------- PRESALE API ----------
 @app.route("/api/presale-stats", methods=["GET"])
 def get_stats():
-    return jsonify({
-        "total_supply": presale_contract.total_supply,
-        "presale_allocation": presale_contract.presale_allocation,
-        "tokens_sold": presale_state.presale_sold,
-        "tokens_remaining": max(0, presale_contract.presale_allocation - presale_state.presale_sold),
-        "current_batch": presale_contract.current_batch,
-        "batch_details": presale_state.batch_sold,
-        "batch_prices_usd": presale_contract.batch_prices_usd,
-    })
+    with LOCK:
+        return jsonify({
+            "total_supply": presale_contract.total_supply,
+            "presale_allocation": presale_contract.presale_allocation,
+            "tokens_sold": presale_state.presale_sold,
+            "tokens_remaining": max(0, presale_contract.presale_allocation - presale_state.presale_sold),
+            "current_batch": presale_contract.current_batch,
+            "batch_details": dict(presale_state.batch_sold),
+            "batch_prices_usd": dict(presale_contract.batch_prices_usd),
+        })
 
 
 @app.route("/api/buy", methods=["POST"])
@@ -210,34 +220,34 @@ def buy_presale():
 
         with LOCK:
             if tx_hash in presale_state.processed_txs:
-                return jsonify({"status": "failed", "reason": "Transaksi ini sudah pernah diklaim."}), 400
+                return jsonify({"status": "error", "reason": "Transaksi ini sudah pernah diklaim."}), 400
 
         print(f"[VERIFIER] Memeriksa tx {tx_hash} untuk {buyer_address}...")
         res = verifier.verify_presale_transaction(tx_hash=tx_hash, expected_buyer=buyer_address)
 
         if not res.valid:
-            return jsonify({"status": "failed", "reason": f"Verifikasi Gagal: {res.reason}"}), 400
+            return jsonify({"status": "error", "reason": f"Verifikasi Gagal: {res.reason}"}), 400
 
         usd_wei = getattr(res, "usd_value_wei", None)
         if usd_wei is None:
-            return jsonify({"status": "failed", "reason": "Verifikasi Gagal: nilai USD tidak tersedia."}), 400
+            return jsonify({"status": "error", "reason": "Verifikasi Gagal: nilai USD tidak tersedia."}), 400
 
         amount_to_process = float(usd_wei) / 1e18
         print(f"[VERIFIER] Sukses! Pembayaran valid: ${amount_to_process}")
 
     with LOCK:
         if not SKIP_ONCHAIN_VERIFICATION and tx_hash in presale_state.processed_txs:
-            return jsonify({"status": "failed", "reason": "Transaksi ini sudah pernah diklaim."}), 400
+            return jsonify({"status": "error", "reason": "Transaksi ini sudah pernah diklaim."}), 400
 
         result = presale_contract.buy_tokens(buyer_address, amount_to_process)
 
-        if result.get("status") == "success":
+        if isinstance(result, dict) and result.get("status") == "success":
             if not SKIP_ONCHAIN_VERIFICATION and tx_hash:
                 presale_state.processed_txs.add(tx_hash)
             result["verified_tx_hash"] = tx_hash if not SKIP_ONCHAIN_VERIFICATION else "bypassed"
             return jsonify(result), 200
 
-    return jsonify(result), 400
+    return jsonify(result if isinstance(result, dict) else {"status": "error", "reason": "Purchase failed"}), 400
 
 
 # ---------- BLOCKCHAIN L1 API ----------
@@ -374,6 +384,7 @@ def register_peer():
 @app.route("/peers", methods=["GET"])
 def list_peers():
     return jsonify({"peers": list(PEERS)})
+
 
 # ============================================================
 # 5. MAIN
