@@ -5,6 +5,7 @@ import hashlib
 import json
 import re
 
+
 class VOINIdentity:
 
     VERSION = "1.0"
@@ -29,12 +30,13 @@ class VOINIdentity:
             raise ValueError("Invalid wallet address format")
         return True
 
-    def create_identity(self, wallet_address, network="BSC"):
+    def create_identity(self, wallet_address, network="BSC", normalize_address=False):
         self.validate_wallet_address(wallet_address)
 
         if not isinstance(network, str) or not network.strip():
             raise ValueError("Network is required")
 
+        formatted_address = wallet_address.lower() if normalize_address else wallet_address
         identity_id = self.generate_identity_id()
 
         self.identity = {
@@ -42,8 +44,8 @@ class VOINIdentity:
             "engine": "Wallet Identity Engine",
             "version": self.VERSION,
             "identity_id": identity_id,
-            "wallet_address": wallet_address,
-            "network": network.upper(),
+            "wallet_address": formatted_address,
+            "network": network.strip().upper(),
             "created_at": int(time.time()),
             "status": "ACTIVE"
         }
@@ -67,6 +69,7 @@ class VOINIdentity:
         if not self.identity:
             return False
         self.identity["status"] = "INACTIVE"
+        self.identity["deactivated_at"] = int(time.time())
         return True
 
 
