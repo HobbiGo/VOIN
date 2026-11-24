@@ -25,6 +25,7 @@ Security note:
 This module stores security metadata, not private keys.
 """
 
+import re
 import sqlite3
 import time
 import json
@@ -32,6 +33,9 @@ import hashlib
 import uuid
 
 from pathlib import Path
+
+_EVM_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_ZERO_ADDRESS = "0x" + ("0" * 40)
 
 
 class _ClosingConnection(sqlite3.Connection):
@@ -224,6 +228,10 @@ class VOINStorageEngine:
     # --------------------------------------------------
 
     @staticmethod
+    def _now_ts() -> int:
+        return int(time.time())
+
+    @staticmethod
     def _hash_nonce(nonce):
 
         if not isinstance(nonce, str) or not nonce:
@@ -234,7 +242,7 @@ class VOINStorageEngine:
         ).hexdigest()
 
     @staticmethod
-    def _normalize_wallet(wallet_address):
+    def _normalize_wallet(wallet_address, *, allow_zero: bool = False):
 
         if not isinstance(wallet_address, str):
             raise ValueError("Invalid wallet address")
@@ -244,7 +252,19 @@ class VOINStorageEngine:
         if not wallet:
             raise ValueError("Empty wallet address")
 
-        return wallet.lower()
+        if not _EVM_ADDRESS_RE.match(wallet):
+            raise ValueError("Invalid EVM wallet address format")
+
+        normalized = wallet.lower()
+
+        if not allow_zero and normalized == _ZERO_ADDRESS:
+            raise ValueError("Zero address is not allowed")
+
+        return normalized
+
+    @classmethod
+    def _normalize_peer_id(cls, peer_id, *, allow_zero: bool = False):
+        return cls._normalize_wallet(peer_id, allow_zero=allow_zero)
 
     @staticmethod
     def _validate_limit(limit):
@@ -267,8 +287,9 @@ class VOINStorageEngine:
             sort_keys=True
         )
 
-    @staticmethod
+    @classmethod
     def _insert_security_event(
+        cls,
         connection,
         event_type,
         wallet_address=None,
@@ -276,6 +297,8 @@ class VOINStorageEngine:
         details=None,
         timestamp=None
     ):
+
+        ts = int(timestamp) if timestamp is not None else cls._now_ts()
 
         connection.execute("""
             INSERT INTO security_events (
@@ -290,18 +313,21 @@ class VOINStorageEngine:
             event_type,
             wallet_address,
             reference_id,
-            timestamp if timestamp is not None else int(time.time()),
+            ts,
             details
         ))
 
-    @staticmethod
+    @classmethod
     def _insert_network_event(
+        cls,
         connection,
         event_type,
         peer_id=None,
         details=None,
         timestamp=None
     ):
+
+        ts = int(timestamp) if timestamp is not None else cls._now_ts()
 
         connection.execute("""
             INSERT INTO network_security_events (
@@ -314,7 +340,7 @@ class VOINStorageEngine:
         """, (
             event_type,
             peer_id,
-            timestamp if timestamp is not None else int(time.time()),
+            ts,
             details
         ))
 
@@ -326,7 +352,7 @@ class VOINStorageEngine:
 
         wallet = self._normalize_wallet(wallet_address)
         nonce_hash = self._hash_nonce(nonce)
-        timestamp = int(time.time())
+        timestamp = self._now_ts()
 
         with self._connect() as connection:
 
@@ -367,7 +393,7 @@ class VOINStorageEngine:
 
         wallet = self._normalize_wallet(wallet_address)
         nonce_hash = self._hash_nonce(nonce)
-        timestamp = int(time.time())
+        timestamp = self._now_ts()
 
         with self._connect() as connection:
 
@@ -434,7 +460,7 @@ class VOINStorageEngine:
             raise ValueError("Invalid expiration")
 
         nonce_hash = self._hash_nonce(nonce)
-        timestamp = int(time.time())
+        timestamp = self._now_ts()
 
         if expires_at <= timestamp:
             raise ValueError("Challenge already expired")
@@ -544,7 +570,7 @@ class VOINStorageEngine:
             raise ValueError("Invalid expiration")
 
         nonce_hash = self._hash_nonce(nonce)
-        timestamp = int(time.time())
+        timestamp = self._now_ts()
 
         if expires_at <= timestamp:
             raise ValueError("Challenge already expired")
@@ -609,7 +635,7 @@ class VOINStorageEngine:
     def consume_challenge(self, challenge_id, wallet_address):
 
         wallet = self._normalize_wallet(wallet_address)
-        timestamp = int(time.time())
+        timestamp = self._now_ts()
 
         with self._connect() as connection:
 
@@ -664,7 +690,7 @@ class VOINStorageEngine:
 
         wallet = self._normalize_wallet(wallet_address)
         nonce_hash = self._hash_nonce(nonce)
-        timestamp = int(time.time())
+        timestamp = self._now_ts()
 
         with self._connect() as connection:
 
@@ -750,6 +776,7 @@ class VOINStorageEngine:
             wallet = self._normalize_wallet(wallet_address)
 
         serialized_details = self._serialize_details(details)
+        timestamp = self._now_ts()
 
         with self._connect() as connection:
 
@@ -758,7 +785,8 @@ class VOINStorageEngine:
                 event_type,
                 wallet,
                 reference_id,
-                serialized_details
+                serialized_details,
+                timestamp=timestamp
             )
 
         return True
@@ -808,13 +836,13 @@ class VOINStorageEngine:
 
     def save_network_peer(self, peer_id, endpoint):
 
-        if not isinstance(peer_id, str) or not peer_id:
-            raise ValueError("Invalid peer ID")
+        normalized_peer_id = self._normalize_peer_id(peer_id)
 
-        if not isinstance(endpoint, str) or not endpoint:
+        if not isinstance(endpoint, str) or not endpoint.strip():
             raise ValueError("Invalid peer endpoint")
 
-        timestamp = int(time.time())
+        clean_endpoint = endpoint.strip()
+        timestamp = self._now_ts()
 
         with self._connect() as connection:
 
@@ -832,8 +860,8 @@ class VOINStorageEngine:
                     )
                     VALUES (?, ?, 'TRUSTED', ?, ?)
                 """, (
-                    peer_id,
-                    endpoint,
+                    normalized_peer_id,
+                    clean_endpoint,
                     timestamp,
                     timestamp
                 ))
@@ -841,7 +869,7 @@ class VOINStorageEngine:
                 self._insert_network_event(
                     connection,
                     "PEER_REGISTERED",
-                    peer_id,
+                    normalized_peer_id,
                     timestamp=timestamp
                 )
 
@@ -856,13 +884,15 @@ class VOINStorageEngine:
 
     def get_network_peer(self, peer_id):
 
+        normalized_peer_id = self._normalize_peer_id(peer_id)
+
         with self._connect() as connection:
 
             row = connection.execute("""
                 SELECT *
                 FROM network_peers
                 WHERE peer_id = ?
-            """, (peer_id,)).fetchone()
+            """, (normalized_peer_id,)).fetchone()
 
         if row is None:
             return None
@@ -897,7 +927,8 @@ class VOINStorageEngine:
 
     def revoke_network_peer(self, peer_id):
 
-        timestamp = int(time.time())
+        normalized_peer_id = self._normalize_peer_id(peer_id)
+        timestamp = self._now_ts()
 
         with self._connect() as connection:
 
@@ -913,7 +944,7 @@ class VOINStorageEngine:
                     AND status = 'TRUSTED'
                 """, (
                     timestamp,
-                    peer_id
+                    normalized_peer_id
                 ))
 
                 success = cursor.rowcount == 1
@@ -923,7 +954,7 @@ class VOINStorageEngine:
                     self._insert_network_event(
                         connection,
                         "PEER_REVOKED",
-                        peer_id,
+                        normalized_peer_id,
                         timestamp=timestamp
                     )
 
@@ -946,20 +977,22 @@ class VOINStorageEngine:
         if not isinstance(event_type, str) or not event_type:
             raise ValueError("Invalid network event type")
 
-        if peer_id is not None:
+        normalized_peer_id = None
 
-            if not isinstance(peer_id, str) or not peer_id:
-                raise ValueError("Invalid peer ID")
+        if peer_id is not None:
+            normalized_peer_id = self._normalize_peer_id(peer_id)
 
         serialized_details = self._serialize_details(details)
+        timestamp = self._now_ts()
 
         with self._connect() as connection:
 
             self._insert_network_event(
                 connection,
                 event_type,
-                peer_id,
-                serialized_details
+                normalized_peer_id,
+                serialized_details,
+                timestamp=timestamp
             )
 
         return True
@@ -1011,5 +1044,5 @@ class VOINStorageEngine:
             "private_key_storage": False,
 
             "backward_compatibility": True,
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
