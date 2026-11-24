@@ -23,9 +23,9 @@
             font-size: 16px;
             background-color: var(--midnight-navy);
             background-image:
-                radial-gradient(circle at 18% 20%, rgba(168, 85, 247, 0.22) 0%, transparent 45%),
-                radial-gradient(circle at 82% 28%, rgba(56, 189, 248, 0.18) 0%, transparent 48%),
-                linear-gradient(180deg, rgba(5, 8, 24, 0.72) 0%, rgba(10, 15, 41, 0.56) 45%, rgba(5, 8, 24, 0.88) 100%),
+                radial-gradient(circle at 22% 22%, rgba(168, 85, 247, 0.14) 0%, transparent 45%),
+                radial-gradient(circle at 78% 28%, rgba(56, 189, 248, 0.14) 0%, transparent 48%),
+                linear-gradient(180deg, rgba(5, 8, 24, 0.42) 0%, rgba(10, 15, 41, 0.28) 46%, rgba(5, 8, 24, 0.72) 100%),
                 url('backdropmaster-voin.jpg');
             background-size: cover;
             background-position: center top;
@@ -51,8 +51,8 @@
             z-index: 0;
             background-size: 46px 46px;
             background-image:
-                linear-gradient(to right, rgba(139, 92, 246, 0.04) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+                linear-gradient(to right, rgba(139, 92, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
         }
 
         header, section, footer {
@@ -61,35 +61,35 @@
         }
 
         .glass-panel {
-            background: rgba(12, 18, 46, 0.74);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(168, 85, 247, 0.32);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            background: rgba(10, 15, 38, 0.58);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(168, 85, 247, 0.34);
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.12);
         }
 
         .glass-tile {
-            background: rgba(9, 14, 38, 0.78);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(129, 140, 248, 0.28);
+            background: rgba(8, 12, 32, 0.54);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(129, 140, 248, 0.3);
             transition: all 0.25s ease;
         }
 
         .glass-tile:hover {
-            border-color: rgba(168, 85, 247, 0.75);
-            box-shadow: 0 10px 28px rgba(168, 85, 247, 0.25);
+            border-color: rgba(168, 85, 247, 0.8);
+            box-shadow: 0 10px 26px rgba(168, 85, 247, 0.28);
             transform: translateY(-2px);
         }
 
         .btn-primary-voin {
             background: linear-gradient(135deg, #6366f1 0%, #9333ea 55%, #3b82f6 100%);
-            box-shadow: 0 0 24px rgba(147, 51, 234, 0.45);
+            box-shadow: 0 0 24px rgba(147, 51, 234, 0.5);
             transition: all 0.25s ease;
         }
 
         .btn-primary-voin:hover:not(:disabled) {
-            box-shadow: 0 0 34px rgba(56, 189, 248, 0.65);
+            box-shadow: 0 0 34px rgba(56, 189, 248, 0.72);
             transform: translateY(-1px);
         }
 
@@ -105,7 +105,7 @@
 <body class="cyber-grid selection:bg-purple-500 selection:text-white">
 
     <!-- ================= NAVBAR ================= -->
-    <header class="sticky top-0 z-40 border-b border-purple-500/25 bg-[#050818]/80 backdrop-blur-xl">
+    <header class="sticky top-0 z-40 border-b border-purple-500/25 bg-[#050818]/65 backdrop-blur-xl">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
             <a href="#home" class="flex items-center gap-2.5 shrink-0">
                 <div class="w-10 h-10 rounded-full overflow-hidden border border-purple-400/60 bg-[#080c24] flex items-center justify-center p-0.5 shadow-[0_0_16px_rgba(168,85,247,0.5)]">
@@ -118,8 +118,8 @@
                 </div>
             </a>
 
-            <nav class="hidden lg:flex items-center gap-1 text-sm font-medium text-slate-300">
-                <a href="#home" class="px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-400/35 text-white">Home</a>
+            <nav class="hidden lg:flex items-center gap-1 text-sm font-medium text-slate-200">
+                <a href="#home" class="px-3 py-1.5 rounded-lg bg-purple-500/25 border border-purple-400/40 text-white">Home</a>
                 <a href="#about" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">About</a>
                 <a href="#technology" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Technology</a>
                 <a href="#tokenomics" class="px-3 py-1.5 rounded-lg hover:text-cyan-300 transition">Tokenomics</a>
@@ -131,19 +131,19 @@
             </nav>
 
             <div class="flex items-center gap-2 shrink-0">
-                <a href="dashboard.html" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-purple-400/45 bg-purple-950/50 hover:border-cyan-300 text-cyan-200 transition">
+                <a href="dashboard.html" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-purple-400/50 bg-purple-950/60 hover:border-cyan-300 text-cyan-200 transition">
                     Dashboard
                 </a>
-                <button type="button" onclick="openWalletModal()" id="navWalletBtn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-cyan-400/50 bg-indigo-950/80 hover:border-cyan-300 text-cyan-100 transition flex items-center gap-2 cursor-pointer">
+                <button type="button" onclick="openWalletModal()" id="navWalletBtn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-cyan-400/55 bg-indigo-950/75 hover:border-cyan-300 text-cyan-100 transition flex items-center gap-2 cursor-pointer">
                     <span id="navWalletDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
                     <span id="navWalletText">Connect Wallet</span>
                 </button>
             </div>
         </div>
 
-        <div class="lg:hidden border-t border-purple-500/15 bg-[#070b1f]/85 px-4 py-2">
-            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar text-xs sm:text-sm font-medium text-slate-300 whitespace-nowrap">
-                <a href="#home" class="px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-400/35 text-white shrink-0">Home</a>
+        <div class="lg:hidden border-t border-purple-500/15 bg-[#070b1f]/70 px-4 py-2">
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar text-xs sm:text-sm font-medium text-slate-200 whitespace-nowrap">
+                <a href="#home" class="px-3 py-1.5 rounded-lg bg-purple-500/25 border border-purple-400/40 text-white shrink-0">Home</a>
                 <a href="#about" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">About</a>
                 <a href="#technology" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Technology</a>
                 <a href="#tokenomics" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">Tokenomics</a>
@@ -160,17 +160,17 @@
     <!-- ================= HERO SECTION ================= -->
     <section id="home" class="max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-14">
         <div class="max-w-3xl space-y-6">
-            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/75 backdrop-blur-md border border-purple-500/45 text-xs sm:text-sm text-cyan-200 font-medium">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/75 backdrop-blur-md border border-purple-500/50 text-xs sm:text-sm text-cyan-200 font-medium shadow-[0_4px_18px_rgba(0,0,0,0.45)]">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
                 + VOIN Ecosystem &bull; Official Presale Dec 2026 - Dec 2028
             </div>
 
-            <h1 class="font-display text-4xl sm:text-5xl lg:text-[56px] font-black leading-[1.12] drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]">
+            <h1 class="font-display text-4xl sm:text-5xl lg:text-[56px] font-black leading-[1.12] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
                 Build. Play. Earn.<br>
                 <span class="bg-gradient-to-r from-cyan-300 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">with VOIN.</span>
             </h1>
 
-            <p class="text-slate-200 text-base sm:text-lg max-w-2xl leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
+            <p class="text-slate-100 text-base sm:text-lg max-w-2xl leading-relaxed drop-shadow-[0_2px_14px_rgba(0,0,0,0.95)]">
                 Next-generation blockchain ecosystem with <span class="text-white font-semibold">260,000,000 VOIN</span> total supply and <span class="text-cyan-300 font-semibold">10 batches &times; 15,600,000 VOIN</span> (156,000,000 VOIN) structured for community growth and real utility.
             </p>
 
@@ -178,26 +178,26 @@
                 <a href="#presale" class="btn-primary-voin px-6 py-3.5 rounded-xl font-semibold text-sm sm:text-base text-white">
                     Join Presale &rarr;
                 </a>
-                <button type="button" onclick="openWalletModal()" class="px-6 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-cyan-400/50 bg-indigo-950/75 backdrop-blur-md hover:border-cyan-300 text-cyan-100 transition cursor-pointer">
+                <button type="button" onclick="openWalletModal()" class="px-6 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-cyan-400/55 bg-indigo-950/65 backdrop-blur-md hover:border-cyan-300 text-cyan-100 transition cursor-pointer">
                     Connect Wallet
                 </button>
-                <a href="dashboard.html" class="px-5 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-slate-500/80 bg-[#070b1f]/75 backdrop-blur-md hover:border-purple-400 text-slate-200 transition">
+                <a href="dashboard.html" class="px-5 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-slate-400/60 bg-[#070b1f]/60 backdrop-blur-md hover:border-purple-400 text-slate-100 transition">
                     Open Dashboard
                 </a>
             </div>
 
             <div class="grid grid-cols-3 gap-3 pt-2 max-w-xl">
                 <div class="glass-tile p-3.5 rounded-2xl">
-                    <p class="font-display text-base sm:text-xl font-extrabold text-white">260,000,000</p>
-                    <p class="text-xs text-slate-300">Total Supply</p>
+                    <p class="font-display text-base sm:text-xl font-extrabold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">260,000,000</p>
+                    <p class="text-xs text-slate-200">Total Supply</p>
                 </div>
                 <div class="glass-tile p-3.5 rounded-2xl">
-                    <p class="font-display text-base sm:text-xl font-extrabold text-cyan-300">10 Batches</p>
-                    <p class="text-xs text-slate-300">15,600,000 / Batch</p>
+                    <p class="font-display text-base sm:text-xl font-extrabold text-cyan-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">10 Batches</p>
+                    <p class="text-xs text-slate-200">15,600,000 / Batch</p>
                 </div>
                 <div class="glass-tile p-3.5 rounded-2xl">
-                    <p class="font-display text-base sm:text-xl font-extrabold text-purple-300">60%</p>
-                    <p class="text-xs text-slate-300">Presale Allocation</p>
+                    <p class="font-display text-base sm:text-xl font-extrabold text-purple-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">60%</p>
+                    <p class="text-xs text-slate-200">Presale Allocation</p>
                 </div>
             </div>
         </div>
@@ -206,28 +206,28 @@
         <div class="mt-10 glass-panel p-5 sm:p-6 rounded-3xl">
             <div class="mb-4">
                 <h2 class="font-display text-lg sm:text-xl font-extrabold text-white">Why VOIN?</h2>
-                <p class="text-xs sm:text-sm text-slate-300">More than a token &mdash; a gateway to interactive gaming, rewards, and real utility.</p>
+                <p class="text-xs sm:text-sm text-slate-200">More than a token &mdash; a gateway to interactive gaming, rewards, and real utility.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="glass-tile p-4 rounded-2xl flex items-start gap-3.5">
                     <span class="text-2xl text-cyan-300">&#127918;</span>
                     <div>
                         <h3 class="font-bold text-white text-sm sm:text-base">Play &amp; Earn</h3>
-                        <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Engage in ecosystem activities and earn VOIN rewards.</p>
+                        <p class="text-xs sm:text-sm text-slate-200 mt-0.5">Engage in ecosystem activities and earn VOIN rewards.</p>
                     </div>
                 </div>
                 <div class="glass-tile p-4 rounded-2xl flex items-start gap-3.5">
                     <span class="text-2xl text-purple-300">&#128142;</span>
                     <div>
                         <h3 class="font-bold text-white text-sm sm:text-base">Real Utility</h3>
-                        <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Use VOIN across wallet features, presale batches, and ecosystem tools.</p>
+                        <p class="text-xs sm:text-sm text-slate-200 mt-0.5">Use VOIN across wallet features, presale batches, and ecosystem tools.</p>
                     </div>
                 </div>
                 <div class="glass-tile p-4 rounded-2xl flex items-start gap-3.5">
                     <span class="text-2xl text-emerald-300">&#129309;</span>
                     <div>
                         <h3 class="font-bold text-white text-sm sm:text-base">Grow Together</h3>
-                        <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Build alongside early participants across 10 structured presale batches.</p>
+                        <p class="text-xs sm:text-sm text-slate-200 mt-0.5">Build alongside early participants across 10 structured presale batches.</p>
                     </div>
                 </div>
             </div>
@@ -240,7 +240,7 @@
             <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
                 <div>
                     <h2 class="font-display text-2xl sm:text-3xl font-extrabold">Tokenomics</h2>
-                    <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Transparent allocation designed for sustainable ecosystem growth.</p>
+                    <p class="text-xs sm:text-sm text-slate-200 mt-0.5">Transparent allocation designed for sustainable ecosystem growth.</p>
                 </div>
                 <span class="font-display text-base sm:text-lg font-bold text-cyan-300">Total Supply: 260,000,000 VOIN</span>
             </div>
@@ -255,19 +255,19 @@
                     </div>
                     <div class="space-y-2 text-xs sm:text-sm w-full">
                         <div class="flex items-center justify-between">
-                            <span class="flex items-center gap-2 text-slate-200"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>Presale (10 Batches)</span>
+                            <span class="flex items-center gap-2 text-slate-100"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>Presale (10 Batches)</span>
                             <span class="font-bold text-purple-300">60%</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="flex items-center gap-2 text-slate-200"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>Liquidity</span>
+                            <span class="flex items-center gap-2 text-slate-100"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>Liquidity</span>
                             <span class="font-bold text-cyan-300">15%</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="flex items-center gap-2 text-slate-200"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>Ecosystem &amp; Rewards</span>
+                            <span class="flex items-center gap-2 text-slate-100"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>Ecosystem &amp; Rewards</span>
                             <span class="font-bold text-indigo-300">15%</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="flex items-center gap-2 text-slate-200"><span class="w-2.5 h-2.5 rounded-full bg-pink-500"></span>Team &amp; Development</span>
+                            <span class="flex items-center gap-2 text-slate-100"><span class="w-2.5 h-2.5 rounded-full bg-pink-500"></span>Team &amp; Development</span>
                             <span class="font-bold text-pink-300">10%</span>
                         </div>
                     </div>
@@ -277,22 +277,22 @@
                     <div class="glass-tile p-4 rounded-2xl border-l-4 border-l-purple-500">
                         <p class="font-display text-xl font-extrabold text-purple-300">60%</p>
                         <p class="font-semibold text-white mt-1">Presale (156,000,000)</p>
-                        <p class="text-xs sm:text-sm text-slate-300 mt-1">10 Batches &times; 15,600,000 VOIN</p>
+                        <p class="text-xs sm:text-sm text-slate-200 mt-1">10 Batches &times; 15,600,000 VOIN</p>
                     </div>
                     <div class="glass-tile p-4 rounded-2xl border-l-4 border-l-cyan-400">
                         <p class="font-display text-xl font-extrabold text-cyan-300">15%</p>
                         <p class="font-semibold text-white mt-1">Liquidity</p>
-                        <p class="text-xs sm:text-sm text-slate-300 mt-1">39,000,000 VOIN</p>
+                        <p class="text-xs sm:text-sm text-slate-200 mt-1">39,000,000 VOIN</p>
                     </div>
                     <div class="glass-tile p-4 rounded-2xl border-l-4 border-l-indigo-400">
                         <p class="font-display text-xl font-extrabold text-indigo-300">15%</p>
                         <p class="font-semibold text-white mt-1">Ecosystem &amp; Rewards</p>
-                        <p class="text-xs sm:text-sm text-slate-300 mt-1">39,000,000 VOIN</p>
+                        <p class="text-xs sm:text-sm text-slate-200 mt-1">39,000,000 VOIN</p>
                     </div>
                     <div class="glass-tile p-4 rounded-2xl border-l-4 border-l-fuchsia-400">
                         <p class="font-display text-xl font-extrabold text-fuchsia-300">10%</p>
                         <p class="font-semibold text-white mt-1">Team &amp; Development</p>
-                        <p class="text-xs sm:text-sm text-slate-300 mt-1">26,000,000 VOIN</p>
+                        <p class="text-xs sm:text-sm text-slate-200 mt-1">26,000,000 VOIN</p>
                     </div>
                 </div>
             </div>
@@ -301,27 +301,27 @@
 
     <!-- ================= ROADMAP 2026 - 2028 ================= -->
     <section id="roadmap" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Roadmap (2026 - 2028)</h2>
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">Roadmap (2026 - 2028)</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm sm:text-base">
             <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-emerald-400">
                 <p class="text-xs font-display font-bold text-emerald-400">DECEMBER 2026</p>
                 <h3 class="font-bold text-white mt-1">Presale Launch</h3>
-                <p class="text-xs sm:text-sm text-slate-300 mt-1">Presale portal opening and initial batch rollout.</p>
+                <p class="text-xs sm:text-sm text-slate-200 mt-1">Presale portal opening and initial batch rollout.</p>
             </div>
             <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-cyan-400">
                 <p class="text-xs font-display font-bold text-cyan-300">2027</p>
                 <h3 class="font-bold text-white mt-1">Wallet &amp; Utility</h3>
-                <p class="text-xs sm:text-sm text-slate-300 mt-1">VOIN Wallet expansion and ecosystem utility integration.</p>
+                <p class="text-xs sm:text-sm text-slate-200 mt-1">VOIN Wallet expansion and ecosystem utility integration.</p>
             </div>
             <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-purple-400">
                 <p class="text-xs font-display font-bold text-purple-300">H1 2028</p>
                 <h3 class="font-bold text-white mt-1">Batch Progression</h3>
-                <p class="text-xs sm:text-sm text-slate-300 mt-1">Continued presale batches and community expansion.</p>
+                <p class="text-xs sm:text-sm text-slate-200 mt-1">Continued presale batches and community expansion.</p>
             </div>
             <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-fuchsia-400">
                 <p class="text-xs font-display font-bold text-fuchsia-300">DECEMBER 2028</p>
                 <h3 class="font-bold text-white mt-1">Mainnet Milestone</h3>
-                <p class="text-xs sm:text-sm text-slate-300 mt-1">Presale schedule completion and full ecosystem activation.</p>
+                <p class="text-xs sm:text-sm text-slate-200 mt-1">Presale schedule completion and full ecosystem activation.</p>
             </div>
         </div>
     </section>
@@ -329,8 +329,8 @@
     <!-- ================= PRESALE SECTION ================= -->
     <section id="presale" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div class="mb-7">
-            <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Presale VOIN</h2>
-            <p class="text-slate-200 text-sm sm:text-base mt-1 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">Secure. Transparent. Fair. Official Presale (Dec 2026 - Dec 2028).</p>
+            <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">Presale VOIN</h2>
+            <p class="text-slate-100 text-sm sm:text-base mt-1 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">Secure. Transparent. Fair. Official Presale (Dec 2026 - Dec 2028).</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -338,7 +338,7 @@
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
                     <div>
                         <h3 class="font-display text-lg sm:text-xl font-bold text-white">Select Batch (1 - 10)</h3>
-                        <p class="text-xs sm:text-sm text-slate-300">Locked USD price per batch &bull; 6% (15,600,000 VOIN) per batch</p>
+                        <p class="text-xs sm:text-sm text-slate-200">Locked USD price per batch &bull; 6% (15,600,000 VOIN) per batch</p>
                     </div>
                     <span class="px-3.5 py-1 rounded-full text-xs sm:text-sm bg-purple-950/80 border border-purple-400/35 text-cyan-200 font-medium">
                         Total Presale: 156,000,000 VOIN
@@ -347,14 +347,14 @@
 
                 <div id="batchGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3"></div>
 
-                <div class="mt-5 p-4 rounded-2xl bg-gradient-to-r from-indigo-950/85 via-purple-950/75 to-indigo-950/85 border border-purple-400/35 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="mt-5 p-4 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-purple-950/70 to-indigo-950/80 border border-purple-400/35 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <p class="text-xs text-purple-200 uppercase tracking-wider">Purchase Rules</p>
                         <p id="purchaseRulesBanner" class="font-display text-sm sm:text-base font-bold text-white mt-0.5">Min: $25 &bull; Max: $10,000 / Wallet / Batch</p>
                     </div>
                     <div class="flex items-center gap-5 text-left sm:text-right">
                         <div>
-                            <p class="text-xs text-slate-300">Batch Quota</p>
+                            <p class="text-xs text-slate-200">Batch Quota</p>
                             <p class="font-display text-sm sm:text-base font-extrabold text-cyan-300">15,600,000 VOIN</p>
                         </div>
                         <a href="dashboard.html" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-cyan-400/40 bg-white/5 hover:border-cyan-300 text-cyan-200 transition">
@@ -369,8 +369,8 @@
 
                 <div class="text-center mb-5">
                     <h3 class="font-display text-2xl font-extrabold text-cyan-300">VOIN COIN</h3>
-                    <p class="text-slate-300 text-sm mt-1">Presale Schedule (Dec 2026 - Dec 2028)</p>
-                    <p id="connectionStatus" class="text-xs sm:text-sm text-yellow-400 mt-1.5 font-semibold">Connecting to presale server...</p>
+                    <p class="text-slate-200 text-sm mt-1">Presale Schedule (Dec 2026 - Dec 2028)</p>
+                    <p id="connectionStatus" class="text-xs sm:text-sm text-yellow-300 mt-1.5 font-semibold">Connecting to presale server...</p>
                 </div>
 
                 <div class="bg-blue-950/60 border border-blue-400/50 rounded-2xl p-3.5 text-center mb-5">
@@ -385,15 +385,15 @@
 
                 <div class="glass-tile rounded-2xl p-4 mb-5 space-y-2.5 text-sm sm:text-base">
                     <div class="flex justify-between items-center">
-                        <span class="text-slate-300">Tokens Sold:</span>
+                        <span class="text-slate-200">Tokens Sold:</span>
                         <span id="tokensSold" class="font-bold text-emerald-400">Loading...</span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-slate-300">Remaining Quota (Total):</span>
+                        <span class="text-slate-200">Remaining Quota (Total):</span>
                         <span id="tokensRemaining" class="font-bold text-amber-300">Loading...</span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-slate-300">Remaining Quota (Current Batch):</span>
+                        <span class="text-slate-200">Remaining Quota (Current Batch):</span>
                         <span id="batchRemaining" class="font-bold text-purple-300">Loading...</span>
                     </div>
                 </div>
@@ -401,17 +401,17 @@
                 <div class="space-y-4">
                     <div>
                         <div class="flex justify-between items-center mb-1.5">
-                            <label for="walletAddress" class="block text-sm font-medium text-slate-200">Your VOIN Wallet Address</label>
+                            <label for="walletAddress" class="block text-sm font-medium text-slate-100">Your VOIN Wallet Address</label>
                             <button type="button" onclick="openWalletModal()" class="text-xs sm:text-sm text-cyan-300 hover:underline font-medium cursor-pointer">Select Wallet</button>
                         </div>
-                        <input type="text" id="walletAddress" placeholder="0x..." class="w-full bg-[#070b1f]/85 border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400">
+                        <input type="text" id="walletAddress" placeholder="0x..." class="w-full bg-[#070b1f]/80 border border-slate-500/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400">
                     </div>
                     <div>
                         <div class="flex justify-between items-center mb-1.5">
-                            <label for="amountPaid" class="block text-sm font-medium text-slate-200">Payment Amount (USD)</label>
+                            <label for="amountPaid" class="block text-sm font-medium text-slate-100">Payment Amount (USD)</label>
                             <span id="amountLimitBadge" class="text-xs text-cyan-300 font-medium">Min: $25 &bull; Max: $10,000 / Batch</span>
                         </div>
-                        <input type="number" id="amountPaid" min="25" max="10000" step="any" placeholder="Minimum 25 - Max 10000 per batch" oninput="updateEstimatedVoin()" class="w-full bg-[#070b1f]/85 border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-purple-400">
+                        <input type="number" id="amountPaid" min="25" max="10000" step="any" placeholder="Minimum 25 - Max 10000 per batch" oninput="updateEstimatedVoin()" class="w-full bg-[#070b1f]/80 border border-slate-500/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-purple-400">
                         <p id="estimatedVoinPreview" class="text-xs text-purple-200 mt-1.5">Estimated VOIN: 0 VOIN &bull; Min: $25 &bull; Max: $10,000 per wallet per batch</p>
                     </div>
                     <button type="button" id="buyBtn" onclick="buyTokens()" class="w-full btn-primary-voin text-white font-bold text-sm sm:text-base py-3.5 rounded-xl cursor-pointer">
@@ -420,7 +420,7 @@
                 </div>
 
                 <div class="mt-4 text-center">
-                    <p class="text-xs sm:text-sm text-slate-400">Schedule: December 2026 - December 2028</p>
+                    <p class="text-xs sm:text-sm text-slate-300">Schedule: December 2026 - December 2028</p>
                 </div>
             </div>
         </div>
@@ -431,26 +431,26 @@
         <div class="glass-panel rounded-3xl p-6 sm:p-8">
             <span class="text-xs sm:text-sm font-display uppercase tracking-wider text-purple-300">About</span>
             <h2 class="font-display text-2xl sm:text-3xl font-extrabold mt-1">About VOIN Wallet &amp; Ecosystem</h2>
-            <p class="text-slate-300 text-sm sm:text-base mt-3 leading-relaxed max-w-3xl">
+            <p class="text-slate-200 text-sm sm:text-base mt-3 leading-relaxed max-w-3xl">
                 <strong>VOIN</strong> connects the presale interface with <code>node.py</code> and <code>presale_contract.py</code> services, while providing account tracking and wallet history inside <code>dashboard.html</code>.
             </p>
         </div>
     </section>
 
     <section id="technology" class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Technology</h2>
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">Technology</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="glass-tile p-5 rounded-2xl">
                 <h3 class="font-display text-base sm:text-lg font-bold text-cyan-300">Node &amp; API Gateway</h3>
-                <p class="text-sm text-slate-300 mt-1.5">Connected to <code>/api/presale-stats</code> and <code>/api/buy</code> for live batch updates.</p>
+                <p class="text-sm text-slate-200 mt-1.5">Connected to <code>/api/presale-stats</code> and <code>/api/buy</code> for live batch updates.</p>
             </div>
             <div class="glass-tile p-5 rounded-2xl">
                 <h3 class="font-display text-base sm:text-lg font-bold text-purple-300">10-Batch Presale Engine</h3>
-                <p class="text-sm text-slate-300 mt-1.5">Manages 10 batches of 15,600,000 VOIN each out of 260,000,000 VOIN total supply.</p>
+                <p class="text-sm text-slate-200 mt-1.5">Manages 10 batches of 15,600,000 VOIN each out of 260,000,000 VOIN total supply.</p>
             </div>
             <div class="glass-tile p-5 rounded-2xl">
                 <h3 class="font-display text-base sm:text-lg font-bold text-indigo-300">Wallet History &amp; Dashboard</h3>
-                <p class="text-sm text-slate-300 mt-1.5">Records buy results, exact timestamps, and sales rank inside <code>dashboard.html</code>.</p>
+                <p class="text-sm text-slate-200 mt-1.5">Records buy results, exact timestamps, and sales rank inside <code>dashboard.html</code>.</p>
             </div>
         </div>
     </section>
@@ -459,7 +459,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="glass-panel p-6 rounded-3xl">
                 <h2 class="font-display text-xl sm:text-2xl font-extrabold">Whitepaper</h2>
-                <p class="text-sm sm:text-base text-slate-300 mt-2">Summary of the 260,000,000 VOIN supply, 156,000,000 VOIN presale allocation (10 batches), and Dec 2026 - Dec 2028 timeline.</p>
+                <p class="text-sm sm:text-base text-slate-200 mt-2">Summary of the 260,000,000 VOIN supply, 156,000,000 VOIN presale allocation (10 batches), and Dec 2026 - Dec 2028 timeline.</p>
                 <button type="button" onclick="openWhitepaperSummary()" class="btn-primary-voin mt-4 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer">
                     View Whitepaper Summary
                 </button>
@@ -467,7 +467,7 @@
 
             <div id="community" class="glass-panel p-6 rounded-3xl">
                 <h2 class="font-display text-xl sm:text-2xl font-extrabold">Community</h2>
-                <p class="text-sm sm:text-base text-slate-300 mt-2">Follow official VOIN ecosystem channels.</p>
+                <p class="text-sm sm:text-base text-slate-200 mt-2">Follow official VOIN ecosystem channels.</p>
                 <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs sm:text-sm font-semibold">
                     <a href="#presale" class="glass-tile py-2.5 px-3 rounded-xl text-center hover:text-cyan-300">Telegram</a>
                     <a href="#presale" class="glass-tile py-2.5 px-3 rounded-xl text-center hover:text-cyan-300">X / Twitter</a>
@@ -479,25 +479,25 @@
     </section>
 
     <section id="faq" class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">FAQ</h2>
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">FAQ</h2>
         <div class="space-y-3 text-sm sm:text-base">
             <details class="glass-panel rounded-2xl p-4 sm:p-5" open>
                 <summary class="font-semibold cursor-pointer text-white">How do I buy VOIN tokens?</summary>
-                <p class="text-slate-300 mt-2">Connect or enter your wallet address (<code>0x...</code>) and payment amount ($25 to $10,000 per wallet per batch) in the Presale section, then click <strong>Buy VOIN</strong>.</p>
+                <p class="text-slate-200 mt-2">Connect or enter your wallet address (<code>0x...</code>) and payment amount ($25 to $10,000 per wallet per batch) in the Presale section, then click <strong>Buy VOIN</strong>.</p>
             </details>
             <details class="glass-panel rounded-2xl p-4 sm:p-5">
                 <summary class="font-semibold cursor-pointer text-white">What is the minimum and maximum purchase per batch?</summary>
-                <p class="text-slate-300 mt-2">Minimum purchase is <strong>$25</strong>, and maximum purchase per wallet per batch is <strong>$10,000</strong> (within the 15,600,000 VOIN batch quota).</p>
+                <p class="text-slate-200 mt-2">Minimum purchase is <strong>$25</strong>, and maximum purchase per wallet per batch is <strong>$10,000</strong> (within the 15,600,000 VOIN batch quota).</p>
             </details>
             <details class="glass-panel rounded-2xl p-4 sm:p-5">
                 <summary class="font-semibold cursor-pointer text-white">When does the presale run?</summary>
-                <p class="text-slate-300 mt-2">The official presale schedule runs from December 1, 2026 to December 2028.</p>
+                <p class="text-slate-200 mt-2">The official presale schedule runs from December 1, 2026 to December 2028.</p>
             </details>
         </div>
     </section>
 
-    <footer class="border-t border-purple-500/20 bg-[#040714]/85 backdrop-blur-md mt-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm text-slate-400">
+    <footer class="border-t border-purple-500/25 bg-[#040714]/75 backdrop-blur-md mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm text-slate-300">
             <span class="font-display font-bold text-white">VOIN WALLET</span>
             <span>Presale Mainnet &bull; Dec 2026 - Dec 2028</span>
         </div>
@@ -508,7 +508,7 @@
         <div class="glass-panel max-w-md w-full rounded-3xl p-6 relative">
             <button type="button" onclick="closeWalletModal()" class="absolute top-4 right-4 text-slate-300 hover:text-white text-xl cursor-pointer">&times;</button>
             <h3 class="font-display text-lg sm:text-xl font-bold text-white">Connect Your Wallet</h3>
-            <p class="text-xs sm:text-sm text-slate-300 mt-1 mb-4">Choose a wallet provider or enter a VOIN address to continue to Presale &amp; Dashboard.</p>
+            <p class="text-xs sm:text-sm text-slate-200 mt-1 mb-4">Choose a wallet provider or enter a VOIN address to continue to Presale &amp; Dashboard.</p>
 
             <div class="space-y-2.5 text-sm mb-4">
                 <button type="button" onclick="selectWalletProvider('MetaMask')" class="w-full glass-tile p-3.5 rounded-xl flex items-center justify-between font-medium cursor-pointer">
@@ -807,7 +807,7 @@
             grid.innerHTML = html;
         }
 
-        function setStatus(text, colorClass = "text-yellow-400") {
+        function setStatus(text, colorClass = "text-yellow-300") {
             const el = document.getElementById("connectionStatus");
             el.innerText = text;
             el.className = `text-xs sm:text-sm mt-1.5 font-semibold ${colorClass}`;
