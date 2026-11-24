@@ -1,5 +1,5 @@
 """
-VOIN SECURITY HTTP SERVER ENGINE V1.0
+VOIN SECURITY HTTP SERVER ENGINE V1.0 (BSC Mainnet / Chain ID 56)
 
 Features:
 - HTTP server adapter for VOIN Security API
@@ -13,9 +13,10 @@ Features:
 """
 
 import json
-
-from wsgiref.simple_server import make_server
 from urllib.parse import parse_qs
+from wsgiref.simple_server import make_server
+
+DEFAULT_CHAIN_ID = 56
 
 
 class VOINSecurityHTTPServer:
@@ -43,7 +44,7 @@ class VOINSecurityHTTPServer:
                 "Invalid VOIN Security API Integration"
             )
 
-        if not isinstance(host, str) or not host:
+        if not isinstance(host, str) or not host.strip():
             raise ValueError("Invalid HTTP host")
 
         if (
@@ -54,7 +55,7 @@ class VOINSecurityHTTPServer:
             raise ValueError("Invalid HTTP port")
 
         self.api_integration = api_integration
-        self.host = host
+        self.host = host.strip()
         self.port = port
         self.server = None
 
@@ -103,7 +104,7 @@ class VOINSecurityHTTPServer:
                 "HTTP_AUTHORIZATION"
             )
 
-            if authorization is not None:
+            if isinstance(authorization, str) and authorization.strip():
                 headers["Authorization"] = authorization
 
             raw_query = environ.get("QUERY_STRING", "")
@@ -120,13 +121,10 @@ class VOINSecurityHTTPServer:
                 if values:
                     query[key] = values[0]
 
-            if "limit" in query:
-
-                try:
-                    query["limit"] = int(query["limit"])
-
-                except (TypeError, ValueError):
-                    query["limit"] = None
+            if "limit" in query and isinstance(query["limit"], str):
+                raw_limit = query["limit"].strip()
+                if raw_limit.isdigit():
+                    query["limit"] = int(raw_limit)
 
             response = self.api_integration.handle_api_request(
                 method=method,
@@ -134,6 +132,13 @@ class VOINSecurityHTTPServer:
                 headers=headers,
                 query=query
             )
+
+            if not isinstance(response, dict):
+                return self._json_response(
+                    start_response,
+                    500,
+                    {"error": "Invalid API response"}
+                )
 
             status_code = response.get(
                 "status_code",
@@ -197,10 +202,11 @@ class VOINSecurityHTTPServer:
         return {
             "engine": "VOIN Security HTTP Server",
             "version": cls.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "wsgi_support": True,
             "json_response": True,
             "api_integration": True,
             "default_host": cls.DEFAULT_HOST,
             "default_port": cls.DEFAULT_PORT,
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
