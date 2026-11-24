@@ -82,38 +82,33 @@
             transform: translateY(-2px);
         }
 
-        /* Penyatuan gambar terpisah ke backdrop */
-        .voin-asset-card {
+        /* Peletakan & penyatuan 4 gambar mengikuti komposisi referensi */
+        .voin-comp-stage {
             position: relative;
-            border-radius: 20px;
-            overflow: hidden;
-            background: rgba(9, 14, 38, 0.55);
-            border: 1px solid rgba(129, 140, 248, 0.25);
-            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+            min-height: 340px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
-        .voin-asset-card:hover {
-            transform: translateY(-3px);
-            border-color: rgba(56, 189, 248, 0.6);
-            box-shadow: 0 12px 28px rgba(147, 51, 234, 0.25);
-        }
-
-        .voin-asset-img {
+        .voin-comp-layer-img {
             display: block;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             mix-blend-mode: lighten;
-            filter: contrast(1.12) saturate(1.15);
-            -webkit-mask-image: radial-gradient(ellipse 88% 86% at 50% 50%, #000 65%, rgba(0, 0, 0, 0.5) 86%, transparent 100%);
-            mask-image: radial-gradient(ellipse 88% 86% at 50% 50%, #000 65%, rgba(0, 0, 0, 0.5) 86%, transparent 100%);
+            filter: contrast(1.14) saturate(1.18) drop-shadow(0 0 16px rgba(56, 189, 248, 0.28)) drop-shadow(0 0 24px rgba(168, 85, 247, 0.25));
+            -webkit-mask-image: radial-gradient(ellipse 88% 86% at 50% 50%, #000 62%, rgba(0, 0, 0, 0.55) 84%, transparent 100%);
+            mask-image: radial-gradient(ellipse 88% 86% at 50% 50%, #000 62%, rgba(0, 0, 0, 0.55) 84%, transparent 100%);
         }
 
-        .voin-asset-fade {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background: radial-gradient(circle at 50% 50%, transparent 45%, rgba(5, 8, 24, 0.65) 100%);
+        .voin-comp-slot {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.14), rgba(5, 8, 24, 0.15) 75%, transparent 100%);
         }
 
         @keyframes ecosystemFloat {
@@ -125,13 +120,18 @@
             }
         }
 
-        .ecosystem-float-slow {
+        .float-a {
             animation: ecosystemFloat 6s ease-in-out infinite;
             will-change: transform;
         }
 
-        .ecosystem-float-alt {
-            animation: ecosystemFloat 7s ease-in-out 1s infinite;
+        .float-b {
+            animation: ecosystemFloat 6.8s ease-in-out 0.8s infinite;
+            will-change: transform;
+        }
+
+        .float-c {
+            animation: ecosystemFloat 7.4s ease-in-out 1.6s infinite;
             will-change: transform;
         }
 
@@ -212,16 +212,16 @@
 
     <!-- ================= HERO SECTION ================= -->
     <section id="home" class="max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-14">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-center">
 
             <!-- Area Kiri: Deskripsi dan Call To Action -->
-            <div class="lg:col-span-6 space-y-6">
+            <div class="lg:col-span-5 space-y-6">
                 <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/75 backdrop-blur-md border border-purple-500/45 text-xs sm:text-sm text-cyan-200 font-medium">
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
                     + VOIN Ecosystem &bull; Official Presale Dec 2026 - Dec 2028
                 </div>
 
-                <h1 class="font-display text-4xl sm:text-5xl lg:text-[56px] font-black leading-[1.12] drop-shadow-[0_4px_24px_rgba(0,0,0,0.75)]">
+                <h1 class="font-display text-4xl sm:text-5xl lg:text-[52px] font-black leading-[1.12] drop-shadow-[0_4px_24px_rgba(0,0,0,0.75)]">
                     Build. Play. Earn.<br>
                     <span class="bg-gradient-to-r from-cyan-300 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">with VOIN.</span>
                 </h1>
@@ -230,52 +230,55 @@
                     Next-generation blockchain ecosystem with <span class="text-white font-semibold">260,000,000 VOIN</span> total supply and <span class="text-cyan-300 font-semibold">10 batches &times; 15,600,000 VOIN</span> (156,000,000 VOIN) structured for community growth and real utility.
                 </p>
 
-                <div class="flex flex-wrap items-center gap-3.5 pt-1">
-                    <a href="#presale" class="btn-primary-voin px-6 py-3.5 rounded-xl font-semibold text-sm sm:text-base text-white">
+                <div class="flex flex-wrap items-center gap-3 pt-1">
+                    <a href="#presale" class="btn-primary-voin px-5 py-3.5 rounded-xl font-semibold text-sm text-white">
                         Join Presale &rarr;
                     </a>
-                    <button type="button" onclick="openWalletModal()" class="px-6 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-cyan-400/50 bg-indigo-950/75 backdrop-blur-md hover:border-cyan-300 text-cyan-100 transition cursor-pointer">
+                    <button type="button" onclick="openWalletModal()" class="px-5 py-3.5 rounded-xl text-sm font-semibold border border-cyan-400/50 bg-indigo-950/75 backdrop-blur-md hover:border-cyan-300 text-cyan-100 transition cursor-pointer">
                         Connect Wallet
                     </button>
-                    <a href="dashboard.html" class="px-5 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-slate-500/80 bg-[#070b1f]/75 backdrop-blur-md hover:border-purple-400 text-slate-200 transition">
+                    <a href="dashboard.html" class="px-4 py-3.5 rounded-xl text-sm font-semibold border border-slate-500/80 bg-[#070b1f]/75 backdrop-blur-md hover:border-purple-400 text-slate-200 transition">
                         Open Dashboard
                     </a>
                 </div>
 
-                <div class="grid grid-cols-3 gap-3 pt-2 max-w-xl">
-                    <div class="glass-tile p-3.5 rounded-2xl">
-                        <p class="font-display text-base sm:text-xl font-extrabold text-white">260,000,000</p>
-                        <p class="text-xs text-slate-300">Total Supply</p>
+                <div class="grid grid-cols-3 gap-2.5 pt-2">
+                    <div class="glass-tile p-3 rounded-2xl">
+                        <p class="font-display text-sm sm:text-lg font-extrabold text-white">260,000,000</p>
+                        <p class="text-[11px] text-slate-300">Total Supply</p>
                     </div>
-                    <div class="glass-tile p-3.5 rounded-2xl">
-                        <p class="font-display text-base sm:text-xl font-extrabold text-cyan-300">10 Batches</p>
-                        <p class="text-xs text-slate-300">15,600,000 / Batch</p>
+                    <div class="glass-tile p-3 rounded-2xl">
+                        <p class="font-display text-sm sm:text-lg font-extrabold text-cyan-300">10 Batches</p>
+                        <p class="text-[11px] text-slate-300">15,600,000 / Batch</p>
                     </div>
-                    <div class="glass-tile p-3.5 rounded-2xl">
-                        <p class="font-display text-base sm:text-xl font-extrabold text-purple-300">60%</p>
-                        <p class="text-xs text-slate-300">Presale Allocation</p>
+                    <div class="glass-tile p-3 rounded-2xl">
+                        <p class="font-display text-sm sm:text-lg font-extrabold text-purple-300">60%</p>
+                        <p class="text-[11px] text-slate-300">Presale Allocation</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Area Kanan: 4 File Gambar Terpisah (voin-picture1.jpg, voin-picture2.jpg, voin-picture3.jpg, voin-picture5.jpg) -->
-            <div class="lg:col-span-6">
-                <div class="grid grid-cols-2 gap-3.5 sm:gap-4">
-                    <div class="voin-asset-card ecosystem-float-slow aspect-square">
-                        <img src="voin-picture1.jpg" alt="VOIN Visual 1" class="voin-asset-img">
-                        <div class="voin-asset-fade"></div>
+            <!-- Area Kanan: Peletakan 4 Gambar Sesuai Komposisi Referensi -->
+            <div class="lg:col-span-7">
+                <div class="voin-comp-stage">
+                    <!-- Emblem Atas Tengah (voin-picture5.jpg) -->
+                    <div class="voin-comp-slot float-b w-24 h-24 sm:w-28 sm:h-28 mb-2 z-10">
+                        <img src="voin-picture5.jpg" alt="VOIN Emblem" class="voin-comp-layer-img select-none">
                     </div>
-                    <div class="voin-asset-card ecosystem-float-alt aspect-square">
-                        <img src="voin-picture2.jpg" alt="VOIN Visual 2" class="voin-asset-img">
-                        <div class="voin-asset-fade"></div>
-                    </div>
-                    <div class="voin-asset-card ecosystem-float-alt aspect-square">
-                        <img src="voin-picture3.jpg" alt="VOIN Visual 3" class="voin-asset-img">
-                        <div class="voin-asset-fade"></div>
-                    </div>
-                    <div class="voin-asset-card ecosystem-float-slow aspect-square">
-                        <img src="voin-picture5.jpg" alt="VOIN Visual 5" class="voin-asset-img">
-                        <div class="voin-asset-fade"></div>
+
+                    <!-- Formasi 3 Elemen Utama (Kiri: picture1, Tengah: picture2, Kanan: picture3) -->
+                    <div class="grid grid-cols-3 gap-2 sm:gap-4 items-center w-full">
+                        <div class="voin-comp-slot float-a h-48 sm:h-64 flex items-center justify-center">
+                            <img src="voin-picture1.jpg" alt="VOIN Card" class="voin-comp-layer-img select-none">
+                        </div>
+
+                        <div class="voin-comp-slot float-b h-52 sm:h-72 flex items-center justify-center">
+                            <img src="voin-picture2.jpg" alt="Ecosystem Node" class="voin-comp-layer-img select-none">
+                        </div>
+
+                        <div class="voin-comp-slot float-c h-48 sm:h-64 flex items-center justify-center">
+                            <img src="voin-picture3.jpg" alt="VOIN Vault" class="voin-comp-layer-img select-none">
+                        </div>
                     </div>
                 </div>
             </div>
