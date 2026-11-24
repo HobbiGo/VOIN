@@ -22,11 +22,16 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 16px;
             background-color: var(--midnight-navy);
+            /* Penggabungan backdrop-voin.jpg dengan overlay gradasi agar menyatu & teks tetap jelas */
             background-image:
-                radial-gradient(circle at 16% 18%, rgba(168, 85, 247, 0.25) 0%, transparent 42%),
-                radial-gradient(circle at 82% 24%, rgba(56, 189, 248, 0.22) 0%, transparent 45%),
-                radial-gradient(circle at 50% 85%, rgba(124, 58, 237, 0.16) 0%, transparent 50%),
-                linear-gradient(180deg, #040714 0%, #0a0f29 50%, #050818 100%);
+                radial-gradient(circle at 16% 18%, rgba(168, 85, 247, 0.22) 0%, transparent 45%),
+                radial-gradient(circle at 82% 24%, rgba(56, 189, 248, 0.20) 0%, transparent 48%),
+                linear-gradient(180deg, rgba(4, 7, 20, 0.72) 0%, rgba(10, 15, 41, 0.62) 45%, rgba(5, 8, 24, 0.88) 100%),
+                url('backdrop-voin.jpg');
+            background-size: cover;
+            background-position: center top;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
             color: #ffffff;
             overflow-x: hidden;
         }
@@ -36,29 +41,45 @@
         }
 
         .cyber-grid {
+            position: relative;
+        }
+
+        .cyber-grid::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
             background-size: 46px 46px;
             background-image:
-                linear-gradient(to right, rgba(139, 92, 246, 0.055) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(56, 189, 248, 0.055) 1px, transparent 1px);
+                linear-gradient(to right, rgba(139, 92, 246, 0.045) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(56, 189, 248, 0.045) 1px, transparent 1px);
+        }
+
+        header, section, footer {
+            position: relative;
+            z-index: 1;
         }
 
         .glass-panel {
-            background: rgba(15, 21, 50, 0.78);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border: 1px solid rgba(168, 85, 247, 0.28);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            background: rgba(12, 18, 46, 0.68);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(168, 85, 247, 0.32);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .glass-tile {
-            background: rgba(11, 16, 40, 0.85);
-            border: 1px solid rgba(129, 140, 248, 0.25);
+            background: rgba(9, 14, 38, 0.74);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(129, 140, 248, 0.28);
             transition: all 0.25s ease;
         }
 
         .glass-tile:hover {
-            border-color: rgba(168, 85, 247, 0.72);
-            box-shadow: 0 10px 28px rgba(168, 85, 247, 0.22);
+            border-color: rgba(168, 85, 247, 0.75);
+            box-shadow: 0 10px 28px rgba(168, 85, 247, 0.25);
             transform: translateY(-2px);
         }
 
@@ -117,7 +138,7 @@
 <body class="cyber-grid selection:bg-purple-500 selection:text-white">
 
     <!-- ================= NAVBAR ================= -->
-    <header class="sticky top-0 z-40 border-b border-purple-500/20 bg-[#050818]/90 backdrop-blur-xl">
+    <header class="sticky top-0 z-40 border-b border-purple-500/25 bg-[#050818]/75 backdrop-blur-xl">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
             <a href="#home" class="flex items-center gap-2.5 shrink-0">
                 <div class="w-10 h-10 rounded-full overflow-hidden border border-purple-400/60 bg-[#080c24] flex items-center justify-center p-0.5 shadow-[0_0_16px_rgba(168,85,247,0.5)]">
@@ -153,7 +174,7 @@
             </div>
         </div>
 
-        <div class="lg:hidden border-t border-purple-500/15 bg-[#070b1f]/95 px-4 py-2">
+        <div class="lg:hidden border-t border-purple-500/15 bg-[#070b1f]/80 px-4 py-2">
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar text-xs sm:text-sm font-medium text-slate-300 whitespace-nowrap">
                 <a href="#home" class="px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-400/35 text-white shrink-0">Home</a>
                 <a href="#about" class="px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-cyan-300 shrink-0">About</a>
@@ -173,17 +194,17 @@
     <section id="home" class="max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-12">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div class="lg:col-span-7 space-y-5">
-                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/80 border border-purple-500/40 text-xs sm:text-sm text-cyan-200 font-medium">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/75 backdrop-blur-md border border-purple-500/45 text-xs sm:text-sm text-cyan-200 font-medium">
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
                     + VOIN Ecosystem &bull; Official Presale Dec 2026 - Dec 2028
                 </div>
 
-                <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.12]">
+                <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.12] drop-shadow-[0_4px_24px_rgba(0,0,0,0.65)]">
                     Build. Play. Earn.<br>
                     <span class="bg-gradient-to-r from-cyan-300 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">with VOIN.</span>
                 </h1>
 
-                <p class="text-slate-300 text-base sm:text-lg max-w-xl leading-relaxed">
+                <p class="text-slate-200 text-base sm:text-lg max-w-xl leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.75)]">
                     Next-generation blockchain ecosystem with <span class="text-white font-semibold">260,000,000 VOIN</span> total supply and <span class="text-cyan-300 font-semibold">10 batches &times; 15,600,000 VOIN</span> (156,000,000 VOIN) structured for community growth and real utility.
                 </p>
 
@@ -191,10 +212,10 @@
                     <a href="#presale" class="btn-primary-voin px-6 py-3.5 rounded-xl font-semibold text-sm sm:text-base text-white">
                         Join Presale &rarr;
                     </a>
-                    <button type="button" onclick="openWalletModal()" class="px-6 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-cyan-400/50 bg-indigo-950/70 hover:border-cyan-300 text-cyan-100 transition cursor-pointer">
+                    <button type="button" onclick="openWalletModal()" class="px-6 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-cyan-400/50 bg-indigo-950/70 backdrop-blur-md hover:border-cyan-300 text-cyan-100 transition cursor-pointer">
                         Connect Wallet
                     </button>
-                    <a href="dashboard.html" class="px-5 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-slate-600/80 bg-white/5 hover:border-purple-400 text-slate-200 transition">
+                    <a href="dashboard.html" class="px-5 py-3.5 rounded-xl text-sm sm:text-base font-semibold border border-slate-500/80 bg-[#070b1f]/65 backdrop-blur-md hover:border-purple-400 text-slate-200 transition">
                         Open Dashboard
                     </a>
                 </div>
@@ -349,7 +370,7 @@
 
     <!-- ================= ROADMAP 2026 - 2028 ================= -->
     <section id="roadmap" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5">Roadmap (2026 - 2028)</h2>
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Roadmap (2026 - 2028)</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm sm:text-base">
             <div class="glass-tile p-5 rounded-2xl border-t-2 border-t-emerald-400">
                 <p class="text-xs font-display font-bold text-emerald-400">DECEMBER 2026</p>
@@ -377,8 +398,8 @@
     <!-- ================= PRESALE SECTION ================= -->
     <section id="presale" class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div class="mb-7">
-            <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-white">Presale VOIN</h2>
-            <p class="text-slate-300 text-sm sm:text-base mt-1">Secure. Transparent. Fair. Official Presale (Dec 2026 - Dec 2028).</p>
+            <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Presale VOIN</h2>
+            <p class="text-slate-200 text-sm sm:text-base mt-1 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">Secure. Transparent. Fair. Official Presale (Dec 2026 - Dec 2028).</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -452,14 +473,14 @@
                             <label for="walletAddress" class="block text-sm font-medium text-slate-200">Your VOIN Wallet Address</label>
                             <button type="button" onclick="openWalletModal()" class="text-xs sm:text-sm text-cyan-300 hover:underline font-medium cursor-pointer">Select Wallet</button>
                         </div>
-                        <input type="text" id="walletAddress" placeholder="0x..." class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400">
+                        <input type="text" id="walletAddress" placeholder="0x..." class="w-full bg-[#070b1f]/85 border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400">
                     </div>
                     <div>
                         <div class="flex justify-between items-center mb-1.5">
                             <label for="amountPaid" class="block text-sm font-medium text-slate-200">Payment Amount (USD)</label>
                             <span id="amountLimitBadge" class="text-xs text-cyan-300 font-medium">Min: $25 &bull; Max: $10,000 / Batch</span>
                         </div>
-                        <input type="number" id="amountPaid" min="25" max="10000" step="any" placeholder="Minimum 25 - Max 10000 per batch" oninput="updateEstimatedVoin()" class="w-full bg-[#070b1f] border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-purple-400">
+                        <input type="number" id="amountPaid" min="25" max="10000" step="any" placeholder="Minimum 25 - Max 10000 per batch" oninput="updateEstimatedVoin()" class="w-full bg-[#070b1f]/85 border border-slate-600/80 rounded-xl px-4 py-3 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:border-purple-400">
                         <p id="estimatedVoinPreview" class="text-xs text-purple-200 mt-1.5">Estimated VOIN: 0 VOIN &bull; Min: $25 &bull; Max: $10,000 per wallet per batch</p>
                     </div>
                     <button type="button" id="buyBtn" onclick="buyTokens()" class="w-full btn-primary-voin text-white font-bold text-sm sm:text-base py-3.5 rounded-xl cursor-pointer">
@@ -486,7 +507,7 @@
     </section>
 
     <section id="technology" class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5">Technology</h2>
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Technology</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="glass-tile p-5 rounded-2xl">
                 <h3 class="font-display text-base sm:text-lg font-bold text-cyan-300">Node &amp; API Gateway</h3>
@@ -527,7 +548,7 @@
     </section>
 
     <section id="faq" class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5">FAQ</h2>
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold mb-5 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">FAQ</h2>
         <div class="space-y-3 text-sm sm:text-base">
             <details class="glass-panel rounded-2xl p-4 sm:p-5" open>
                 <summary class="font-semibold cursor-pointer text-white">How do I buy VOIN tokens?</summary>
@@ -544,7 +565,7 @@
         </div>
     </section>
 
-    <footer class="border-t border-purple-500/20 bg-[#040714] mt-8">
+    <footer class="border-t border-purple-500/20 bg-[#040714]/85 backdrop-blur-md mt-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm text-slate-400">
             <span class="font-display font-bold text-white">VOIN WALLET</span>
             <span>Presale Mainnet &bull; Dec 2026 - Dec 2028</span>
