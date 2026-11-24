@@ -380,11 +380,12 @@
         const CONFIGURED_API_URL = "";
         const API_URL = (CONFIGURED_API_URL || window.location.origin).replace(/\/+$/, "");
 
-        // Provided VOIN presale settlement account
         const RECEIVING_WALLET_ADDRESS = VOIN_CFG?.treasuryAddress || "0xAEb22359588A50e6F746004E66418Eb2c978dAA2";
         const MIN_PURCHASE_USD = VOIN_CFG?.limitsUsd?.minPurchaseUsd ? Number(VOIN_CFG.limitsUsd.minPurchaseUsd) : 25;
 
-        const PRESALE_CAP_VOIN = VOIN_CFG?.totalPresaleVoinAllocation ? Number(VOIN_CFG.totalPresaleVoinAllocation) : 156000000;
+        const PRESALE_CAP_VOIN = VOIN_CFG?.limitsUsd?.totalPresaleVoinAllocation
+            ? Number(VOIN_CFG.limitsUsd.totalPresaleVoinAllocation)
+            : (VOIN_CFG?.totalPresaleVoinAllocation ? Number(VOIN_CFG.totalPresaleVoinAllocation) : 156000000);
         const TOTAL_SUPPLY_VOIN = VOIN_CFG?.totalSupply ? Number(VOIN_CFG.totalSupply) : 260000000;
 
         const STORAGE_WALLET_KEY = "voin_wallet_address";
