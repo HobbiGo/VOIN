@@ -1,7 +1,7 @@
 """
 VOIN QUANTUM SECURITY ENGINE V1.0
 
-Post-Quantum Digital Signature Engine.
+Post-Quantum Digital Signature Engine (BSC Mainnet / Chain ID 56).
 
 Standard:
 NIST FIPS 204 - ML-DSA
@@ -40,7 +40,7 @@ class VOINQuantumSecurityEngine:
 
     def __init__(self, algorithm="ML-DSA-65"):
 
-        if algorithm not in self.SUPPORTED_ALGORITHMS:
+        if not isinstance(algorithm, str) or algorithm not in self.SUPPORTED_ALGORITHMS:
             raise ValueError("Unsupported quantum algorithm")
 
         self.algorithm = algorithm
@@ -64,6 +64,10 @@ class VOINQuantumSecurityEngine:
             raise RuntimeError(
                 f"{self.algorithm} is not enabled in liboqs"
             )
+
+    @staticmethod
+    def _now_ts() -> int:
+        return int(time.time())
 
     @staticmethod
     def _to_bytes(value, field_name):
@@ -107,10 +111,11 @@ class VOINQuantumSecurityEngine:
 
         return {
             "success": True,
+            "chain_id": DEFAULT_CHAIN_ID,
             "algorithm": self.algorithm,
-            "public_key": public_key.hex(),
-            "private_key": private_key.hex(),
-            "created_at": int(time.time()),
+            "public_key": public_key.hex().lower(),
+            "private_key": private_key.hex().lower(),
+            "created_at": self._now_ts(),
             "engine": "VOIN Quantum Security Engine",
             "version": self.VERSION
         }
@@ -141,8 +146,9 @@ class VOINQuantumSecurityEngine:
 
         return {
             "success": True,
+            "chain_id": DEFAULT_CHAIN_ID,
             "algorithm": self.algorithm,
-            "signature": signature.hex(),
+            "signature": signature.hex().lower(),
             "engine": "VOIN Quantum Security Engine",
             "version": self.VERSION
         }
@@ -154,6 +160,7 @@ class VOINQuantumSecurityEngine:
         if not isinstance(message, str) or not message:
             return {
                 "success": False,
+                "chain_id": DEFAULT_CHAIN_ID,
                 "status": "INVALID_MESSAGE"
             }
 
@@ -180,11 +187,13 @@ class VOINQuantumSecurityEngine:
             if not valid:
                 return {
                     "success": False,
+                    "chain_id": DEFAULT_CHAIN_ID,
                     "status": "INVALID_SIGNATURE"
                 }
 
             return {
                 "success": True,
+                "chain_id": DEFAULT_CHAIN_ID,
                 "status": "QUANTUM_SIGNATURE_VALID",
                 "algorithm": self.algorithm,
                 "engine": "VOIN Quantum Security Engine",
@@ -194,6 +203,7 @@ class VOINQuantumSecurityEngine:
         except (ValueError, TypeError):
             return {
                 "success": False,
+                "chain_id": DEFAULT_CHAIN_ID,
                 "status": "INVALID_SIGNATURE"
             }
 
