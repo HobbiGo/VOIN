@@ -1,11 +1,11 @@
 """
 VOIN VERIFICATION ENGINE V1.2
 
-Persistent wallet challenge and digital signature verification.
+Persistent wallet challenge and digital signature verification (BSC Mainnet / Chain ID 56).
 
 Features:
 - SQLite persistent challenge retrieval
-- Wallet address validation
+- Wallet address validation & normalization
 - Digital signature verification
 - Atomic challenge and nonce consumption
 - Replay protection
@@ -16,6 +16,8 @@ import re
 
 from security.challenge import VOINChallengeEngine
 from security.signatures import VOINSignatureEngine
+
+DEFAULT_CHAIN_ID = 56
 
 
 class VOINVerificationEngine:
@@ -36,6 +38,22 @@ class VOINVerificationEngine:
 
         self.signature_engine = VOINSignatureEngine
 
+    @staticmethod
+    def _normalize_wallet(wallet_address):
+        if not isinstance(wallet_address, str):
+            return None
+        cleaned = wallet_address.strip()
+        if not cleaned:
+            return None
+        return cleaned.lower()
+
+    @staticmethod
+    def _normalize_challenge_id(challenge_id):
+        if not isinstance(challenge_id, str):
+            return None
+        cleaned = challenge_id.strip()
+        return cleaned if cleaned else None
+
     def create_verification_challenge(self, wallet_address):
 
         if not self.signature_engine.validate_address(
@@ -46,8 +64,10 @@ class VOINVerificationEngine:
                 "status": "INVALID_ADDRESS"
             }
 
+        normalized_wallet = self._normalize_wallet(wallet_address)
+
         return self.challenge_engine.create_challenge(
-            wallet_address
+            normalized_wallet
         )
 
     def verify_wallet(
@@ -57,7 +77,16 @@ class VOINVerificationEngine:
         signature
     ):
 
-        # 1. Validate wallet address.
+        normalized_challenge_id = self._normalize_challenge_id(
+            challenge_id
+        )
+        if normalized_challenge_id is None:
+            return {
+                "success": False,
+                "status": "INVALID_OR_EXPIRED_CHALLENGE"
+            }
+
+        # 1. Validate and normalize wallet address.
         if not self.signature_engine.validate_address(
             wallet_address
         ):
@@ -66,10 +95,12 @@ class VOINVerificationEngine:
                 "status": "INVALID_ADDRESS"
             }
 
+        normalized_wallet = self._normalize_wallet(wallet_address)
+
         # 2. Validate challenge ownership and expiration.
         if not self.challenge_engine.validate_challenge(
-            challenge_id,
-            wallet_address
+            normalized_challenge_id,
+            normalized_wallet
         ):
             return {
                 "success": False,
@@ -78,7 +109,7 @@ class VOINVerificationEngine:
 
         # 3. Retrieve persistent challenge.
         challenge = self.challenge_engine.storage.get_challenge(
-            challenge_id
+            normalized_challenge_id
         )
 
         if not challenge:
@@ -98,13 +129,13 @@ class VOINVerificationEngine:
                 "status": "INVALID_CHALLENGE_NONCE"
             }
 
-        nonce = nonce_match.group(1)
+        nonce = nonce_match.group(1).lower()
 
         # 5. Verify digital signature.
         result = self.signature_engine.verify_signature(
             message=challenge["message"],
             signature=signature,
-            expected_address=wallet_address
+            expected_address=normalized_wallet
         )
 
         if not result["success"]:
@@ -115,8 +146,8 @@ class VOINVerificationEngine:
 
         # 6. Atomically consume challenge and nonce.
         consumed = self.challenge_engine.storage.consume_authentication(
-            challenge_id=challenge_id,
-            wallet_address=wallet_address,
+            challenge_id=normalized_challenge_id,
+            wallet_address=normalized_wallet,
             nonce=nonce
         )
 
@@ -131,7 +162,8 @@ class VOINVerificationEngine:
             "success": True,
             "status": "WALLET_VERIFIED",
             "wallet_address": result["signer"],
-            "challenge_id": challenge_id,
+            "normalized_wallet_address": result["signer"].lower(),
+            "challenge_id": normalized_challenge_id,
             "engine": "VOIN Verification Engine",
             "version": self.VERSION
         }
@@ -142,11 +174,12 @@ class VOINVerificationEngine:
         return {
             "engine": "VOIN Verification Engine",
             "version": cls.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "challenge_verification": True,
             "signature_verification": True,
             "persistent_storage": True,
             "atomic_consumption": True,
             "nonce_consumption": True,
             "replay_protection": True,
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
