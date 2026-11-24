@@ -1,13 +1,19 @@
 """
 VOIN DIGITAL SIGNATURE ENGINE V1.2
 
-EVM-compatible digital signature verification.
+EVM-compatible digital signature verification (BSC Mainnet / Chain ID 56).
 Supports bytes, HexBytes and hexadecimal signatures.
 """
+
+import re
 
 from eth_account import Account
 from eth_account.messages import encode_defunct
 from eth_utils import is_address, to_checksum_address
+
+_EVM_HEX_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_ZERO_ADDRESS = "0x" + ("0" * 40)
+DEFAULT_CHAIN_ID = 56
 
 
 class VOINSignatureEngine:
@@ -15,44 +21,70 @@ class VOINSignatureEngine:
     VERSION = "1.2.0"
 
     @staticmethod
-    def validate_address(address):
+    def validate_address(address, *, allow_zero: bool = False):
 
         if not isinstance(address, str):
             return False
 
-        return is_address(address)
+        cleaned = address.strip()
+        if not _EVM_HEX_RE.match(cleaned) or not is_address(cleaned):
+            return False
+
+        if not allow_zero and cleaned.lower() == _ZERO_ADDRESS:
+            return False
+
+        return True
+
+    @classmethod
+    def normalize_address(cls, address, *, allow_zero: bool = False) -> str:
+        if not cls.validate_address(address, allow_zero=allow_zero):
+            raise ValueError("Invalid EVM wallet address")
+        return address.strip().lower()
 
     @staticmethod
     def normalize_signature(signature):
 
         if isinstance(signature, (bytes, bytearray)):
-            signature = bytes(signature)
+            raw_bytes = bytes(signature)
+
+        elif hasattr(signature, "hex") and callable(signature.hex) and not isinstance(signature, str):
+            hex_val = signature.hex()
+            if isinstance(hex_val, str):
+                hex_str = hex_val.strip()
+                if hex_str.startswith(("0x", "0X")):
+                    hex_str = hex_str[2:]
+                try:
+                    raw_bytes = bytes.fromhex(hex_str)
+                except ValueError as exc:
+                    raise ValueError("Invalid signature format") from exc
+            else:
+                raise ValueError("Invalid signature format")
 
         elif isinstance(signature, str):
 
-            signature = signature.strip()
+            hex_str = signature.strip()
 
-            if signature.startswith("0x"):
-                signature = signature[2:]
+            if hex_str.startswith(("0x", "0X")):
+                hex_str = hex_str[2:]
 
             try:
-                signature = bytes.fromhex(signature)
+                raw_bytes = bytes.fromhex(hex_str)
 
-            except ValueError:
-                raise ValueError("Invalid signature format")
+            except ValueError as exc:
+                raise ValueError("Invalid signature format") from exc
 
         else:
             raise ValueError("Invalid signature type")
 
-        if len(signature) != 65:
+        if len(raw_bytes) != 65:
             raise ValueError("Invalid signature length")
 
-        return signature
+        return raw_bytes
 
     @classmethod
     def recover_signer(cls, message, signature):
 
-        if not isinstance(message, str):
+        if not isinstance(message, str) or not message:
             raise ValueError("Invalid message")
 
         normalized_signature = cls.normalize_signature(
@@ -100,7 +132,7 @@ class VOINSignatureEngine:
             )
 
             expected = to_checksum_address(
-                expected_address
+                expected_address.strip()
             )
 
             if recovered.lower() != expected.lower():
@@ -114,6 +146,7 @@ class VOINSignatureEngine:
                 "success": True,
                 "status": "SIGNATURE_VALID",
                 "signer": recovered,
+                "normalized_signer": recovered.lower(),
                 "engine": "VOIN Signature Engine",
                 "version": cls.VERSION
             }
@@ -131,6 +164,7 @@ class VOINSignatureEngine:
         return {
             "engine": "VOIN Digital Signature Engine",
             "version": cls.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "algorithm": "EIP-191",
             "signature_formats": [
                 "BYTES",
@@ -138,9 +172,9 @@ class VOINSignatureEngine:
                 "HEX_STRING"
             ],
             "network_support": [
+                "BSC_MAINNET",
                 "BSC",
-                "BSC_TESTNET",
                 "EVM_COMPATIBLE"
             ],
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
