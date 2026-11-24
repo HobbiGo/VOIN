@@ -26,6 +26,27 @@ API_TOKEN = (os.getenv("API_TOKEN") or "").strip()
 DB_PATH = os.getenv("VOIN_DB_PATH", os.path.join(BASE_DIR, "voin.db"))
 SKIP_ONCHAIN_VERIFICATION = os.getenv("SKIP_ONCHAIN_VERIFICATION", "false").lower() == "true"
 
+MAINNET_RPC_URL = "https://bsc-dataseed.binance.org/"
+MAINNET_CHAIN_ID = 56
+DEFAULT_TREASURY = "0xAEb22359588A50e6F746004E66418Eb2c978dAA2"
+
+
+def _load_deployed_mainnet_fallback() -> dict:
+    for fname in ("deployed_voin_mainnet.json", "deployed_voin_addresses.json"):
+        fpath = os.path.join(BASE_DIR, fname)
+        if os.path.isfile(fpath):
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+            except Exception:
+                pass
+    return {}
+
+
+_DEPLOYED_FALLBACK = _load_deployed_mainnet_fallback()
+
 
 # ============================================================
 # 1. PRESALE STATE & CONTRACT
@@ -84,13 +105,23 @@ chain = VoinChain(genesis_data=genesis_data, difficulty=1, store=store)
 PEERS = set()
 LOCK = threading.Lock()
 
-expected_chain_id_raw = (os.getenv("EXPECTED_CHAIN_ID") or "97").strip()
+expected_chain_id_raw = (os.getenv("EXPECTED_CHAIN_ID") or str(MAINNET_CHAIN_ID)).strip()
 expected_chain_id = int(expected_chain_id_raw) if expected_chain_id_raw else None
 
+presale_contract_addr = (
+    os.getenv("VOIN_PRESALE_CONTRACT")
+    or _DEPLOYED_FALLBACK.get("VOIN_PRESALE_CONTRACT")
+    or _DEPLOYED_FALLBACK.get("voinPresale")
+    or ""
+).strip()
+
+rpc_url = (os.getenv("BSC_RPC_URL") or MAINNET_RPC_URL).strip()
+treasury_addr = (os.getenv("TREASURY_ADDRESS") or DEFAULT_TREASURY).strip()
+
 verifier = BlockchainTransactionVerifier(
-    rpc_url=os.getenv("BSC_RPC_URL", "https://data-seed-prebsc-1-s1.binance.org:8545/"),
-    presale_contract_address=os.getenv("VOIN_PRESALE_CONTRACT", ""),
-    treasury_address=os.getenv("TREASURY_ADDRESS", "0xAEb22359588A50e6F746004E66418Eb2c978dAA2"),
+    rpc_url=rpc_url,
+    presale_contract_address=presale_contract_addr,
+    treasury_address=treasury_addr,
     expected_chain_id=expected_chain_id,
 )
 
@@ -164,6 +195,8 @@ def _broadcast_block_to_peers(block, sig_e, sig_p, skip_peer=None):
 app = Flask(__name__)
 CORS(app)
 
+BLOCKED_STATIC_EXTS = {".py", ".db", ".sqlite", ".sqlite3", ".json", ".env", ".sh", ".sol"}
+
 
 @app.route("/")
 def serve_index():
@@ -174,6 +207,9 @@ def serve_index():
 def serve_static(filename):
     if not filename or filename.startswith((".", "/")):
         return jsonify({"error": "invalid path"}), 400
+    _, ext = os.path.splitext(filename.lower())
+    if ext in BLOCKED_STATIC_EXTS:
+        return jsonify({"error": "forbidden"}), 403
     full_path = os.path.abspath(os.path.join(BASE_DIR, filename))
     if not full_path.startswith(BASE_DIR + os.sep) or not os.path.isfile(full_path):
         return jsonify({"error": "not found"}), 404
@@ -393,5 +429,7 @@ if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", 5000))
     print(f"Node VOIN berjalan di port {port}...")
     print(f"DB: {DB_PATH}")
+    print(f"Chain ID: {expected_chain_id} | RPC: {rpc_url}")
+    print(f"Presale Contract: {presale_contract_addr or '(belum diset)'}")
     print(f"On-chain Verification: {'DISABLED (Bypass)' if SKIP_ONCHAIN_VERIFICATION else 'ENABLED'}")
     app.run(host="0.0.0.0", port=port, threaded=True)
