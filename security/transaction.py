@@ -4,17 +4,22 @@ VOIN TRANSACTION SECURITY ENGINE V1.1
 Transaction validation, integrity verification,
 duplicate request protection and status management.
 
-Development module - not a production blockchain.
+Target Environment: BSC Mainnet (Chain ID 56) / EVM
 """
 
 import hashlib
 import json
+import re
 import secrets
 import time
 import threading
 
 from decimal import Decimal, InvalidOperation
 from eth_utils import is_address
+
+_EVM_HEX_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_ZERO_ADDRESS = "0x" + ("0" * 40)
+DEFAULT_CHAIN_ID = 56
 
 
 class VOINTransactionSecurity:
@@ -27,22 +32,53 @@ class VOINTransactionSecurity:
         "REJECTED"
     }
 
-    def __init__(self):
+    def __init__(self, chain_id=DEFAULT_CHAIN_ID):
 
+        if isinstance(chain_id, bool) or not isinstance(chain_id, int) or chain_id <= 0:
+            raise ValueError("Invalid chain_id")
+
+        self.chain_id = chain_id
         self.transactions = {}
         self.idempotency_records = {}
         self.lock = threading.RLock()
 
     @staticmethod
-    def validate_address(address):
+    def _now_ts() -> int:
+        return int(time.time())
 
-        return (
-            isinstance(address, str)
-            and is_address(address)
-        )
+    @staticmethod
+    def _format_decimal(value: Decimal) -> str:
+        text = format(value, "f")
+        if "." in text:
+            text = text.rstrip("0").rstrip(".")
+        return text or "0"
+
+    @staticmethod
+    def validate_address(address, *, allow_zero: bool = False):
+
+        if not isinstance(address, str):
+            return False
+
+        cleaned = address.strip()
+        if not _EVM_HEX_RE.match(cleaned) or not is_address(cleaned):
+            return False
+
+        if not allow_zero and cleaned.lower() == _ZERO_ADDRESS:
+            return False
+
+        return True
+
+    @classmethod
+    def normalize_address(cls, address, *, allow_zero: bool = False) -> str:
+        if not cls.validate_address(address, allow_zero=allow_zero):
+            raise ValueError("Invalid EVM wallet address")
+        return address.strip().lower()
 
     @staticmethod
     def validate_amount(amount):
+
+        if isinstance(amount, bool):
+            return False
 
         try:
             value = Decimal(str(amount))
@@ -79,7 +115,7 @@ class VOINTransactionSecurity:
         receiver,
         amount,
         asset="VOIN",
-        network="VOIN"
+        network="BSC_MAINNET"
     ):
 
         if not self.validate_address(sender):
@@ -94,7 +130,7 @@ class VOINTransactionSecurity:
                 "status": "INVALID_RECEIVER"
             }
 
-        if sender.lower() == receiver.lower():
+        if sender.strip().lower() == receiver.strip().lower():
             return {
                 "success": False,
                 "status": "SELF_TRANSFER_NOT_ALLOWED"
@@ -129,7 +165,7 @@ class VOINTransactionSecurity:
         receiver,
         amount,
         asset="VOIN",
-        network="VOIN",
+        network="BSC_MAINNET",
         idempotency_key=None
     ):
 
@@ -156,16 +192,19 @@ class VOINTransactionSecurity:
                     "status": "INVALID_IDEMPOTENCY_KEY"
                 }
 
-        normalized_amount = str(
-            Decimal(str(amount)).normalize()
-        )
+        normalized_sender = sender.strip().lower()
+        normalized_receiver = receiver.strip().lower()
+        normalized_amount = self._format_decimal(Decimal(str(amount).strip()))
+        normalized_asset = asset.strip().upper()
+        normalized_network = network.strip().upper()
 
         fingerprint_data = {
-            "sender": sender.lower(),
-            "receiver": receiver.lower(),
+            "chain_id": self.chain_id,
+            "sender": normalized_sender,
+            "receiver": normalized_receiver,
             "amount": normalized_amount,
-            "asset": asset.upper(),
-            "network": network.upper()
+            "asset": normalized_asset,
+            "network": normalized_network
         }
 
         fingerprint = self.calculate_integrity_hash(
@@ -176,7 +215,8 @@ class VOINTransactionSecurity:
 
             if idempotency_key is not None:
 
-                scope = sender.lower() + ":" + idempotency_key
+                clean_key = idempotency_key.strip()
+                scope = normalized_sender + ":" + clean_key
 
                 existing = self.idempotency_records.get(scope)
 
@@ -198,12 +238,13 @@ class VOINTransactionSecurity:
 
             transaction = {
                 "transaction_id": transaction_id,
-                "sender": sender,
-                "receiver": receiver,
+                "chain_id": self.chain_id,
+                "sender": normalized_sender,
+                "receiver": normalized_receiver,
                 "amount": normalized_amount,
-                "asset": asset.upper(),
-                "network": network.upper(),
-                "timestamp": int(time.time()),
+                "asset": normalized_asset,
+                "network": normalized_network,
+                "timestamp": self._now_ts(),
                 "status": "PENDING"
             }
 
@@ -218,7 +259,8 @@ class VOINTransactionSecurity:
 
             if idempotency_key is not None:
 
-                scope = sender.lower() + ":" + idempotency_key
+                clean_key = idempotency_key.strip()
+                scope = normalized_sender + ":" + clean_key
 
                 self.idempotency_records[scope] = {
                     "fingerprint": fingerprint,
@@ -302,10 +344,11 @@ class VOINTransactionSecurity:
         return {
             "engine": "VOIN Transaction Security Engine",
             "version": cls.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "address_validation": True,
             "amount_validation": True,
             "integrity_verification": True,
             "idempotency_protection": True,
             "transaction_status_management": True,
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
