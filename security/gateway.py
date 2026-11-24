@@ -79,6 +79,13 @@ class VOINSecurityGateway:
             raise ValueError("Invalid challenge ID")
         return challenge_id.strip()
 
+    @staticmethod
+    def _normalize_signature(signature):
+        if isinstance(signature, str):
+            cleaned = signature.strip()
+            return cleaned if cleaned else signature
+        return signature
+
     def create_wallet_authentication(self, wallet_address):
         normalized_wallet = self._normalize_wallet(wallet_address)
         return self.api_integration.create_wallet_authentication(
@@ -93,10 +100,11 @@ class VOINSecurityGateway:
     ):
         normalized_wallet = self._normalize_wallet(wallet_address)
         normalized_challenge_id = self._normalize_challenge_id(challenge_id)
+        normalized_signature = self._normalize_signature(signature)
         return self.api_integration.verify_wallet_authentication(
             wallet_address=normalized_wallet,
             challenge_id=normalized_challenge_id,
-            signature=signature
+            signature=normalized_signature
         )
 
     def handle_api_request(
