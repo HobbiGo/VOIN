@@ -71,6 +71,10 @@ class VOIND1RateLimitEngine:
         wallet = self._normalize_wallet(wallet_address)
         now = int(time.time())
 
+        # 3 placeholders per occurrence:
+        # 1) cooldown_until <= ?
+        # 2) (? - window_started_at)
+        # 3) >= ?
         reset_condition = """
         (
             (
@@ -142,7 +146,11 @@ class VOIND1RateLimitEngine:
             updated_at
         """
 
-        # Exactly 24 parameters for 24 SQL placeholders.
+        # 26 placeholders total:
+        # - INSERT VALUES: 6
+        # - window_started_at: 3 (reset_condition) + 1 (THEN ?) = 4
+        # - attempts: 3 (reset_condition) = 3
+        # - cooldown_until: 1 + 3 (reset_condition) + 3 + 3 + 1 (updated_at) = 12 -> 13 with updated_at
         params = [
             # INSERT VALUES: 6
             wallet,
@@ -163,7 +171,7 @@ class VOIND1RateLimitEngine:
             now,
             self.window_seconds,
 
-            # cooldown_until: 10
+            # cooldown_until: 12
             now,
             now,
             now,
@@ -307,6 +315,11 @@ class VOIND1RateLimitEngine:
         )
 
         attempts = int(row["attempts"])
+        window_started_at = int(row["window_started_at"])
+
+        if not blocked and (now - window_started_at) >= self.window_seconds:
+            attempts = 0
+            cooldown_until = None
 
         return {
             "success": True,
