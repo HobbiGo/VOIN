@@ -2,14 +2,19 @@
 VOIN CLOUDFLARE D1 STORAGE ENGINE
 Version: 1.0.3
 
-Async storage engine for Cloudflare Python Workers.
+Async storage engine for Cloudflare Python Workers (BSC Mainnet / Chain ID 56).
 SQLite local storage remains unchanged.
 """
 
 import hashlib
 import json
-import time
 import math
+import re
+import time
+
+DEFAULT_CHAIN_ID = 56
+_EVM_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_ZERO_ADDRESS = "0x" + ("0" * 40)
 
 
 class VOIND1StorageEngine:
@@ -30,31 +35,51 @@ class VOIND1StorageEngine:
     # =====================================================
 
     @staticmethod
-    def _normalize_wallet(wallet_address):
+    def _now_ts() -> int:
+        return int(time.time())
+
+    @staticmethod
+    def _normalize_wallet(wallet_address, *, allow_zero: bool = False):
 
         if not isinstance(wallet_address, str):
             raise ValueError("Invalid wallet address")
 
         wallet = wallet_address.strip().lower()
 
-        if len(wallet) != 42 or not wallet.startswith("0x"):
+        if not _EVM_ADDRESS_RE.fullmatch(wallet):
             raise ValueError("Invalid wallet address")
 
-        try:
-            int(wallet[2:], 16)
-        except ValueError:
-            raise ValueError("Invalid wallet address")
+        if not allow_zero and wallet == _ZERO_ADDRESS:
+            raise ValueError("Zero address is not allowed")
 
         return wallet
 
     @staticmethod
+    def _normalize_peer_id(peer_id):
+
+        if not isinstance(peer_id, str):
+            raise ValueError("Invalid peer ID")
+
+        cleaned = peer_id.strip()
+        if not cleaned:
+            raise ValueError("Invalid peer ID")
+
+        if _EVM_ADDRESS_RE.fullmatch(cleaned):
+            normalized = cleaned.lower()
+            if normalized == _ZERO_ADDRESS:
+                raise ValueError("Zero address is not allowed for peer ID")
+            return normalized
+
+        return cleaned
+
+    @staticmethod
     def _hash_nonce(nonce):
 
-        if not isinstance(nonce, str) or not nonce:
+        if not isinstance(nonce, str) or not nonce.strip():
             raise ValueError("Invalid nonce")
 
         return hashlib.sha256(
-            nonce.encode("utf-8")
+            nonce.strip().encode("utf-8")
         ).hexdigest()
 
     @staticmethod
@@ -170,7 +195,7 @@ class VOIND1StorageEngine:
         wallet = self._normalize_wallet(wallet_address)
         nonce_hash = self._hash_nonce(nonce)
 
-        now = time.time()
+        now = self._now_ts()
 
         statements = [
 
@@ -251,8 +276,10 @@ class VOIND1StorageEngine:
         wallet = self._normalize_wallet(wallet_address)
         nonce_hash = self._hash_nonce(nonce)
 
-        if not isinstance(challenge_id, str) or not challenge_id:
+        if not isinstance(challenge_id, str) or not challenge_id.strip():
             raise ValueError("Invalid challenge ID")
+
+        cleaned_challenge_id = challenge_id.strip()
 
         if not isinstance(message, str) or not message:
             raise ValueError("Invalid challenge message")
@@ -264,7 +291,7 @@ class VOIND1StorageEngine:
             raise ValueError("Invalid challenge expiration")
 
         try:
-            expiration = float(expires_at)
+            expiration = int(expires_at) if isinstance(expires_at, int) else float(expires_at)
 
         except (TypeError, ValueError, OverflowError):
             raise ValueError("Invalid challenge expiration")
@@ -272,7 +299,7 @@ class VOIND1StorageEngine:
         if not math.isfinite(expiration):
             raise ValueError("Invalid challenge expiration")
 
-        now = time.time()
+        now = self._now_ts()
 
         if expiration <= now:
             raise ValueError(
@@ -281,7 +308,7 @@ class VOIND1StorageEngine:
 
         details = json.dumps(
             {
-                "challenge_id": challenge_id,
+                "challenge_id": cleaned_challenge_id,
                 "status": "created"
             },
             separators=(",", ":")
@@ -323,7 +350,7 @@ class VOIND1StorageEngine:
                 VALUES (?, ?, ?, ?, ?, ?, 0, 'CHALLENGE')
                 """
             ).bind(
-                challenge_id,
+                cleaned_challenge_id,
                 wallet,
                 nonce_hash,
                 message,
@@ -366,7 +393,7 @@ class VOIND1StorageEngine:
             ).bind(
                 "CHALLENGE_CREATED",
                 wallet,
-                challenge_id,
+                cleaned_challenge_id,
                 now,
                 details
             ),
@@ -386,7 +413,7 @@ class VOIND1StorageEngine:
             ).bind(
                 "CHALLENGE_CREATED_ATOMIC",
                 wallet,
-                challenge_id,
+                cleaned_challenge_id,
                 now,
                 details
             )
@@ -398,7 +425,7 @@ class VOIND1StorageEngine:
 
     async def get_challenge(self, challenge_id):
 
-        if not isinstance(challenge_id, str) or not challenge_id:
+        if not isinstance(challenge_id, str) or not challenge_id.strip():
             raise ValueError("Invalid challenge ID")
 
         return await self._first(
@@ -416,7 +443,7 @@ class VOIND1StorageEngine:
             WHERE challenge_id = ?
             LIMIT 1
             """,
-            (challenge_id,)
+            (challenge_id.strip(),)
         )
 
     async def consume_challenge(
@@ -427,7 +454,7 @@ class VOIND1StorageEngine:
 
         wallet = self._normalize_wallet(wallet_address)
 
-        if not isinstance(challenge_id, str) or not challenge_id:
+        if not isinstance(challenge_id, str) or not challenge_id.strip():
             raise ValueError("Invalid challenge ID")
 
         result = await self._run(
@@ -441,9 +468,9 @@ class VOIND1StorageEngine:
               AND expires_at > ?
             """,
             (
-                challenge_id,
+                challenge_id.strip(),
                 wallet,
-                time.time()
+                self._now_ts()
             )
         )
 
@@ -463,10 +490,10 @@ class VOIND1StorageEngine:
         wallet = self._normalize_wallet(wallet_address)
         nonce_hash = self._hash_nonce(nonce)
 
-        if not isinstance(challenge_id, str) or not challenge_id:
+        if not isinstance(challenge_id, str) or not challenge_id.strip():
             raise ValueError("Invalid challenge ID")
 
-        now = time.time()
+        now = self._now_ts()
 
         # Migration 0003 trigger performs:
         # 1. Validate matching unused nonce.
@@ -488,7 +515,7 @@ class VOIND1StorageEngine:
               AND expires_at > ?
             """,
             (
-                challenge_id,
+                challenge_id.strip(),
                 wallet,
                 nonce_hash,
                 now
@@ -509,7 +536,7 @@ class VOIND1StorageEngine:
         details=None
     ):
 
-        if not isinstance(event_type, str) or not event_type:
+        if not isinstance(event_type, str) or not event_type.strip():
             raise ValueError("Invalid event type")
 
         wallet = None
@@ -535,10 +562,10 @@ class VOIND1StorageEngine:
             VALUES (?, ?, ?, ?, ?)
             """,
             (
-                event_type,
+                event_type.strip().upper(),
                 wallet,
                 reference_id,
-                time.time(),
+                self._now_ts(),
                 serialized
             )
         )
@@ -601,13 +628,12 @@ class VOIND1StorageEngine:
 
     async def save_network_peer(self, peer_id, endpoint):
 
-        if not isinstance(peer_id, str) or not peer_id:
-            raise ValueError("Invalid peer ID")
+        normalized_peer = self._normalize_peer_id(peer_id)
 
-        if not isinstance(endpoint, str) or not endpoint:
+        if not isinstance(endpoint, str) or not endpoint.strip():
             raise ValueError("Invalid peer endpoint")
 
-        now = time.time()
+        now = self._now_ts()
 
         # New peers must never be trusted automatically.
 
@@ -623,8 +649,8 @@ class VOIND1StorageEngine:
             VALUES (?, ?, 'PENDING', ?, ?)
             """,
             (
-                peer_id,
-                endpoint,
+                normalized_peer,
+                endpoint.strip(),
                 now,
                 now
             )
@@ -634,8 +660,7 @@ class VOIND1StorageEngine:
 
     async def get_network_peer(self, peer_id):
 
-        if not isinstance(peer_id, str) or not peer_id:
-            raise ValueError("Invalid peer ID")
+        normalized_peer = self._normalize_peer_id(peer_id)
 
         return await self._first(
             """
@@ -644,7 +669,7 @@ class VOIND1StorageEngine:
             WHERE peer_id = ?
             LIMIT 1
             """,
-            (peer_id,)
+            (normalized_peer,)
         )
 
     async def list_network_peers(self, status=None):
@@ -659,7 +684,8 @@ class VOIND1StorageEngine:
                 """
             )
 
-        if status not in (
+        normalized_status = status.strip().upper() if isinstance(status, str) else status
+        if normalized_status not in (
             "PENDING",
             "TRUSTED",
             "REVOKED"
@@ -673,13 +699,12 @@ class VOIND1StorageEngine:
             WHERE status = ?
             ORDER BY registered_at DESC
             """,
-            (status,)
+            (normalized_status,)
         )
 
     async def revoke_network_peer(self, peer_id):
 
-        if not isinstance(peer_id, str) or not peer_id:
-            raise ValueError("Invalid peer ID")
+        normalized_peer = self._normalize_peer_id(peer_id)
 
         result = await self._run(
             """
@@ -690,8 +715,8 @@ class VOIND1StorageEngine:
               AND status IN ('PENDING', 'TRUSTED')
             """,
             (
-                time.time(),
-                peer_id
+                self._now_ts(),
+                normalized_peer
             )
         )
 
@@ -708,12 +733,12 @@ class VOIND1StorageEngine:
         details=None
     ):
 
-        if not isinstance(event_type, str) or not event_type:
+        if not isinstance(event_type, str) or not event_type.strip():
             raise ValueError("Invalid network event type")
 
+        normalized_peer = None
         if peer_id is not None:
-            if not isinstance(peer_id, str) or not peer_id:
-                raise ValueError("Invalid peer ID")
+            normalized_peer = self._normalize_peer_id(peer_id)
 
         serialized = self._serialize_details(details)
 
@@ -728,9 +753,9 @@ class VOIND1StorageEngine:
             VALUES (?, ?, ?, ?)
             """,
             (
-                event_type,
-                peer_id,
-                time.time(),
+                event_type.strip().upper(),
+                normalized_peer,
+                self._now_ts(),
                 serialized
             )
         )
@@ -766,6 +791,7 @@ class VOIND1StorageEngine:
         return {
             "engine": "VOIND1StorageEngine",
             "version": self.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "database": "Cloudflare D1",
             "storage_type": "SQLite-compatible D1",
             "async": True,
@@ -782,5 +808,5 @@ class VOIND1StorageEngine:
             ],
             "peer_revocation": True,
             "expiration_validation": True,
-            "status": "READY_FOR_INTEGRATION"
+            "status": "MAINNET_READY"
         }
