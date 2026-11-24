@@ -1,7 +1,7 @@
 """
 VOIN NONCE ENGINE V1.1
 
-SQLite-based persistent nonce management.
+SQLite-based persistent nonce management (BSC Mainnet / Chain ID 56).
 
 Features:
 - Cryptographically secure nonce generation
@@ -19,6 +19,7 @@ import time
 
 from security.storage import VOINStorageEngine
 
+DEFAULT_CHAIN_ID = 56
 _EVM_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
 _NONCE_HEX_RE = re.compile(r"^[0-9a-fA-F]{16,128}$")
 _ZERO_ADDRESS = "0x" + ("0" * 40)
@@ -31,6 +32,10 @@ class VOINNonceEngine:
     def __init__(self, storage=None):
 
         self.storage = storage or VOINStorageEngine()
+
+    @staticmethod
+    def _now_ts() -> int:
+        return int(time.time())
 
     @staticmethod
     def _normalize_wallet(wallet_address, *, allow_zero: bool = False) -> str:
@@ -58,9 +63,9 @@ class VOINNonceEngine:
         # Retry in the extremely unlikely event of a collision.
         for _ in range(3):
 
-            nonce = secrets.token_hex(32)
+            nonce = secrets.token_hex(32).lower()
 
-            timestamp = int(time.time())
+            timestamp = self._now_ts()
 
             try:
 
@@ -112,6 +117,7 @@ class VOINNonceEngine:
         return {
             "engine": "VOIN Nonce Engine",
             "version": cls.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "storage": "SQLite",
             "cryptographic_random_nonce": True,
             "persistent_nonce_storage": True,
