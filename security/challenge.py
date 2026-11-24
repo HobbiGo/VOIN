@@ -97,6 +97,8 @@ class VOINChallengeEngine:
 
         if nonce is None:
             nonce = secrets.token_hex(32)
+        elif isinstance(nonce, str):
+            nonce = nonce.strip()
 
         if (
             not isinstance(nonce, str)
