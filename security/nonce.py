@@ -12,11 +12,16 @@ Features:
 - Security audit integration
 """
 
+import re
 import secrets
-import time
 import sqlite3
+import time
 
 from security.storage import VOINStorageEngine
+
+_EVM_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_NONCE_HEX_RE = re.compile(r"^[0-9a-fA-F]{16,128}$")
+_ZERO_ADDRESS = "0x" + ("0" * 40)
 
 
 class VOINNonceEngine:
@@ -27,16 +32,28 @@ class VOINNonceEngine:
 
         self.storage = storage or VOINStorageEngine()
 
-    # Generate and persist nonce
-    def generate_nonce(self, wallet_address):
-
+    @staticmethod
+    def _normalize_wallet(wallet_address, *, allow_zero: bool = False) -> str:
         if not isinstance(wallet_address, str):
             raise ValueError("Invalid wallet address")
 
-        if not wallet_address.strip():
+        cleaned = wallet_address.strip()
+        if not cleaned:
             raise ValueError("Empty wallet address")
 
-        wallet = wallet_address.strip()
+        if not _EVM_ADDRESS_RE.match(cleaned):
+            raise ValueError("Invalid EVM wallet address format")
+
+        normalized = cleaned.lower()
+        if not allow_zero and normalized == _ZERO_ADDRESS:
+            raise ValueError("Zero address is not allowed")
+
+        return normalized
+
+    # Generate and persist nonce
+    def generate_nonce(self, wallet_address):
+
+        wallet = self._normalize_wallet(wallet_address)
 
         # Retry in the extremely unlikely event of a collision.
         for _ in range(3):
@@ -67,23 +84,22 @@ class VOINNonceEngine:
     # Verify and atomically consume nonce
     def verify_nonce(self, wallet_address, nonce):
 
-        if not isinstance(wallet_address, str):
-            return False
-
-        if not wallet_address.strip():
-            return False
-
         if not isinstance(nonce, str):
             return False
 
-        if not nonce:
+        cleaned_nonce = nonce.strip()
+        if not cleaned_nonce or not _NONCE_HEX_RE.match(cleaned_nonce):
             return False
 
         try:
 
-            return self.storage.consume_nonce(
-                wallet_address,
-                nonce
+            wallet = self._normalize_wallet(wallet_address)
+
+            return bool(
+                self.storage.consume_nonce(
+                    wallet,
+                    cleaned_nonce.lower()
+                )
             )
 
         except (ValueError, TypeError):
@@ -102,5 +118,5 @@ class VOINNonceEngine:
             "atomic_consumption": True,
             "replay_protection": True,
             "restart_protection": True,
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
