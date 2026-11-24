@@ -12,6 +12,7 @@ Features:
 - Alert reporting
 """
 
+from contextlib import closing
 import hashlib
 import re
 import sqlite3
@@ -102,7 +103,7 @@ class VOINAlertEngine:
 
     def _initialize_database(self):
 
-        with self._connect() as connection:
+        with closing(self._connect()) as connection:
 
             if self.database_path != ":memory:":
                 connection.execute("PRAGMA journal_mode = WAL")
@@ -213,7 +214,7 @@ class VOINAlertEngine:
 
         timestamp = self._now_ts()
 
-        with self._connect() as connection:
+        with closing(self._connect()) as connection:
 
             connection.execute("""
                 INSERT OR IGNORE INTO security_alerts (
@@ -245,7 +246,7 @@ class VOINAlertEngine:
                 WHERE fingerprint = ?
             """, (fingerprint,)).fetchone()
 
-        return dict(row)
+        return dict(row) if row is not None else None
 
     def scan_events(self, limit=100):
 
@@ -288,7 +289,13 @@ class VOINAlertEngine:
 
         if status is not None:
 
-            if status not in (
+            normalized_status = (
+                status.strip().upper()
+                if isinstance(status, str)
+                else status
+            )
+
+            if normalized_status not in (
                 "OPEN",
                 "ACKNOWLEDGED",
                 "RESOLVED"
@@ -296,21 +303,27 @@ class VOINAlertEngine:
                 raise ValueError("Invalid alert status")
 
             query += " AND status = ?"
-            parameters.append(status)
+            parameters.append(normalized_status)
 
         if risk_level is not None:
 
-            if risk_level not in self.RISK_LEVELS:
+            normalized_risk = (
+                risk_level.strip().upper()
+                if isinstance(risk_level, str)
+                else risk_level
+            )
+
+            if normalized_risk not in self.RISK_LEVELS:
                 raise ValueError("Invalid risk level")
 
             query += " AND risk_level = ?"
-            parameters.append(risk_level)
+            parameters.append(normalized_risk)
 
         query += " ORDER BY created_at DESC LIMIT ?"
 
         parameters.append(limit)
 
-        with self._connect() as connection:
+        with closing(self._connect()) as connection:
 
             rows = connection.execute(
                 query,
@@ -326,7 +339,7 @@ class VOINAlertEngine:
 
         timestamp = self._now_ts()
 
-        with self._connect() as connection:
+        with closing(self._connect()) as connection:
 
             cursor = connection.execute("""
                 UPDATE security_alerts
@@ -348,7 +361,7 @@ class VOINAlertEngine:
 
         timestamp = self._now_ts()
 
-        with self._connect() as connection:
+        with closing(self._connect()) as connection:
 
             cursor = connection.execute("""
                 UPDATE security_alerts
@@ -365,7 +378,7 @@ class VOINAlertEngine:
 
     def get_alert_summary(self):
 
-        with self._connect() as connection:
+        with closing(self._connect()) as connection:
 
             rows = connection.execute("""
                 SELECT
@@ -391,13 +404,17 @@ class VOINAlertEngine:
 
         for row in rows:
 
-            total = row["total"]
+            total = int(row["total"])
+            risk_key = str(row["risk_level"] or "").strip().upper()
+            status_key = str(row["status"] or "").strip().upper()
 
             summary["total"] += total
 
-            summary["by_risk"][row["risk_level"]] += total
+            if risk_key in summary["by_risk"]:
+                summary["by_risk"][risk_key] += total
 
-            summary["by_status"][row["status"]] += total
+            if status_key in summary["by_status"]:
+                summary["by_status"][status_key] += total
 
         return summary
 
