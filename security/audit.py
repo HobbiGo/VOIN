@@ -1,6 +1,6 @@
 """
 VOIN SECURITY AUDIT ENGINE V1.1.0
-Centralized security event recording and reporting.
+Centralized security event recording and reporting (BSC Mainnet / Chain ID 56).
 Features:
 Authentication event tracking
 Challenge and nonce event tracking
@@ -14,7 +14,14 @@ Security note:
 This module stores security metadata, not private keys.
 """
 
+import re
+import time
+
 from security.storage import VOINStorageEngine
+
+DEFAULT_CHAIN_ID = 56
+_EVM_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_ZERO_ADDRESS = "0x" + ("0" * 40)
 
 
 class VOINAuditEngine:
@@ -45,6 +52,31 @@ class VOINAuditEngine:
             if storage is not None
             else VOINStorageEngine()
         )
+
+    @staticmethod
+    def _now_ts() -> int:
+        return int(time.time())
+
+    @staticmethod
+    def _normalize_wallet(wallet_address, *, allow_zero: bool = False):
+        if wallet_address is None:
+            return None
+
+        if not isinstance(wallet_address, str):
+            raise ValueError("Invalid wallet address")
+
+        cleaned = wallet_address.strip()
+        if not cleaned:
+            raise ValueError("Invalid wallet address")
+
+        if not _EVM_ADDRESS_RE.match(cleaned):
+            raise ValueError("Invalid EVM wallet address format")
+
+        normalized = cleaned.lower()
+        if not allow_zero and normalized == _ZERO_ADDRESS:
+            raise ValueError("Zero address is not allowed")
+
+        return normalized
 
     # --------------------------------------------------
     # VALIDATION
@@ -89,11 +121,12 @@ class VOINAuditEngine:
     ):
 
         event_type = self._validate_event_type(event_type)
+        normalized_wallet = self._normalize_wallet(wallet_address)
         details = self._validate_details(details)
 
         self.storage.log_event(
             event_type=event_type,
-            wallet_address=wallet_address,
+            wallet_address=normalized_wallet,
             reference_id=reference_id,
             details=details
         )
@@ -358,8 +391,10 @@ class VOINAuditEngine:
         limit=100
     ):
 
+        normalized_wallet = self._normalize_wallet(wallet_address)
+
         return self.storage.get_wallet_security_events(
-            wallet_address=wallet_address,
+            wallet_address=normalized_wallet,
             limit=limit
         )
 
@@ -374,6 +409,8 @@ class VOINAuditEngine:
         report = {
             "engine": "VOIN Security Audit Engine",
             "version": self.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
+            "generated_at": self._now_ts(),
             "total_events": len(events),
 
             "authentication_success": 0,
@@ -476,6 +513,7 @@ class VOINAuditEngine:
         return {
             "engine": "VOIN Security Audit Engine",
             "version": cls.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
 
             "event_recording": True,
             "wallet_audit_history": True,
@@ -493,5 +531,5 @@ class VOINAuditEngine:
             "persistent_storage": "SQLite",
             "private_key_storage": False,
 
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
