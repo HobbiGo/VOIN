@@ -1,10 +1,43 @@
-// VOIN Cloudflare Worker — Web3 ke Web4 Development Preview
-// Catatan: Tetap arahkan transaksi on-chain ke jaringan uji coba (BSC Testnet / Chain ID 97)
-// selama tahap pengembangan dan verifikasi keamanan belum selesai[span_2](start_span)[span_2](end_span)[span_3](start_span)[span_3](end_span).
+// VOIN Cloudflare Worker — BSC Mainnet (Chain ID 56)
 
-const DEFAULT_CONTRACT = "0xf6e7a0cd45e0f98b383273888c79ae548a4abb05"; //[span_4](start_span)[span_4](end_span)[span_5](start_span)[span_5](end_span)
-const DEFAULT_CHAIN_ID = 97; // BSC Testnet[span_6](start_span)[span_6](end_span)[span_7](start_span)[span_7](end_span)
-const PLANNED_MAX_SUPPLY = 260_000_000; //[span_8](start_span)[span_8](end_span)[span_9](start_span)[span_9](end_span)
+const DEFAULT_CONTRACT = "0xf6e7a0cd45e0f98b383273888c79ae548a4abb05";
+const DEFAULT_CHAIN_ID = 56; // BSC Mainnet
+const PLANNED_MAX_SUPPLY = 260_000_000;
+const MAINNET_EXPLORER_BASE = "https://bscscan.com";
+const TESTNET_EXPLORER_BASE = "https://testnet.bscscan.com";
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function resolveChainId(env) {
+  const raw = env?.VOIN_CHAIN_ID;
+  const parsed = raw === undefined || raw === null || String(raw).trim() === ""
+    ? DEFAULT_CHAIN_ID
+    : Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_CHAIN_ID;
+}
+
+function resolveContractAddress(env) {
+  const candidate = String(env?.VOIN_CONTRACT_ADDRESS || DEFAULT_CONTRACT).trim();
+  return /^0x[0-9a-fA-F]{40}$/.test(candidate) ? candidate : DEFAULT_CONTRACT;
+}
+
+function getNetworkLabel(chainId) {
+  if (chainId === 56) return "BSC Mainnet";
+  if (chainId === 97) return "BSC Testnet";
+  return `EVM Chain ${chainId}`;
+}
+
+function getExplorerUrl(chainId, contractAddress) {
+  const base = chainId === 97 ? TESTNET_EXPLORER_BASE : MAINNET_EXPLORER_BASE;
+  return `${base}/address/${contractAddress}`;
+}
 
 function jsonResponse(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data, null, 2), {
@@ -20,12 +53,16 @@ function jsonResponse(data, status = 200, extraHeaders = {}) {
 
 function handleApi(request, env, url) {
   const path = url.pathname;
+  const chainId = resolveChainId(env);
+  const contractAddress = resolveContractAddress(env);
+  const networkName = getNetworkLabel(chainId);
 
   if (path === "/api/health") {
     return jsonResponse({
       ok: true,
       service: "voin-worker",
-      mode: env.VOIN_ENV_MODE || "development-preview",
+      mode: env.VOIN_ENV_MODE || "mainnet",
+      chain_id: chainId,
       timestamp: new Date().toISOString(),
     });
   }
@@ -34,28 +71,29 @@ function handleApi(request, env, url) {
     return jsonResponse({
       project: "VOIN",
       symbol: "$VOIN",
-      planned_max_supply: PLANNED_MAX_SUPPLY, //[span_10](start_span)[span_10](end_span)[span_11](start_span)[span_11](end_span)
+      planned_max_supply: PLANNED_MAX_SUPPLY,
       active_wallet_network: {
-        name: "BSC Testnet", //[span_12](start_span)[span_12](end_span)[span_13](start_span)[span_13](end_span)
-        chain_id: Number(env.VOIN_CHAIN_ID || DEFAULT_CHAIN_ID), //[span_14](start_span)[span_14](end_span)[span_15](start_span)[span_15](end_span)
-        presale_test_contract: env.VOIN_CONTRACT_ADDRESS || DEFAULT_CONTRACT, //[span_16](start_span)[span_16](end_span)[span_17](start_span)[span_17](end_span)
+        name: networkName,
+        chain_id: chainId,
+        contract_address: contractAddress,
+        explorer: getExplorerUrl(chainId, contractAddress),
       },
       custom_l1_reference: {
         network_name: "VOIN Mainnet (Genesis Config)",
         chain_id: 260,
-        status: "prototype-in-development", //[span_18](start_span)[span_18](end_span)[span_19](start_span)[span_19](end_span)
+        status: "prototype-in-development",
       },
       web4_modules_status: {
-        core_and_hybrid_pqc_node: "experimental / prototype", //[span_20](start_span)[span_20](end_span)[span_21](start_span)[span_21](end_span)
-        ai_engine: "planned / research", //[span_22](start_span)[span_22](end_span)
-        mainnet_and_live_presale: "not_active", //[span_23](start_span)[span_23](end_span)[span_24](start_span)[span_24](end_span)
+        core_and_hybrid_pqc_node: "experimental / prototype",
+        ai_engine: "planned / research",
+        mainnet_and_live_presale: chainId === 56 ? "active" : "not_active",
       },
       disclaimer:
-        "Testnet & development preview only. Not a live token sale, financial advice, or production Web4/mainnet guarantee.", //[span_25](start_span)[span_25](end_span)[span_26](start_span)[span_26](end_span)
+        "Verify contract addresses and transaction parameters on BSC Mainnet (Chain ID 56) before interacting.",
     });
   }
 
-  // Contoh endpoint untuk menghubungkan status node P2P jika NODE_API_URL diset di env
+  // Endpoint untuk menghubungkan status node P2P jika NODE_API_URL diset di env
   if (path === "/api/node-status") {
     if (!env.NODE_API_URL) {
       return jsonResponse(
@@ -110,12 +148,19 @@ async function proxyNodeStatus(nodeBaseUrl) {
 }
 
 function renderHtml(projectId, contractAddress, chainId) {
+  const networkName = getNetworkLabel(chainId);
+  const explorerUrl = getExplorerUrl(chainId, contractAddress);
+  const safeProjectId = escapeHtml(projectId);
+  const safeContract = escapeHtml(contractAddress);
+  const safeExplorerUrl = escapeHtml(explorerUrl);
+  const safeNetworkName = escapeHtml(networkName);
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VOIN — Web3 to Web4 Development Preview</title>
+  <title>VOIN — ${safeNetworkName} &amp; Web4 Gateway</title>
   <style>
     :root {
       --bg: #050d1b;
@@ -180,49 +225,52 @@ function renderHtml(projectId, contractAddress, chainId) {
   <div class="wrap">
     <header class="top">
       <div class="brand">VOIN PROTOCOL</div>
-      <div class="badge">TESTNET &amp; WEB4 R&amp;D PREVIEW · CHAIN ${chainId}</div>
+      <div class="badge">${safeNetworkName.toUpperCase()} · CHAIN ${chainId}</div>
     </header>
 
     <main>
       <h1>Web3 Foundation to <span>Web4 Ecosystem</span></h1>
       <p class="lead">
-        Exploration build for VOIN: combining Layer-1 / EVM testnet workflows, post-quantum signature research (ML-DSA),
-        and staged AI/automation modules.
+        VOIN security &amp; gateway portal configured for ${safeNetworkName} (Chain ID ${chainId}),
+        paired with EVM security verification, PQC research modules (ML-DSA), and staged Web4 tooling.
       </p>
 
       <div class="actions">
-        <button class="btn btn-gold" id="btnConnect" type="button">Connect Wallet (Testnet)</button>
+        <button class="btn btn-gold" id="btnConnect" type="button">Connect Wallet (${safeNetworkName})</button>
         <button class="btn btn-ghost" id="btnApiInfo" type="button">Check /api/info</button>
-        <a class="btn btn-ghost" href="https://testnet.bscscan.com/address/${contractAddress}" target="_blank" rel="noopener noreferrer">View Test Contract ↗</a>
+        <a class="btn btn-ghost" href="${safeExplorerUrl}" target="_blank" rel="noopener noreferrer">View Contract on BscScan ↗</a>
       </div>
 
       <div class="grid">
         <div class="card">
-          <h3>01 / Layer-1 &amp; Presale Testnet</h3>
-          <p>Current test contract configured on Chain ID ${chainId} with planned max supply of 260,000,000 VOIN.</p>
+          <h3>01 / ${safeNetworkName} (Chain ${chainId})</h3>
+          <p>Active EVM network configured on Chain ID ${chainId} with planned max supply of 260,000,000 VOIN.</p>
         </div>
         <div class="card">
           <h3>02 / Hybrid &amp; PQC Security</h3>
-          <p>Research &amp; prototyping with EVM signatures and NIST FIPS 204 (ML-DSA) before any production rollout.</p>
+          <p>EVM signature verification alongside NIST FIPS 204 (ML-DSA) post-quantum modules.</p>
         </div>
         <div class="card">
           <h3>03 / Web4 &amp; AI Modules</h3>
-          <p>Staged development for analytics, monitoring, and agent/workflow tooling—built step by step.</p>
+          <p>Staged development for analytics, monitoring, and agent/workflow tooling.</p>
         </div>
       </div>
 
       <div class="status-box" id="output">Wallet status: Not connected.
-Reown Project ID configured: ${projectId ? "Yes" : "No"}
-Contract: ${contractAddress}</div>
+Reown Project ID configured: ${safeProjectId ? "Yes" : "No"}
+Network: ${safeNetworkName} (${chainId})
+Contract: ${safeContract}</div>
 
       <div class="warn">
-        <strong>Notice:</strong> Testnet &amp; development preview only. Do not send real funds or treat test allocations as live tokens or guaranteed returns.
+        <strong>Notice:</strong> Always verify the target chain (${safeNetworkName} · Chain ID ${chainId}) and contract address before signing or sending transactions.
       </div>
     </main>
   </div>
 
   <script type="module">
     const projectId = ${JSON.stringify(projectId)};
+    const activeChainId = ${JSON.stringify(chainId)};
+    const activeNetworkName = ${JSON.stringify(networkName)};
     const output = document.getElementById("output");
     const btnConnect = document.getElementById("btnConnect");
     const btnApiInfo = document.getElementById("btnApiInfo");
@@ -250,13 +298,24 @@ Contract: ${contractAddress}</div>
         import("https://esm.sh/@reown/appkit@1.8.24/networks?target=es2022"),
       ]);
 
+      const selectedNetwork =
+        activeChainId === 97 && networks.bscTestnet
+          ? networks.bscTestnet
+          : networks.bsc || {
+              id: 56,
+              name: "BNB Smart Chain",
+              nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+              rpcUrls: { default: { http: ["https://bsc-dataseed.bnbchain.org"] } },
+              blockExplorers: { default: { name: "BscScan", url: "https://bscscan.com" } },
+            };
+
       appKitModal = createAppKit({
         adapters: [new EthersAdapter()],
-        networks: [networks.bscTestnet],
+        networks: [selectedNetwork],
         projectId,
         metadata: {
-          name: "VOIN Web4 Preview",
-          description: "VOIN Testnet & Web4 development preview",
+          name: "VOIN Protocol",
+          description: "VOIN Security & Web4 Gateway on BSC Mainnet",
           url: window.location.origin,
           icons: [],
         },
@@ -267,9 +326,9 @@ Contract: ${contractAddress}</div>
       appKitModal.subscribeAccount((acc) => {
         if (acc?.isConnected && acc?.address) {
           btnConnect.textContent = acc.address.slice(0, 6) + "..." + acc.address.slice(-4);
-          log("Connected wallet: " + acc.address + "\\nNetwork: BSC Testnet (Chain ID 97)");
+          log("Connected wallet: " + acc.address + "\\nNetwork: " + activeNetworkName + " (Chain ID " + activeChainId + ")");
         } else {
-          btnConnect.textContent = "Connect Wallet (Testnet)";
+          btnConnect.textContent = "Connect Wallet (" + activeNetworkName + ")";
         }
       });
     } catch (err) {
@@ -309,8 +368,8 @@ export default {
       );
     }
 
-    const contractAddress = env.VOIN_CONTRACT_ADDRESS || DEFAULT_CONTRACT;
-    const chainId = Number(env.VOIN_CHAIN_ID || DEFAULT_CHAIN_ID);
+    const contractAddress = resolveContractAddress(env);
+    const chainId = resolveChainId(env);
     const html = renderHtml(projectId, contractAddress, chainId);
 
     return new Response(request.method === "HEAD" ? null : html, {
