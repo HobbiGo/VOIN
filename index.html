@@ -22,7 +22,6 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 16px;
             background-color: var(--midnight-navy);
-            /* Menyatukan backdrop-voin.jpg pada body dengan gradasi yang seimbang */
             background-image:
                 radial-gradient(circle at 16% 18%, rgba(168, 85, 247, 0.22) 0%, transparent 45%),
                 radial-gradient(circle at 80% 28%, rgba(56, 189, 248, 0.18) 0%, transparent 48%),
@@ -83,15 +82,60 @@
             transform: translateY(-2px);
         }
 
-        /* Animasi mengambang untuk visual tiga pilar ekosistem baru */
+        /* Luxury Showcase Frame agar gambar menyatu elegan tanpa kotak putih mencolok */
+        .luxury-showcase-frame {
+            position: relative;
+            border-radius: 26px;
+            background: linear-gradient(145deg, rgba(16, 22, 58, 0.78), rgba(7, 11, 30, 0.88));
+            border: 1px solid rgba(168, 85, 247, 0.38);
+            box-shadow:
+                0 24px 60px rgba(0, 0, 0, 0.65),
+                0 0 36px rgba(139, 92, 246, 0.18),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
+            overflow: hidden;
+        }
+
+        .luxury-showcase-frame::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 25% 25%, rgba(56, 189, 248, 0.14), transparent 55%),
+                radial-gradient(circle at 80% 75%, rgba(168, 85, 247, 0.18), transparent 55%);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .luxury-showcase-frame::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            box-shadow: inset 0 0 42px rgba(5, 8, 24, 0.82);
+            border-radius: 26px;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .ecosystem-blend-img {
+            position: relative;
+            z-index: 1;
+            mix-blend-mode: lighten;
+            filter: contrast(1.08) saturate(1.12) drop-shadow(0 12px 24px rgba(0, 0, 0, 0.55));
+            -webkit-mask-image: radial-gradient(ellipse 88% 84% at 50% 50%, #000 68%, rgba(0, 0, 0, 0.65) 85%, transparent 100%);
+            mask-image: radial-gradient(ellipse 88% 84% at 50% 50%, #000 68%, rgba(0, 0, 0, 0.65) 85%, transparent 100%);
+            transition: transform 0.45s ease;
+        }
+
+        .luxury-showcase-frame:hover .ecosystem-blend-img {
+            transform: scale(1.02);
+        }
+
         @keyframes ecosystemFloat {
             0%, 100% {
-                transform: translateY(0px) scale(1);
-                filter: drop-shadow(0 0 25px rgba(168, 85, 247, 0.35)) drop-shadow(0 0 15px rgba(56, 189, 248, 0.2));
+                transform: translateY(0px);
             }
             50% {
-                transform: translateY(-8px) scale(1.015);
-                filter: drop-shadow(0 15px 35px rgba(168, 85, 247, 0.45)) drop-shadow(0 10px 25px rgba(56, 189, 248, 0.35));
+                transform: translateY(-6px);
             }
         }
 
@@ -176,9 +220,9 @@
     </header>
 
     <!-- ================= HERO SECTION ================= -->
-    <section id="home" class="max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-16">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            
+    <section id="home" class="max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-14">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+
             <!-- Area Kiri: Deskripsi dan Call To Action -->
             <div class="lg:col-span-6 space-y-6">
                 <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/75 backdrop-blur-md border border-purple-500/45 text-xs sm:text-sm text-cyan-200 font-medium">
@@ -223,21 +267,21 @@
                 </div>
             </div>
 
-            <!-- Area Kanan: Visual 3 Pilihan Terintegrasi "pictureplus-voin.jpg" -->
-            <div class="lg:col-span-6 flex items-center justify-center py-4">
-                <div class="relative w-full max-w-lg lg:max-w-xl flex items-center justify-center">
-                    <!-- Glow aura lembut melingkari visual ekosistem -->
-                    <div class="absolute w-80 h-80 rounded-full bg-[#090d26]/80 blur-3xl pointer-events-none"></div>
-                    <div class="absolute w-72 h-72 rounded-full bg-gradient-to-tr from-purple-600/25 via-indigo-500/15 to-cyan-400/20 blur-3xl pointer-events-none"></div>
-                    
-                    <!-- Penerapan pictureplus-voin.jpg sebagai aset utama -->
-                    <div class="ecosystem-visual-wrap relative z-10 w-full transition duration-500">
-                        <img id="ecosystemAssetsImg" src="pictureplus-voin.jpg" alt="VOIN Ecosystem Features" class="w-full h-auto object-contain select-none" onerror="this.style.display='none'; document.getElementById('ecosystemFallback').style.display='flex';">
-                        
-                        <!-- Fallback jika berkas pictureplus-voin.jpg belum terbaca -->
-                        <div id="ecosystemFallback" style="display:none;" class="w-full py-12 flex-col items-center justify-center text-center p-6 border border-purple-500/30 rounded-3xl bg-indigo-950/40 backdrop-blur-md">
-                            <span class="font-display text-3xl font-extrabold text-white">VOIN ECOSYSTEM</span>
-                            <p class="text-slate-300 text-sm mt-2">Features visualizations (Physical Card, Ecosystem Node & Security Vault)</p>
+            <!-- Area Kanan: Bingkai Elegan & Menyatu untuk "pictureplus-voin.jpg" -->
+            <div class="lg:col-span-6 flex items-center justify-center py-2">
+                <div class="ecosystem-visual-wrap w-full max-w-xl">
+                    <div class="luxury-showcase-frame p-3 sm:p-4">
+                        <div class="h-1 w-full rounded-full bg-gradient-to-r from-cyan-400 via-purple-500 to-fuchsia-400 opacity-80 mb-2.5"></div>
+                        <img id="ecosystemAssetsImg" src="pictureplus-voin.jpg" alt="VOIN Ecosystem Features" class="ecosystem-blend-img w-full h-auto rounded-2xl select-none" onerror="this.style.display='none'; document.getElementById('ecosystemFallback').style.display='flex';">
+
+                        <div id="ecosystemFallback" style="display:none;" class="w-full py-12 flex-col items-center justify-center text-center p-6 rounded-2xl bg-indigo-950/50">
+                            <span class="font-display text-2xl sm:text-3xl font-extrabold text-white">VOIN ECOSYSTEM</span>
+                            <p class="text-slate-300 text-sm mt-2">Physical Card &bull; Ecosystem Node &bull; VOIN Vault</p>
+                        </div>
+
+                        <div class="mt-2.5 pt-2 border-t border-purple-400/20 flex items-center justify-between text-[11px] sm:text-xs text-slate-300 px-1">
+                            <span class="font-display tracking-wider text-cyan-300">VOIN ARCHITECTURE</span>
+                            <span class="text-purple-200">Card &bull; Node &bull; Vault</span>
                         </div>
                     </div>
                 </div>
@@ -246,7 +290,7 @@
         </div>
 
         <!-- Why VOIN? -->
-        <div class="mt-8 glass-panel p-5 sm:p-6 rounded-3xl">
+        <div class="mt-10 glass-panel p-5 sm:p-6 rounded-3xl">
             <div class="mb-4">
                 <h2 class="font-display text-lg sm:text-xl font-extrabold text-white">Why VOIN?</h2>
                 <p class="text-xs sm:text-sm text-slate-300">More than a token &mdash; a gateway to interactive gaming, rewards, and real utility.</p>
