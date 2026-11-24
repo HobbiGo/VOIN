@@ -1,5 +1,5 @@
 """
-VOIN SECURITY API INTEGRATION ENGINE V1.1.0
+VOIN SECURITY API INTEGRATION ENGINE V1.1.0 (BSC Mainnet / Chain ID 56)
 
 Features:
 - Security API delegation
@@ -127,7 +127,16 @@ class VOINSecurityAPIIntegration:
         normalized_wallet = self._normalize_wallet(wallet_address)
         cleaned_challenge = self._clean_optional_str(challenge)
         cleaned_challenge_id = self._clean_optional_str(challenge_id)
-        cleaned_nonce = nonce.strip() if isinstance(nonce, str) else nonce
+        cleaned_nonce = (
+            nonce.strip()
+            if isinstance(nonce, str) and nonce.strip()
+            else (None if isinstance(nonce, str) else nonce)
+        )
+        cleaned_signature = (
+            signature.strip()
+            if isinstance(signature, str) and signature.strip()
+            else signature
+        )
 
         verify_method = (
             self.security_integration.verify_authentication
@@ -147,7 +156,7 @@ class VOINSecurityAPIIntegration:
             return verify_method(
                 wallet_address=normalized_wallet,
                 challenge=cleaned_challenge,
-                signature=signature,
+                signature=cleaned_signature,
                 nonce=cleaned_nonce
             )
 
@@ -160,7 +169,7 @@ class VOINSecurityAPIIntegration:
         return verify_method(
             challenge_id=resolved_challenge_id,
             wallet_address=normalized_wallet,
-            signature=signature
+            signature=cleaned_signature
         )
 
     def engine_info(self):
