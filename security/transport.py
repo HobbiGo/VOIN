@@ -14,9 +14,14 @@ Security scope:
 
 import ipaddress
 import json
+import re
 import socket
 import socketserver
 import threading
+
+_EVM_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_ZERO_ADDRESS = "0x" + ("0" * 40)
+DEFAULT_CHAIN_ID = 56
 
 
 class VOINTransportEngine:
@@ -29,24 +34,35 @@ class VOINTransportEngine:
         if communication_engine is None:
             raise ValueError("communication_engine is required")
 
-        if not isinstance(local_peer_id, str) or not local_peer_id:
+        if not isinstance(local_peer_id, str) or not local_peer_id.strip():
             raise ValueError("local_peer_id is required")
 
         self.communication_engine = communication_engine
-        self.local_peer_id = local_peer_id
+        self.local_peer_id = self._normalize_peer_id(local_peer_id)
         self.server = None
         self.server_thread = None
         self._lock = threading.RLock()
+
+    @staticmethod
+    def _normalize_peer_id(peer_id: str) -> str:
+        cleaned = peer_id.strip()
+        if _EVM_ADDRESS_RE.match(cleaned):
+            normalized = cleaned.lower()
+            if normalized == _ZERO_ADDRESS:
+                raise ValueError("Zero address is not allowed for local_peer_id")
+            return normalized
+        return cleaned
 
     @staticmethod
     def _is_loopback_host(host):
         if not isinstance(host, str) or not host:
             return False
 
+        cleaned = host.strip()
         try:
-            return ipaddress.ip_address(host).is_loopback
+            return ipaddress.ip_address(cleaned).is_loopback
         except ValueError:
-            return host.lower() == "localhost"
+            return cleaned.lower() == "localhost"
 
     @staticmethod
     def _encode_message(message):
@@ -84,6 +100,8 @@ class VOINTransportEngine:
                 "success": False,
                 "error": "Invalid port"
             }
+
+        clean_host = host.strip()
 
         with self._lock:
 
@@ -176,7 +194,7 @@ class VOINTransportEngine:
 
             try:
                 server = LocalTCPServer(
-                    (host, port),
+                    (clean_host, port),
                     RequestHandler
                 )
 
@@ -271,9 +289,11 @@ class VOINTransportEngine:
                 "error": "Invalid or oversized message"
             }
 
+        clean_host = host.strip()
+
         try:
             with socket.create_connection(
-                (host, port),
+                (clean_host, port),
                 timeout=self.SOCKET_TIMEOUT
             ) as connection:
 
@@ -336,6 +356,7 @@ class VOINTransportEngine:
         return {
             "engine": "VOIN Network Transport Engine",
             "version": self.VERSION,
+            "chain_id": DEFAULT_CHAIN_ID,
             "transport": "TCP",
             "message_framing": "NEWLINE_DELIMITED_JSON",
             "message_size_limit": self.MAX_MESSAGE_SIZE,
@@ -347,6 +368,6 @@ class VOINTransportEngine:
             "status": (
                 "RUNNING"
                 if running
-                else "READY_FOR_TESTING"
+                else "LOOPBACK_MAINNET_READY"
             )
         }
