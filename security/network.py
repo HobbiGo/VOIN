@@ -4,7 +4,7 @@ VOIN NETWORK SECURITY ENGINE V1.1.1
 Provides defensive network peer management.
 
 Features:
-- Peer identity validation
+- Peer identity validation & normalization
 - Trusted peer registration
 - Endpoint validation
 - Duplicate peer prevention
@@ -27,6 +27,8 @@ import time
 
 from urllib.parse import urlparse
 
+ZERO_PEER_ID = "0x" + ("0" * 40)
+
 
 class VOINNetworkSecurityEngine:
 
@@ -45,6 +47,20 @@ class VOINNetworkSecurityEngine:
         self.security_events = []
 
         self._load_persistent_peers()
+
+    # --------------------------------------------------
+    # INTERNAL HELPERS
+    # --------------------------------------------------
+
+    @staticmethod
+    def _now_ts() -> int:
+        return int(time.time())
+
+    @classmethod
+    def normalize_peer_id(cls, peer_id) -> str | None:
+        if not cls.validate_peer_identity(peer_id):
+            return None
+        return peer_id.strip().lower()
 
     # --------------------------------------------------
     # PEER RECOVERY
@@ -66,11 +82,11 @@ class VOINNetworkSecurityEngine:
                 if not isinstance(peer, dict):
                     continue
 
-                peer_id = peer.get("peer_id")
+                peer_id = self.normalize_peer_id(peer.get("peer_id"))
                 endpoint = peer.get("endpoint")
                 status = peer.get("status")
 
-                if not self.validate_peer_identity(peer_id):
+                if peer_id is None:
                     continue
 
                 if not self.validate_endpoint(endpoint):
@@ -81,7 +97,7 @@ class VOINNetworkSecurityEngine:
 
                 self.trusted_peers[peer_id] = {
                     "peer_id": peer_id,
-                    "endpoint": endpoint,
+                    "endpoint": endpoint.strip(),
                     "status": status,
                     "registered_at": peer.get("registered_at"),
                     "updated_at": peer.get("updated_at")
@@ -96,20 +112,23 @@ class VOINNetworkSecurityEngine:
     # --------------------------------------------------
 
     @staticmethod
-    def validate_peer_identity(peer_id):
+    def validate_peer_identity(peer_id, *, allow_zero: bool = False):
 
         if not isinstance(peer_id, str):
             return False
 
-        if len(peer_id) != 42:
+        cleaned = peer_id.strip()
+
+        if len(cleaned) != 42:
             return False
 
-        return bool(
-            re.fullmatch(
-                r"0x[a-fA-F0-9]{40}",
-                peer_id
-            )
-        )
+        if not re.fullmatch(r"0x[a-fA-F0-9]{40}", cleaned):
+            return False
+
+        if not allow_zero and cleaned.lower() == ZERO_PEER_ID:
+            return False
+
+        return True
 
     @staticmethod
     def validate_endpoint(endpoint):
@@ -150,7 +169,7 @@ class VOINNetworkSecurityEngine:
             if port is not None and not 1 <= port <= 65535:
                 return False
 
-            hostname = parsed.hostname
+            hostname = parsed.hostname.lower()
 
             if not hostname:
                 return False
@@ -181,7 +200,7 @@ class VOINNetworkSecurityEngine:
                         return False
 
                     if not re.fullmatch(
-                        r"[a-zA-Z0-9-]+",
+                        r"[a-z0-9-]+",
                         label
                     ):
                         return False
@@ -203,11 +222,17 @@ class VOINNetworkSecurityEngine:
         details=None
     ):
 
+        normalized_id = (
+            peer_id.strip().lower()
+            if isinstance(peer_id, str)
+            else str(peer_id)
+        )
+
         event = {
             "event_type": event_type,
-            "peer_id": peer_id,
+            "peer_id": normalized_id,
             "details": copy.deepcopy(details or {}),
-            "timestamp": time.time()
+            "timestamp": self._now_ts()
         }
 
         self.security_events.append(event)
@@ -218,7 +243,7 @@ class VOINNetworkSecurityEngine:
             try:
                 self.storage_engine.log_network_event(
                     event_type,
-                    peer_id,
+                    normalized_id,
                     event["details"]
                 )
 
@@ -262,11 +287,17 @@ class VOINNetworkSecurityEngine:
         must not call storage_engine.log_network_event().
         """
 
+        normalized_id = (
+            peer_id.strip().lower()
+            if isinstance(peer_id, str)
+            else str(peer_id)
+        )
+
         event = {
             "event_type": event_type,
-            "peer_id": peer_id,
+            "peer_id": normalized_id,
             "details": copy.deepcopy(details or {}),
-            "timestamp": time.time()
+            "timestamp": self._now_ts()
         }
 
         self.security_events.append(event)
@@ -310,11 +341,13 @@ class VOINNetworkSecurityEngine:
                 "error": "Invalid peer identity"
             }
 
+        normalized_id = peer_id.strip().lower()
+
         if not self.validate_endpoint(endpoint):
 
             self._record_event(
                 "INVALID_PEER_ENDPOINT",
-                peer_id
+                normalized_id
             )
 
             return {
@@ -322,13 +355,15 @@ class VOINNetworkSecurityEngine:
                 "error": "Invalid peer endpoint"
             }
 
-        existing_peer = self.trusted_peers.get(peer_id)
+        clean_endpoint = endpoint.strip()
+
+        existing_peer = self.trusted_peers.get(normalized_id)
 
         if existing_peer is not None:
 
             self._record_event(
                 "DUPLICATE_PEER",
-                peer_id
+                normalized_id
             )
 
             return {
@@ -336,7 +371,7 @@ class VOINNetworkSecurityEngine:
                 "error": "Peer already registered"
             }
 
-        registered_at = int(time.time())
+        registered_at = self._now_ts()
         updated_at = registered_at
 
         if self.storage_engine is not None:
@@ -344,13 +379,13 @@ class VOINNetworkSecurityEngine:
             try:
 
                 existing_peer = self.storage_engine.get_network_peer(
-                    peer_id
+                    normalized_id
                 )
 
                 if existing_peer is not None:
 
-                    self.trusted_peers[peer_id] = {
-                        "peer_id": existing_peer["peer_id"],
+                    self.trusted_peers[normalized_id] = {
+                        "peer_id": normalized_id,
                         "endpoint": existing_peer["endpoint"],
                         "status": existing_peer["status"],
                         "registered_at": existing_peer["registered_at"],
@@ -359,7 +394,7 @@ class VOINNetworkSecurityEngine:
 
                     self._record_event(
                         "DUPLICATE_PEER",
-                        peer_id
+                        normalized_id
                     )
 
                     return {
@@ -368,12 +403,12 @@ class VOINNetworkSecurityEngine:
                     }
 
                 self.storage_engine.save_network_peer(
-                    peer_id,
-                    endpoint
+                    normalized_id,
+                    clean_endpoint
                 )
 
                 saved_peer = self.storage_engine.get_network_peer(
-                    peer_id
+                    normalized_id
                 )
 
                 if not isinstance(saved_peer, dict):
@@ -388,7 +423,7 @@ class VOINNetworkSecurityEngine:
 
                 self._record_event(
                     "PEER_STORAGE_ERROR",
-                    peer_id
+                    normalized_id
                 )
 
                 return {
@@ -396,9 +431,9 @@ class VOINNetworkSecurityEngine:
                     "error": "Peer persistence failed"
                 }
 
-        self.trusted_peers[peer_id] = {
-            "peer_id": peer_id,
-            "endpoint": endpoint,
+        self.trusted_peers[normalized_id] = {
+            "peer_id": normalized_id,
+            "endpoint": clean_endpoint,
             "status": "TRUSTED",
             "registered_at": registered_at,
             "updated_at": updated_at
@@ -408,19 +443,19 @@ class VOINNetworkSecurityEngine:
 
             self._record_persistent_event_locally(
                 "PEER_REGISTERED",
-                peer_id
+                normalized_id
             )
 
         else:
 
             self._record_event(
                 "PEER_REGISTERED",
-                peer_id
+                normalized_id
             )
 
         return {
             "success": True,
-            "peer_id": peer_id,
+            "peer_id": normalized_id,
             "status": "TRUSTED"
         }
 
@@ -430,13 +465,16 @@ class VOINNetworkSecurityEngine:
 
     def revoke_peer(self, peer_id):
 
-        peer = self.trusted_peers.get(peer_id)
+        normalized_id = self.normalize_peer_id(peer_id)
+        lookup_id = normalized_id if normalized_id is not None else str(peer_id)
+
+        peer = self.trusted_peers.get(lookup_id)
 
         if peer is None:
 
             self._record_event(
                 "UNKNOWN_PEER_REVOCATION",
-                str(peer_id)
+                lookup_id
             )
 
             return {
@@ -451,14 +489,14 @@ class VOINNetworkSecurityEngine:
                 "error": "Peer already revoked"
             }
 
-        updated_at = int(time.time())
+        updated_at = self._now_ts()
 
         if self.storage_engine is not None:
 
             try:
 
                 success = self.storage_engine.revoke_network_peer(
-                    peer_id
+                    normalized_id
                 )
 
                 if not success:
@@ -469,7 +507,7 @@ class VOINNetworkSecurityEngine:
                     }
 
                 saved_peer = self.storage_engine.get_network_peer(
-                    peer_id
+                    normalized_id
                 )
 
                 if not isinstance(saved_peer, dict):
@@ -483,7 +521,7 @@ class VOINNetworkSecurityEngine:
 
                 self._record_event(
                     "PEER_STORAGE_ERROR",
-                    peer_id,
+                    normalized_id,
                     {"operation": "revoke"}
                 )
 
@@ -499,19 +537,19 @@ class VOINNetworkSecurityEngine:
 
             self._record_persistent_event_locally(
                 "PEER_REVOKED",
-                peer_id
+                normalized_id
             )
 
         else:
 
             self._record_event(
                 "PEER_REVOKED",
-                peer_id
+                normalized_id
             )
 
         return {
             "success": True,
-            "peer_id": peer_id,
+            "peer_id": normalized_id,
             "status": "REVOKED"
         }
 
@@ -521,7 +559,11 @@ class VOINNetworkSecurityEngine:
 
     def is_trusted_peer(self, peer_id):
 
-        peer = self.trusted_peers.get(peer_id)
+        normalized_id = self.normalize_peer_id(peer_id)
+        if normalized_id is None:
+            return False
+
+        peer = self.trusted_peers.get(normalized_id)
 
         return bool(
             peer
@@ -530,7 +572,11 @@ class VOINNetworkSecurityEngine:
 
     def get_peer(self, peer_id):
 
-        peer = self.trusted_peers.get(peer_id)
+        normalized_id = self.normalize_peer_id(peer_id)
+        if normalized_id is None:
+            return None
+
+        peer = self.trusted_peers.get(normalized_id)
 
         if peer is None:
             return None
@@ -574,5 +620,5 @@ class VOINNetworkSecurityEngine:
                 self.storage_engine is not None
             ),
             "p2p_network": False,
-            "status": "READY_FOR_TESTING"
+            "status": "MAINNET_READY"
         }
